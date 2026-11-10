@@ -5,13 +5,17 @@
       "default": true,
       "package": "EC Weave",
       "versionName": "Version 1.0.0",
-      "versionNumber": "1.0.0.LATEST",
-      "versionDescription": "Initial release of EC Weave — dynamic email template generation from Salesforce related list data."
+      "versionNumber": "1.0.0.NEXT",
+      "versionDescription": "Initial release of EC Weave"
     }
   ],
   "name": "Dynamic Communication Engine",
   "namespace": "",
   "sfdcLoginUrl": "https://login.salesforce.com",
   "sourceApiVersion": "66.0",
-  "defaultLwcLanguage": "javascript"
+  "defaultLwcLanguage": "javascript",
+  "packageAliases": {
+    "EC Weave": "0HoOK00000007Sv0AI",
+    "EC Weave@1.0.0-1": "04tOK0000014tF3YAI"
+  }
 }

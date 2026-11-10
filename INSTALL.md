@@ -4,7 +4,7 @@
 
 | Version | Date | Install Link |
 |---------|------|--------------|
-| 1.0.0 | TBD | _(package version not yet created — run packaging steps first)_ |
+| 1.0.0 | 2026-11-10 | [Install in Salesforce](https://login.salesforce.com/packaging/installPackage.apexp?p0=04tOK0000014tF3YAI) |
 
 ## How to Install
 
