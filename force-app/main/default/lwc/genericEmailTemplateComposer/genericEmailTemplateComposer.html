@@ -1,0 +1,395 @@
+<template>
+    <lightning-card>
+        <div class="composer-shell">
+            <header class="composer-header">
+                <div class="composer-title-block">
+                    <div class="composer-icon">
+                        <lightning-icon icon-name="utility:email" size="small" variant="inverse"></lightning-icon>
+                    </div>
+                    <div>
+                        <h1>Compose Email</h1>
+                        <p>Generate and send a configurable email.</p>
+                    </div>
+                </div>
+            </header>
+
+            <template if:true={isLoading}>
+                <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+            </template>
+
+            <template if:true={errorMessage}>
+                <div class="error" role="alert">{errorMessage}</div>
+            </template>
+
+            <template if:true={hasNoTemplates}>
+                <div class="empty-state">No active templates are configured for this object.</div>
+            </template>
+
+            <template if:true={hasTemplates}>
+                <section class="context-panel">
+                    <div class="context-item">
+                        <div class="context-icon">
+                            <lightning-icon icon-name="utility:description" size="x-small"></lightning-icon>
+                        </div>
+                        <div>
+                            <span class="context-label">Template</span>
+                            <div class="context-title-row">
+                                <strong>{selectedTemplateName}</strong>
+                                <template if:true={showAutoSelectedBadge}>
+                                    <span class="status-badge">Auto-selected</span>
+                                </template>
+                            </div>
+                            <p>{templateContextLine}</p>
+                        </div>
+                    </div>
+
+                    <div class="context-item">
+                        <div class="context-icon">
+                            <lightning-icon icon-name="utility:description" size="x-small"></lightning-icon>
+                        </div>
+                        <div>
+                            <span class="context-label">Record</span>
+                            <strong>{recordDisplayName}</strong>
+                            <p>{recordContextLine}</p>
+                        </div>
+                    </div>
+
+                    <template if:true={hasMultipleTemplates}>
+                        <div class="template-change">
+                            <lightning-combobox
+                                variant="label-hidden"
+                                name="template"
+                                value={selectedTemplateId}
+                                placeholder="Change Template"
+                                options={templateOptions}
+                                disabled={isLoading}
+                                onchange={handleTemplateChange}>
+                            </lightning-combobox>
+                        </div>
+                    </template>
+                </section>
+
+                <template if:true={isComposeView}>
+                    <section class="compose-grid">
+                        <div class="compose-column">
+                        <section class="compose-section">
+                            <div class="section-heading">
+                                <div class="section-title">
+                                    <lightning-icon icon-name="utility:groups" size="x-small"></lightning-icon>
+                                    <h2>Recipients</h2>
+                                </div>
+                                <lightning-button
+                                    label="Add Recipient"
+                                    icon-name="utility:add"
+                                    onclick={handleShowManualRecipient}>
+                                </lightning-button>
+                            </div>
+
+                            <template if:true={hasNoRecipientOptions}>
+                                <div class="empty-state small">No configured recipients were found.</div>
+                            </template>
+
+                            <div class="recipient-groups-modern">
+                                <div class="recipient-line-modern">
+                                    <span class="recipient-kind">To</span>
+                                    <div class="recipient-chip-list">
+                                        <template for:each={toRecipientCards} for:item="recipient">
+                                            <article class="recipient-chip" key={recipient.cardKey}>
+                                                <span class="recipient-avatar">{recipient.initials}</span>
+                                                <span class="recipient-chip-text">
+                                                    <strong>{recipient.displayName}</strong>
+                                                    <small>{recipient.detailText}</small>
+                                                </span>
+                                                <lightning-combobox
+                                                    class="recipient-type-select"
+                                                    variant="label-hidden"
+                                                    value={recipient.recipientType}
+                                                    options={recipientTypeOptions}
+                                                    data-id={recipient.cardKey}
+                                                    onchange={handleRecipientTypeChange}>
+                                                </lightning-combobox>
+                                                <template if:true={recipient.required}>
+                                                    <span class="required-badge">Required</span>
+                                                </template>
+                                                <template if:false={recipient.required}>
+                                                    <lightning-button-icon
+                                                        icon-name="utility:close"
+                                                        variant="bare"
+                                                        alternative-text="Remove"
+                                                        data-id={recipient.cardKey}
+                                                        onclick={handleRemoveRecipient}>
+                                                    </lightning-button-icon>
+                                                </template>
+                                            </article>
+                                        </template>
+                                    </div>
+                                </div>
+
+                                <div class="recipient-line-modern">
+                                    <span class="recipient-kind">CC</span>
+                                    <template if:true={hasCcRecipients}>
+                                        <div class="recipient-chip-list">
+                                            <template for:each={ccRecipientCards} for:item="recipient">
+                                                <article class="recipient-chip" key={recipient.cardKey}>
+                                                    <span class="recipient-avatar">{recipient.initials}</span>
+                                                    <span class="recipient-chip-text">
+                                                        <strong>{recipient.displayName}</strong>
+                                                        <small>{recipient.detailText}</small>
+                                                    </span>
+                                                    <lightning-combobox
+                                                        class="recipient-type-select"
+                                                        variant="label-hidden"
+                                                        value={recipient.recipientType}
+                                                        options={recipientTypeOptions}
+                                                        data-id={recipient.cardKey}
+                                                        onchange={handleRecipientTypeChange}>
+                                                    </lightning-combobox>
+                                                    <template if:true={recipient.required}>
+                                                        <span class="required-badge">Required</span>
+                                                    </template>
+                                                    <template if:false={recipient.required}>
+                                                        <lightning-button-icon
+                                                            icon-name="utility:close"
+                                                            variant="bare"
+                                                            alternative-text="Remove"
+                                                            data-id={recipient.cardKey}
+                                                            onclick={handleRemoveRecipient}>
+                                                        </lightning-button-icon>
+                                                    </template>
+                                                </article>
+                                            </template>
+                                        </div>
+                                    </template>
+                                    <template if:false={hasCcRecipients}>
+                                        <lightning-button variant="base" label="Add CC" data-type="CC" onclick={handleShowManualRecipientForType}></lightning-button>
+                                    </template>
+                                </div>
+
+                                <div class="recipient-line-modern">
+                                    <span class="recipient-kind">BCC</span>
+                                    <template if:true={hasBccRecipients}>
+                                        <div class="recipient-chip-list">
+                                            <template for:each={bccRecipientCards} for:item="recipient">
+                                                <article class="recipient-chip" key={recipient.cardKey}>
+                                                    <span class="recipient-avatar">{recipient.initials}</span>
+                                                    <span class="recipient-chip-text">
+                                                        <strong>{recipient.displayName}</strong>
+                                                        <small>{recipient.detailText}</small>
+                                                    </span>
+                                                    <lightning-combobox
+                                                        class="recipient-type-select"
+                                                        variant="label-hidden"
+                                                        value={recipient.recipientType}
+                                                        options={recipientTypeOptions}
+                                                        data-id={recipient.cardKey}
+                                                        onchange={handleRecipientTypeChange}>
+                                                    </lightning-combobox>
+                                                    <template if:true={recipient.required}>
+                                                        <span class="required-badge">Required</span>
+                                                    </template>
+                                                    <template if:false={recipient.required}>
+                                                        <lightning-button-icon
+                                                            icon-name="utility:close"
+                                                            variant="bare"
+                                                            alternative-text="Remove"
+                                                            data-id={recipient.cardKey}
+                                                            onclick={handleRemoveRecipient}>
+                                                        </lightning-button-icon>
+                                                    </template>
+                                                </article>
+                                            </template>
+                                        </div>
+                                    </template>
+                                    <template if:false={hasBccRecipients}>
+                                        <lightning-button variant="base" label="Add BCC" data-type="BCC" onclick={handleShowManualRecipientForType}></lightning-button>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <template if:true={hasAvailableRecipients}>
+                                <div class="available-recipient-list">
+                                    <span>Available</span>
+                                    <template for:each={availableRecipientCards} for:item="recipient">
+                                        <lightning-button
+                                            key={recipient.cardKey}
+                                            label={recipient.addLabel}
+                                            data-id={recipient.cardKey}
+                                            onclick={handleAddConfiguredRecipient}>
+                                        </lightning-button>
+                                    </template>
+                                </div>
+                            </template>
+
+                            <template if:true={showManualRecipientForm}>
+                                <div class="manual-recipient-inline">
+                                    <lightning-input
+                                        label="Email"
+                                        type="email"
+                                        value={manualEmail}
+                                        required
+                                        onchange={handleManualEmailChange}>
+                                    </lightning-input>
+                                    <lightning-combobox
+                                        label="Recipient Type"
+                                        value={manualRecipientType}
+                                        options={recipientTypeOptions}
+                                        onchange={handleManualTypeChange}>
+                                    </lightning-combobox>
+                                    <div class="manual-inline-actions">
+                                        <lightning-button label="Cancel" onclick={handleHideManualRecipient}></lightning-button>
+                                        <lightning-button label="Add" variant="brand" onclick={handleAddManualRecipient}></lightning-button>
+                                    </div>
+                                </div>
+                            </template>
+                        </section>
+
+                        <section class="compose-section">
+                            <div class="section-heading">
+                                <div class="section-title">
+                                    <lightning-icon icon-name="utility:attach" size="x-small"></lightning-icon>
+                                    <h2>Attachments ({selectedAttachmentCount})</h2>
+                                </div>
+                                <lightning-file-upload
+                                    label="Upload"
+                                    name="dceAttachmentUpload"
+                                    record-id={effectiveRecordId}
+                                    multiple
+                                    disabled={isLoading}
+                                    onuploadfinished={handleUploadFinished}>
+                                </lightning-file-upload>
+                            </div>
+
+                            <template if:true={hasAttachments}>
+                                <div class="attachment-grid">
+                                    <template for:each={attachments} for:item="attachment">
+                                        <article class="attachment-card" key={attachment.contentDocumentId}>
+                                            <lightning-input
+                                                type="checkbox"
+                                                variant="label-hidden"
+                                                checked={attachment.selected}
+                                                data-id={attachment.contentDocumentId}
+                                                onchange={handleAttachmentSelectedChange}>
+                                            </lightning-input>
+                                            <lightning-icon icon-name="utility:attach" size="small"></lightning-icon>
+                                            <div>
+                                                <strong>{attachment.displayTitle}</strong>
+                                                <p>{attachment.displayMeta}</p>
+                                            </div>
+                                        </article>
+                                    </template>
+                                </div>
+                            </template>
+
+                            <template if:false={hasAttachments}>
+                                <div class="empty-state small">No related attachments were found.</div>
+                            </template>
+                        </section>
+
+                        <section class="compose-section">
+                            <div class="section-title">
+                                <lightning-icon icon-name="utility:edit" size="x-small"></lightning-icon>
+                                <h2>Subject</h2>
+                            </div>
+                            <lightning-input
+                                type="text"
+                                variant="label-hidden"
+                                value={renderedSubject}
+                                required
+                                disabled={isLoading}
+                                onchange={handleSubjectChange}>
+                            </lightning-input>
+                        </section>
+
+                        <section class="compose-section message-section">
+                            <div class="section-heading">
+                                <div class="section-title">
+                                    <lightning-icon icon-name="utility:note" size="x-small"></lightning-icon>
+                                    <h2>Message</h2>
+                                </div>
+                                <lightning-button
+                                    label="Regenerate"
+                                    disabled={isLoading}
+                                    onclick={handleRegenerate}>
+                                </lightning-button>
+                            </div>
+
+                            <template if:true={hasManualEdits}>
+                                <div class="manual-edit-warning">You have unsaved manual edits.</div>
+                            </template>
+
+                            <template if:true={hasBlankRenderedContent}>
+                                <div class="helper-message">
+                                    The template rendered with blank content. Review the template configuration before sending.
+                                </div>
+                            </template>
+
+                            <lightning-input-rich-text
+                                label="Email Body"
+                                value={renderedBody}
+                                required
+                                disabled={isLoading}
+                                onchange={handleBodyChange}>
+                            </lightning-input-rich-text>
+                        </section>
+                        </div>
+                    </section>
+                </template>
+
+                <template if:true={isPreviewView}>
+                    <section class="preview-step-panel">
+                        <section class="preview-card preview-card-full">
+                            <div class="section-heading preview-card-heading">
+                                <div class="section-title">
+                                    <lightning-icon icon-name="utility:preview" size="x-small"></lightning-icon>
+                                    <h2>Preview</h2>
+                                </div>
+                            </div>
+
+                            <div class="preview-recipient-lines">
+                                <p><strong>To:</strong> {toRecipientDisplay}</p>
+                                <p><strong>CC:</strong> {ccRecipientDisplay}</p>
+                                <p><strong>BCC:</strong> {bccRecipientDisplay}</p>
+                                <p><strong>Subject:</strong> {renderedSubject}</p>
+                            </div>
+
+                            <template if:true={hasSelectedAttachments}>
+                                <div class="preview-attachments">
+                                    <strong>Attachments</strong>
+                                    <template for:each={selectedAttachments} for:item="attachment">
+                                        <span key={attachment.contentDocumentId}>{attachment.displayTitle}</span>
+                                    </template>
+                                </div>
+                            </template>
+
+                            <div class="send-preview-expanded">
+                                <lightning-formatted-rich-text value={renderedBody}></lightning-formatted-rich-text>
+                            </div>
+                        </section>
+                    </section>
+                </template>
+            </template>
+
+            <footer class="footer">
+                <lightning-button label="Cancel" onclick={handleCancel}></lightning-button>
+                <template if:true={isComposeView}>
+                    <lightning-button
+                        variant="brand"
+                        label="Continue to Preview"
+                        disabled={disablePreviewButton}
+                        onclick={handleContinueToPreview}>
+                    </lightning-button>
+                </template>
+                <template if:true={isPreviewView}>
+                    <lightning-button label="Back" onclick={handleBackToCompose}></lightning-button>
+                    <lightning-button
+                        variant="brand"
+                        label="Send Email"
+                        icon-name="utility:send"
+                        disabled={disableSendButton}
+                        onclick={handleSend}>
+                    </lightning-button>
+                </template>
+            </footer>
+        </div>
+    </lightning-card>
+</template>

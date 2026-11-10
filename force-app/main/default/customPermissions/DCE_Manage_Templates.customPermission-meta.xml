@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomPermission xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Allows a user to create, edit, delete, preview, and directly author HTML email templates in the Dynamic Communication Engine.</description>
+    <label>Manage DCE Templates</label>
+</CustomPermission>

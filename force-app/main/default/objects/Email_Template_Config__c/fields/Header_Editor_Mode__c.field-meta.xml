@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Header_Editor_Mode__c</fullName>
+    <description>Remembers whether administrators prefer to edit the header visually or as HTML source.</description>
+    <inlineHelpText>Select Visual for rich-text controls or HTML Source to edit markup directly.</inlineHelpText>
+    <label>Header Editor Mode</label>
+    <required>false</required>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>Visual</fullName>
+                <default>true</default>
+                <label>Visual</label>
+            </value>
+            <value>
+                <fullName>HTML Source</fullName>
+                <default>false</default>
+                <label>HTML Source</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Allow_User_Edit_Before_Send__c</fullName><defaultValue>true</defaultValue><description>Indicates whether users may edit the rendered message before sending.</description><label>Allow User Edit Before Send</label><type>Checkbox</type></CustomField>

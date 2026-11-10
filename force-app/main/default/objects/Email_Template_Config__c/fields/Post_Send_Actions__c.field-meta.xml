@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Post_Send_Actions__c</fullName>
+    <description>JSON configuration for post-send actions that execute after a DCE email sends successfully.</description>
+    <label>Post Send Actions</label>
+    <length>32768</length>
+    <type>LongTextArea</type>
+    <visibleLines>8</visibleLines>
+</CustomField>

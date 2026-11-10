@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Is_Main_Title__c</fullName><defaultValue>false</defaultValue><description>Marks this field as a title-style value within the rendered section.</description><label>Is Main Title</label><type>Checkbox</type></CustomField>

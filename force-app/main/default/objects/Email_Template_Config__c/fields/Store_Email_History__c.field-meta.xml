@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Store_Email_History__c</fullName><defaultValue>true</defaultValue><description>Indicates whether a runtime implementation should store email history.</description><label>Store Email History</label><type>Checkbox</type></CustomField>

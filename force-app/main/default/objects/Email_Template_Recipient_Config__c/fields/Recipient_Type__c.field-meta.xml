@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Recipient_Type__c</fullName><label>Recipient Type</label><required>false</required><type>Picklist</type><valueSet><restricted>true</restricted><valueSetDefinition><sorted>false</sorted><value><fullName>To</fullName><default>true</default><label>To</label></value><value><fullName>CC</fullName><default>false</default><label>CC</label></value><value><fullName>BCC</fullName><default>false</default><label>BCC</label></value></valueSetDefinition></valueSet></CustomField>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>63.0</apiVersion>
+    <isExposed>true</isExposed>
+    <targets>
+        <target>lightning__RecordPage</target>
+        <target>lightning__RecordAction</target>
+        <target>lightning__FlowScreen</target>
+    </targets>
+    <targetConfigs>
+        <targetConfig targets="lightning__RecordAction">
+            <actionType>ScreenAction</actionType>
+        </targetConfig>
+        <targetConfig targets="lightning__FlowScreen">
+            <property name="recordId" type="String" label="Record Id" description="The Id of the parent record used to generate the email." required="true" role="inputOnly"/>
+            <property name="objectApiName" type="String" label="Object API Name" description="The API name of the parent object, such as Opportunity or Account." required="true" role="inputOnly"/>
+            <property name="templateId" type="String" label="Template Id" description="Optional template Id to preselect when launched from Flow." role="inputOnly"/>
+            <property name="flowMode" type="Boolean" label="Flow Mode" description="Set to true when this component is used inside a Screen Flow." default="true" role="inputOnly"/>
+            <property name="hideFlowFooter" type="Boolean" label="Hide Flow Footer" description="Set this with the Flow screen footer hidden so the component controls its own actions." default="true" role="inputOnly"/>
+            <property name="finishFlowOnSend" type="Boolean" label="Finish Flow On Send" description="Finish the Flow automatically after a successful send." default="true" role="inputOnly"/>
+            <property name="emailSent" type="Boolean" label="Email Sent" description="True when the email was sent successfully." role="outputOnly"/>
+            <property name="cancelled" type="Boolean" label="Cancelled" description="True when the user cancelled the composer." role="outputOnly"/>
+        </targetConfig>
+    </targetConfigs>
+</LightningComponentBundle>

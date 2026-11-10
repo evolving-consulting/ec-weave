@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Region__c</fullName>
+    <description>Identifies which template region this ordered overflow chunk extends.</description>
+    <inlineHelpText>Managed automatically as Header, Body, or Footer.</inlineHelpText>
+    <label>Region</label>
+    <required>true</required>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>Header</fullName><default>false</default><label>Header</label></value>
+            <value><fullName>Body</fullName><default>false</default><label>Body</label></value>
+            <value><fullName>Footer</fullName><default>false</default><label>Footer</label></value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

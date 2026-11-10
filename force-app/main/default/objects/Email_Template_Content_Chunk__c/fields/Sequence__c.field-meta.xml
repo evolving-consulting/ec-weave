@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Sequence__c</fullName>
+    <description>Defines the deterministic order in which overflow HTML chunks are reassembled.</description>
+    <inlineHelpText>Managed automatically; lower values are appended first.</inlineHelpText>
+    <label>Sequence</label>
+    <precision>6</precision>
+    <required>true</required>
+    <scale>0</scale>
+    <type>Number</type>
+    <unique>false</unique>
+</CustomField>

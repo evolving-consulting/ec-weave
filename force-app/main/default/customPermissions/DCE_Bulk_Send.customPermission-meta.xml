@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomPermission xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Allows a user to send a single DCE email to more than 10 recipients in one send. Assign only to users with a legitimate bulk-notification use case.</description>
+    <label>DCE Bulk Send</label>
+</CustomPermission>

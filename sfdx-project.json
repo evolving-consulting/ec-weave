@@ -1,0 +1,17 @@
+{
+  "packageDirectories": [
+    {
+      "path": "force-app",
+      "default": true,
+      "package": "EC Weave",
+      "versionName": "Version 1.0.0",
+      "versionNumber": "1.0.0.LATEST",
+      "versionDescription": "Initial release of EC Weave — dynamic email template generation from Salesforce related list data."
+    }
+  ],
+  "name": "Dynamic Communication Engine",
+  "namespace": "",
+  "sfdcLoginUrl": "https://login.salesforce.com",
+  "sourceApiVersion": "66.0",
+  "defaultLwcLanguage": "javascript"
+}

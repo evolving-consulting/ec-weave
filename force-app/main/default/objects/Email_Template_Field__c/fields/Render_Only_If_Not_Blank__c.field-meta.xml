@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Render_Only_If_Not_Blank__c</fullName><defaultValue>true</defaultValue><description>Suppresses this field when the rendered value is blank.</description><label>Render Only If Not Blank</label><type>Checkbox</type></CustomField>

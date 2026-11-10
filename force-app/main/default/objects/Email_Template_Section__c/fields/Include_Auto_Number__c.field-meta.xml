@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Include_Auto_Number__c</fullName><defaultValue>false</defaultValue><description>Indicates whether rendered repeated rows should include a generated number.</description><label>Include Auto Number</label><type>Checkbox</type></CustomField>

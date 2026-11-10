@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Email_Template_Config__c</fullName><label>Email Template Config</label><referenceTo>Email_Template_Config__c</referenceTo><relationshipLabel>Email Template Sections</relationshipLabel><relationshipName>Email_Template_Sections</relationshipName><reparentableMasterDetail>false</reparentableMasterDetail><type>MasterDetail</type><writeRequiresMasterRead>false</writeRequiresMasterRead></CustomField>

@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Allow_Multiple__c</fullName><defaultValue>true</defaultValue><description>Allows multiple recipients to resolve from this configuration.</description><label>Allow Multiple</label><type>Checkbox</type></CustomField>

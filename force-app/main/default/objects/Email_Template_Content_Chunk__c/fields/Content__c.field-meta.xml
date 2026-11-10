@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Content__c</fullName>
+    <description>One ordered segment of overflow HTML source for a template region.</description>
+    <inlineHelpText>Managed automatically by the template builder; do not edit individual chunks.</inlineHelpText>
+    <label>Content</label>
+    <length>131072</length>
+    <type>LongTextArea</type>
+    <visibleLines>25</visibleLines>
+</CustomField>

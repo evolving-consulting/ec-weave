@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomApplication xmlns="http://soap.sforce.com/2006/04/metadata">
+    <brand>
+        <headerColor>#181818</headerColor>
+        <logo>EC_Cube_Logo</logo>
+        <logoVersion>1</logoVersion>
+        <shouldOverrideOrgTheme>true</shouldOverrideOrgTheme>
+    </brand>
+    <defaultLandingTab>dceTemplateBuilder</defaultLandingTab>
+    <description
+  >Design, govern, preview, and send dynamic communications with reusable EC-branded visual and HTML templates.</description>
+    <formFactors>Large</formFactors>
+    <isNavAutoTempTabsDisabled>false</isNavAutoTempTabsDisabled>
+    <isNavPersonalizationDisabled>false</isNavPersonalizationDisabled>
+    <isNavTabPersistenceDisabled>false</isNavTabPersistenceDisabled>
+    <label>EC Compose Studio</label>
+    <navType>Standard</navType>
+    <tabs>dceTemplateBuilder</tabs>
+    <tabs>Email_Template_Config__c</tabs>
+    <tabs>Email_Template_Section__c</tabs>
+    <tabs>Email_Template_Field__c</tabs>
+    <tabs>Email_Template_Line__c</tabs>
+    <tabs>Email_Template_Recipient_Config__c</tabs>
+    <uiType>Lightning</uiType>
+</CustomApplication>

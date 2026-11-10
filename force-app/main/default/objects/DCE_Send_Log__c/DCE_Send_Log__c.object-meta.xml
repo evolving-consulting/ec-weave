@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <description>Audit log of emails sent via the Dynamic Communication Engine. Used for per-user daily rate limiting and anomaly review.</description>
+    <enableActivities>false</enableActivities>
+    <enableFeeds>false</enableFeeds>
+    <enableHistory>false</enableHistory>
+    <enableReports>true</enableReports>
+    <label>DCE Send Log</label>
+    <nameField>
+        <label>DCE Send Log Name</label>
+        <type>AutoNumber</type>
+        <displayFormat>LOG-{0000000}</displayFormat>
+    </nameField>
+    <pluralLabel>DCE Send Logs</pluralLabel>
+    <sharingModel>Private</sharingModel>
+</CustomObject>
