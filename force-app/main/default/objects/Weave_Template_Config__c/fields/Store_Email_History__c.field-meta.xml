@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Store_Email_History__c</fullName>
+    <defaultValue>true</defaultValue>
+    <description>When true, a Weave_Send_Log__c record is created for each send.</description>
+    <label>Store Email History</label>
+    <type>Checkbox</type>
+</CustomField>

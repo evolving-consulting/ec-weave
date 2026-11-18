@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>HTML_Output__c</fullName>
+    <description>Rendered HTML for this component, stored at save time. Each component stores its own HTML so the 131 KB limit applies per component.</description>
+    <label>HTML Output</label>
+    <length>131072</length>
+    <type>LongTextArea</type>
+    <visibleLines>25</visibleLines>
+</CustomField>

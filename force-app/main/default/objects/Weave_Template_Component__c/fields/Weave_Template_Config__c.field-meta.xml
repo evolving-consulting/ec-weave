@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Weave_Template_Config__c</fullName>
+    <label>Weave Template Config</label>
+    <referenceTo>Weave_Template_Config__c</referenceTo>
+    <relationshipLabel>Weave Template Components</relationshipLabel>
+    <relationshipName>Weave_Template_Components</relationshipName>
+    <reparentableMasterDetail>false</reparentableMasterDetail>
+    <type>MasterDetail</type>
+    <writeRequiresMasterRead>false</writeRequiresMasterRead>
+</CustomField>

@@ -3,161 +3,822 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EC Weave</title>
+  <title>Weave — Template Library</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
   <style>
+    /*
+     * Layout: fixed sidebar + scrollable main content area
+     * Palette: Deep Teal primary, light sidebar, Paper ground
+     */
     :root {
-      --brand: #1F5F5B;
-      --brand-dark: #174846;
-      --brand-light: #e8f4f3;
-      --text: #1a1a1a;
-      --muted: #555;
-      --bg: #ffffff;
+      --teal-deep:   #1F5F5B;
+      --teal-light:  #4F9B93;
+      --teal-bg:     #EBF4F3;
+      --teal-muted:  #D2EDEB;
+      --ink:         #2B2B29;
+      --stone:       #6B6B66;
+      --stone-light: #A8A8A4;
+      --border:      #E2E2DE;
+      --bg-page:     #F4F4F1;
+      --bg-sidebar:  #FAFAF9;
+      --bg-card:     #FFFFFF;
+      --fg:          #2B2B29;
+      --fg-muted:    #6B6B66;
+      --status-active-bg:   #EBF4F3;
+      --status-active-fg:   #1F5F5B;
+      --status-draft-bg:    #FFF3D6;
+      --status-draft-fg:    #8A6400;
+      --status-archived-bg: #F0F0ED;
+      --status-archived-fg: #6B6B66;
+      color-scheme: light;
     }
 
-    * {
-      box-sizing: border-box;
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --teal-deep:   #4F9B93;
+        --teal-light:  #7BBFB9;
+        --teal-bg:     #1A3330;
+        --teal-muted:  #1E3D3A;
+        --ink:         #EAEAE7;
+        --stone:       #A8A8A4;
+        --stone-light: #6B6B66;
+        --border:      #2E2E2B;
+        --bg-page:     #1A1A18;
+        --bg-sidebar:  #212120;
+        --bg-card:     #272725;
+        --fg:          #EAEAE7;
+        --fg-muted:    #A8A8A4;
+        --status-active-bg:   #1A3330;
+        --status-active-fg:   #7BBFB9;
+        --status-draft-bg:    #332500;
+        --status-draft-fg:    #FFCF5C;
+        --status-archived-bg: #272725;
+        --status-archived-fg: #A8A8A4;
+        color-scheme: dark;
+      }
+    }
+
+    :root[data-theme="dark"] {
+      --teal-deep:   #4F9B93;
+      --teal-light:  #7BBFB9;
+      --teal-bg:     #1A3330;
+      --teal-muted:  #1E3D3A;
+      --ink:         #EAEAE7;
+      --stone:       #A8A8A4;
+      --stone-light: #6B6B66;
+      --border:      #2E2E2B;
+      --bg-page:     #1A1A18;
+      --bg-sidebar:  #212120;
+      --bg-card:     #272725;
+      --fg:          #EAEAE7;
+      --fg-muted:    #A8A8A4;
+      --status-active-bg:   #1A3330;
+      --status-active-fg:   #7BBFB9;
+      --status-draft-bg:    #332500;
+      --status-draft-fg:    #FFCF5C;
+      --status-archived-bg: #272725;
+      --status-archived-fg: #A8A8A4;
+      color-scheme: dark;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html, body {
+      height: 100%;
       margin: 0;
-      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--fg);
+      background: var(--bg-page);
     }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      color: var(--text);
-      background: var(--bg);
-      line-height: 1.6;
+    .app {
+      display: flex;
+      height: 100%;
+      min-height: 100vh;
     }
 
-    header {
-      background: var(--brand);
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 220px;
+      flex-shrink: 0;
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .sidebar-logo {
+      padding: 20px 16px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-mark {
+      width: 28px;
+      height: 28px;
+      flex-shrink: 0;
+    }
+
+    .logo-wordmark {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .logo-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--fg);
+      letter-spacing: -0.3px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .logo-badge {
+      background: var(--teal-deep);
       color: #fff;
-      padding: 64px 24px 48px;
-      text-align: center;
-    }
-
-    header h1 {
-      font-size: 2.75rem;
+      font-size: 9px;
       font-weight: 700;
-      letter-spacing: -0.5px;
+      letter-spacing: 0.5px;
+      padding: 1px 5px;
+      border-radius: 3px;
     }
 
-    header p.tagline {
-      margin-top: 12px;
-      font-size: 1.15rem;
-      opacity: 0.88;
-      max-width: 560px;
-      margin-left: auto;
-      margin-right: auto;
+    .logo-sub {
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--stone);
     }
 
-    .cta {
-      margin-top: 36px;
+    .sidebar-nav {
+      padding: 12px 8px;
+      flex: 1;
     }
 
-    .cta a {
-      display: inline-block;
-      background: #fff;
-      color: var(--brand);
-      font-weight: 700;
-      font-size: 1rem;
-      padding: 14px 32px;
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 7px;
+      color: var(--fg-muted);
+      font-size: 13.5px;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.12s, color 0.12s;
+      user-select: none;
+    }
+
+    .nav-item:hover {
+      background: var(--teal-muted);
+      color: var(--teal-deep);
+    }
+
+    .nav-item.active {
+      background: var(--teal-bg);
+      color: var(--teal-deep);
+      font-weight: 600;
+    }
+
+    .nav-item svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      opacity: 0.75;
+    }
+
+    .nav-item.active svg,
+    .nav-item:hover svg { opacity: 1; }
+
+    .sidebar-bottom {
+      padding: 8px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .sidebar-bottom-link {
+      display: block;
+      padding: 7px 10px;
       border-radius: 6px;
+      font-size: 12.5px;
+      color: var(--fg-muted);
       text-decoration: none;
-      transition: background 0.15s, color 0.15s;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s;
     }
 
-    .cta a:hover {
-      background: var(--brand-light);
+    .sidebar-bottom-link:hover {
+      background: var(--teal-muted);
+      color: var(--teal-deep);
     }
 
-    main {
-      max-width: 760px;
-      margin: 0 auto;
-      padding: 56px 24px;
-    }
-
-    section + section {
-      margin-top: 48px;
-    }
-
-    h2 {
-      font-size: 1.35rem;
-      font-weight: 700;
-      color: var(--brand);
-      margin-bottom: 12px;
-    }
-
-    p {
-      color: var(--text);
-      font-size: 1rem;
-      max-width: 680px;
-    }
-
-    footer {
-      border-top: 1px solid #e5e5e5;
+    .sidebar-bottom-link.cta {
+      background: var(--teal-deep);
+      color: #fff;
+      font-weight: 600;
       text-align: center;
-      padding: 32px 24px;
-      font-size: 0.875rem;
-      color: var(--muted);
+      margin-top: 4px;
     }
 
-    footer a {
-      color: var(--brand);
+    .sidebar-bottom-link.cta:hover {
+      background: var(--teal-light);
+      color: #fff;
+    }
+
+    .sidebar-brand-footer {
+      padding: 10px 10px 14px;
+      font-size: 11px;
+      color: var(--stone-light);
+      text-align: center;
+    }
+
+    /* ── Main ── */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      overflow-y: auto;
+    }
+
+    .main-header {
+      padding: 24px 28px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-card);
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .main-header-left .eyebrow {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--stone);
+      margin-bottom: 2px;
+    }
+
+    .main-header-left h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+      color: var(--fg);
+      margin: 0;
+    }
+
+    .main-header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .env-badge {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--stone);
+      padding: 5px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+    }
+
+    .env-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #F59E0B;
+      flex-shrink: 0;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--teal-deep);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 16px;
+      border-radius: 7px;
+      border: none;
+      cursor: pointer;
       text-decoration: none;
+      transition: background 0.12s;
+      white-space: nowrap;
+      font-family: inherit;
     }
 
-    footer a:hover {
-      text-decoration: underline;
+    .btn-primary:hover { background: var(--teal-light); }
+
+    .main-body {
+      padding: 24px 28px;
+      flex: 1;
     }
 
-    @media (max-width: 600px) {
-      header h1 { font-size: 2rem; }
+    /* ── Callout ── */
+    .callout {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      background: var(--teal-bg);
+      border: 1px solid var(--teal-muted);
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 20px;
+      color: var(--teal-deep);
+      font-size: 13px;
+    }
+
+    .callout-icon { flex-shrink: 0; margin-top: 1px; }
+    .callout strong { font-weight: 600; }
+
+    /* ── Filter bar ── */
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .filter-tabs {
+      display: flex;
+      gap: 4px;
+      flex: 1;
+      flex-wrap: wrap;
+    }
+
+    .filter-tab {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--fg-muted);
+      transition: all 0.12s;
+      user-select: none;
+      font-family: inherit;
+    }
+
+    .filter-tab:hover {
+      background: var(--teal-muted);
+      color: var(--teal-deep);
+      border-color: transparent;
+    }
+
+    .filter-tab.active {
+      background: var(--ink);
+      color: #fff;
+      border-color: transparent;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) .filter-tab.active {
+        background: var(--fg);
+        color: var(--bg-page);
+      }
+    }
+
+    :root[data-theme="dark"] .filter-tab.active {
+      background: var(--fg);
+      color: var(--bg-page);
+    }
+
+    .search-wrap {
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .search-wrap svg {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--stone);
+      pointer-events: none;
+      width: 15px;
+      height: 15px;
+    }
+
+    .search-input {
+      padding: 7px 12px 7px 32px;
+      border-radius: 7px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--fg);
+      font-size: 13px;
+      font-family: inherit;
+      width: 200px;
+      transition: border-color 0.12s;
+      outline: none;
+    }
+
+    .search-input:focus { border-color: var(--teal-deep); }
+    .search-input::placeholder { color: var(--stone-light); }
+
+    /* ── Table ── */
+    .table-wrap {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      overflow-x: auto;
+    }
+
+    .template-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+      min-width: 540px;
+    }
+
+    .template-table thead tr { border-bottom: 1px solid var(--border); }
+
+    .template-table th {
+      text-align: left;
+      padding: 10px 16px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--stone);
+      white-space: nowrap;
+    }
+
+    .template-table tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.1s;
+    }
+
+    .template-table tbody tr:last-child { border-bottom: none; }
+    .template-table tbody tr:hover { background: var(--bg-page); }
+
+    .template-table td {
+      padding: 13px 16px;
+      color: var(--fg);
+      vertical-align: middle;
+    }
+
+    .td-name { font-weight: 600; }
+    .td-object { color: var(--fg-muted); }
+
+    .status-pill {
+      display: inline-block;
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-size: 11.5px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .status-active   { background: var(--status-active-bg);   color: var(--status-active-fg); }
+    .status-draft    { background: var(--status-draft-bg);    color: var(--status-draft-fg); }
+    .status-archived { background: var(--status-archived-bg); color: var(--status-archived-fg); }
+
+    .td-date {
+      color: var(--fg-muted);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .action-btn {
+      padding: 4px 10px;
+      border-radius: 5px;
+      font-size: 12.5px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: none;
+      font-family: inherit;
+      transition: background 0.1s, color 0.1s;
+      color: var(--teal-deep);
+    }
+
+    .action-btn:hover { background: var(--teal-bg); }
+
+    .action-btn.delete { color: #C13030; }
+
+    .action-btn.delete:hover {
+      background: #FEF0F0;
+      color: #9B1C1C;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) .action-btn.delete:hover {
+        background: #3B1010;
+        color: #FC8181;
+      }
+    }
+
+    :root[data-theme="dark"] .action-btn.delete:hover {
+      background: #3B1010;
+      color: #FC8181;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--fg-muted);
+    }
+
+    .empty-state p { margin: 0; font-size: 14px; }
+
+    /* ── Placeholder views ── */
+    .placeholder-view {
+      padding: 48px 28px;
+      color: var(--fg-muted);
+      font-size: 14px;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 680px) {
+      .sidebar { width: 56px; }
+
+      .logo-wordmark,
+      .nav-item span,
+      .sidebar-bottom-link span,
+      .sidebar-brand-footer,
+      .logo-badge,
+      .logo-sub { display: none; }
+
+      .sidebar-logo { justify-content: center; padding: 16px 8px; }
+      .nav-item { justify-content: center; padding: 10px; }
+      .nav-item svg { opacity: 1; }
+      .sidebar-bottom { align-items: center; }
+      .sidebar-bottom-link.cta { display: none; }
+      .main-header { padding: 16px; }
+      .main-body { padding: 16px; }
+      .search-input { width: 140px; }
     }
   </style>
 </head>
 <body>
 
-  <header>
-    <h1>EC Weave</h1>
-    <p class="tagline">Dynamic email template generation from Salesforce related list data</p>
-    <div class="cta">
-      <a href="https://login.salesforce.com/packaging/installPackage.apexp?p0=04tOK0000014tF3YAI">Install in Salesforce</a>
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <svg class="logo-mark" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <line x1="4" y1="4" x2="24" y2="24" stroke="#1F5F5B" stroke-width="4.5" stroke-linecap="round"/>
+        <line x1="4" y1="24" x2="24" y2="4" stroke="#2B2B29" stroke-width="4.5" stroke-linecap="round"/>
+        <rect x="11" y="11" width="6" height="6" fill="var(--bg-sidebar)"/>
+        <line x1="4" y1="4" x2="24" y2="24" stroke="#1F5F5B" stroke-width="4.5" stroke-linecap="round"/>
+      </svg>
+      <div class="logo-wordmark">
+        <span class="logo-name">
+          weave
+          <span class="logo-badge">EC</span>
+        </span>
+        <span class="logo-sub">Dynamic Comm. Engine</span>
+      </div>
     </div>
-  </header>
 
-  <main>
-    <section>
-      <h2>The Problem</h2>
-      <p>
-        Salesforce's native email templates cannot pull data from related records — a gap that has been
-        open on the Salesforce IdeaExchange since 2009 with no native solution. If you've ever needed
-        to include a table of quote line items, a list of reservation options, or a summary of attendees
-        in an email generated from Salesforce, you've hit this wall.
-      </p>
-    </section>
+    <nav class="sidebar-nav">
+      <a class="nav-item active" href="#templates" onclick="showView('templates', this); return false;">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="2" width="12" height="12" rx="2"/>
+          <line x1="5" y1="6" x2="11" y2="6"/>
+          <line x1="5" y1="9" x2="9" y2="9"/>
+        </svg>
+        <span>Templates</span>
+      </a>
+      <a class="nav-item" href="#learning" onclick="showView('learning', this); return false;">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="8" cy="8" r="6"/>
+          <line x1="8" y1="5" x2="8" y2="8.5"/>
+          <circle cx="8" cy="11" r="0.5" fill="currentColor" stroke="none"/>
+        </svg>
+        <span>Learning Center</span>
+      </a>
+      <a class="nav-item" href="#updates" onclick="showView('updates', this); return false;">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 12 L8 3 L14 12 Z"/>
+          <line x1="8" y1="7" x2="8" y2="9.5"/>
+          <circle cx="8" cy="11" r="0.5" fill="currentColor" stroke="none"/>
+        </svg>
+        <span>Updates</span>
+      </a>
+    </nav>
 
-    <section>
-      <h2>The Solution</h2>
-      <p>
-        EC Weave is a Salesforce Unlocked Package that lets administrators build fully dynamic email
-        templates driven by related list data. Templates support repeating text blocks and tables
-        populated from child records, configurable filters, merge fields from parent and child objects,
-        dynamic recipient resolution, and rich branding — all without writing a single line of code.
-        End users generate and send emails directly from Salesforce via Quick Actions or Flow.
-      </p>
-    </section>
+    <div class="sidebar-bottom">
+      <a class="sidebar-bottom-link" href="mailto:hello@evolving-consulting.com">
+        <span>Request a Feature</span>
+      </a>
+      <a class="sidebar-bottom-link" href="mailto:hello@evolving-consulting.com">
+        <span>Report a Bug</span>
+      </a>
+      <a class="sidebar-bottom-link cta" href="https://evolving-consulting.com" target="_blank" rel="noopener">
+        <span>Talk to EC</span>
+      </a>
+    </div>
+    <div class="sidebar-brand-footer">An <strong>Evolving Consulting</strong> product</div>
+  </aside>
 
-    <section>
-      <h2>Built For</h2>
-      <p>
-        Sales and service teams using Salesforce who need dynamic, data-rich emails: proposals,
-        reservation confirmations, quotes, product summaries, client onboarding, and more.
-      </p>
-    </section>
+  <!-- Main content -->
+  <main class="main">
+
+    <!-- Templates view -->
+    <div id="view-templates">
+      <div class="main-header">
+        <div class="main-header-left">
+          <div class="eyebrow">Weave</div>
+          <h1>Template Library</h1>
+        </div>
+        <div class="main-header-right">
+          <div class="env-badge">
+            <span class="env-dot"></span>
+            Sandbox
+          </div>
+          <button class="btn-primary" onclick="alert('New Template builder coming soon.')">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <line x1="6.5" y1="1.5" x2="6.5" y2="11.5"/>
+              <line x1="1.5" y1="6.5" x2="11.5" y2="6.5"/>
+            </svg>
+            New Template
+          </button>
+        </div>
+      </div>
+
+      <div class="main-body">
+        <div class="callout">
+          <svg class="callout-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="3" x2="13" y2="13"/>
+            <line x1="3" y1="13" x2="13" y2="3"/>
+          </svg>
+          <div>
+            <strong>Weave builds templates straight from related list data</strong> — true cross-object merge fields, no formula-field workarounds.
+          </div>
+        </div>
+
+        <div class="filter-bar">
+          <div class="filter-tabs">
+            <button class="filter-tab active" onclick="filterTemplates('all', this)">All</button>
+            <button class="filter-tab" onclick="filterTemplates('active', this)">Active</button>
+            <button class="filter-tab" onclick="filterTemplates('draft', this)">Draft</button>
+            <button class="filter-tab" onclick="filterTemplates('archived', this)">Archived</button>
+          </div>
+          <div class="search-wrap">
+            <svg viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.6">
+              <circle cx="6.5" cy="6.5" r="4.5"/>
+              <line x1="10" y1="10" x2="13.5" y2="13.5"/>
+            </svg>
+            <input class="search-input" type="search" id="template-search" placeholder="Search templates" oninput="renderTable()">
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="template-table">
+            <thead>
+              <tr>
+                <th>Template Name</th>
+                <th>Parent Object</th>
+                <th>Status</th>
+                <th>Last Modified</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="template-tbody"></tbody>
+          </table>
+          <div id="empty-state" class="empty-state" style="display:none">
+            <p>No templates match your filter.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Learning Center view -->
+    <div id="view-learning" style="display:none">
+      <div class="main-header">
+        <div class="main-header-left">
+          <div class="eyebrow">Weave</div>
+          <h1>Learning Center</h1>
+        </div>
+      </div>
+      <div class="placeholder-view">
+        Documentation, guides, and tutorials coming soon.
+      </div>
+    </div>
+
+    <!-- Updates view -->
+    <div id="view-updates" style="display:none">
+      <div class="main-header">
+        <div class="main-header-left">
+          <div class="eyebrow">Weave</div>
+          <h1>Updates</h1>
+        </div>
+      </div>
+      <div class="placeholder-view">
+        Release notes and changelog coming soon.
+      </div>
+    </div>
+
   </main>
+</div>
 
-  <footer>
-    <p>Built by <a href="https://evolving-consulting.com">Evolving Consulting</a></p>
-  </footer>
+<script>
+  var templates = [
+    { id:1, name:'Quote Follow-Up',              object:'Opportunity', status:'active',   modified:'Nov 6, 2026' },
+    { id:2, name:'Renewal Reminder',             object:'Account',     status:'active',   modified:'Nov 4, 2026' },
+    { id:3, name:'Welcome Email',                object:'Contact',     status:'active',   modified:'Oct 29, 2026' },
+    { id:4, name:'Service Appointment Conf.',    object:'Case',        status:'draft',    modified:'Oct 22, 2026' },
+    { id:5, name:'Product Summary Report',       object:'Opportunity', status:'archived', modified:'Sep 14, 2026' },
+    { id:6, name:'Onboarding Kickoff',           object:'Account',     status:'draft',    modified:'Oct 10, 2026' },
+  ];
 
+  var currentFilter = 'all';
+
+  function statusLabel(s) {
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  function renderTable() {
+    var q = document.getElementById('template-search').value.toLowerCase();
+    var tbody = document.getElementById('template-tbody');
+    var empty = document.getElementById('empty-state');
+
+    var rows = templates.filter(function(t) {
+      var matchFilter = currentFilter === 'all' || t.status === currentFilter;
+      var matchSearch = !q || t.name.toLowerCase().indexOf(q) > -1 || t.object.toLowerCase().indexOf(q) > -1;
+      return matchFilter && matchSearch;
+    });
+
+    if (rows.length === 0) {
+      tbody.innerHTML = '';
+      empty.style.display = 'block';
+    } else {
+      empty.style.display = 'none';
+      tbody.innerHTML = rows.map(function(t) {
+        return '<tr>' +
+          '<td class="td-name">' + t.name + '</td>' +
+          '<td class="td-object">' + t.object + '</td>' +
+          '<td><span class="status-pill status-' + t.status + '">' + statusLabel(t.status) + '</span></td>' +
+          '<td class="td-date">' + t.modified + '</td>' +
+          '<td><div class="actions">' +
+            '<button class="action-btn" onclick="templateAction(\'edit\',' + t.id + ')">Edit</button>' +
+            '<button class="action-btn" onclick="templateAction(\'clone\',' + t.id + ')">Clone</button>' +
+            '<button class="action-btn delete" onclick="templateAction(\'delete\',' + t.id + ',this)">Delete</button>' +
+          '</div></td>' +
+        '</tr>';
+      }).join('');
+    }
+  }
+
+  function filterTemplates(filter, btn) {
+    currentFilter = filter;
+    document.querySelectorAll('.filter-tab').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    renderTable();
+  }
+
+  function templateAction(action, id, btn) {
+    if (action === 'delete') {
+      var tr = btn.closest('tr');
+      tr.style.opacity = '0.4';
+      tr.style.transition = 'opacity 0.2s';
+      setTimeout(function() {
+        var idx = templates.findIndex(function(x) { return x.id === id; });
+        if (idx > -1) templates.splice(idx, 1);
+        renderTable();
+      }, 200);
+    }
+  }
+
+  function showView(view, link) {
+    ['templates','learning','updates'].forEach(function(v) {
+      document.getElementById('view-' + v).style.display = v === view ? '' : 'none';
+    });
+    document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
+    link.classList.add('active');
+  }
+
+  renderTable();
+</script>
 </body>
 </html>

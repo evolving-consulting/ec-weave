@@ -3,9 +3,11 @@
  * Business record access is delegated to GenericDynamicQueryService.
  */
 public with sharing class GenericEmailTemplateRenderer {
-  private static final String SECTION_TYPE_STATIC_TEXT = 'Static Text';
+  private static final String SECTION_TYPE_TEXT = 'Text';
+  private static final String SECTION_TYPE_STATIC_TEXT = 'Static Text'; // legacy alias
   private static final String SECTION_TYPE_TEXT_BLOCK = 'Text Block';
   private static final String SECTION_TYPE_TABLE = 'Table';
+  private static final String SECTION_TYPE_RELATED = 'Related';
   private static Map<String, SObject> standardMergeAliases;
 
   public static RenderedEmailDTO renderEmail(Id templateId, Id recordId) {
@@ -260,7 +262,7 @@ public with sharing class GenericEmailTemplateRenderer {
     List<Email_Template_Line__c> lines,
     List<Email_Template_Field__c> fields
   ) {
-    if (section.Section_Type__c == SECTION_TYPE_STATIC_TEXT) {
+    if (section.Section_Type__c == SECTION_TYPE_TEXT || section.Section_Type__c == SECTION_TYPE_STATIC_TEXT) {
       return renderStaticTextSection(
         section,
         parentRecord,
@@ -277,7 +279,7 @@ public with sharing class GenericEmailTemplateRenderer {
         fields
       );
     }
-    if (section.Section_Type__c == SECTION_TYPE_TABLE) {
+    if (section.Section_Type__c == SECTION_TYPE_TABLE || section.Section_Type__c == SECTION_TYPE_RELATED) {
       return renderTableSection(
         section,
         parentRecord,
@@ -627,7 +629,7 @@ public with sharing class GenericEmailTemplateRenderer {
         true
       );
 
-      if (section.Section_Type__c == SECTION_TYPE_STATIC_TEXT) {
+      if (section.Section_Type__c == SECTION_TYPE_TEXT || section.Section_Type__c == SECTION_TYPE_STATIC_TEXT) {
         collectParentFieldsFromTemplate(
           parentFieldPaths,
           section.Static_Content__c,

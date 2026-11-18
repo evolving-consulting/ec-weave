@@ -1,0 +1,1661 @@
+<template>
+  <div class="weave-shell">
+
+    <!-- ── Spinner ───────────────────────────────────────────────────────── -->
+    <template if:true={isLoading}>
+      <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+    </template>
+
+    <!-- ── Sidebar ───────────────────────────────────────────────────────── -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="sidebar-mark">
+          <svg class="sidebar-mark-svg" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <line x1="6" y1="6" x2="26" y2="26" stroke="#4fb893" stroke-width="4.5" stroke-linecap="round"/>
+            <line x1="6" y1="26" x2="26" y2="6" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round"/>
+            <rect x="13" y="13" width="6" height="6" fill="#1f5f5b"/>
+            <line x1="6" y1="6" x2="26" y2="26" stroke="#4fb893" stroke-width="4.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="sidebar-identity">
+          <span class="sidebar-wordmark">weave</span>
+          <span class="ec-chip">EC</span>
+          <span class="sidebar-sub">DYNAMIC COMM. ENGINE</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav-list">
+        <button class={sidebarNavClassTemplates} data-view="templates" onclick={handleSidebarNav}>
+          <svg class="nav-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="3" y="3" width="6" height="6" rx="1" fill="currentColor"/>
+            <rect x="11" y="3" width="6" height="6" rx="1" fill="currentColor" opacity="0.5"/>
+            <rect x="3" y="11" width="6" height="6" rx="1" fill="currentColor" opacity="0.5"/>
+            <rect x="11" y="11" width="6" height="6" rx="1" fill="currentColor" opacity="0.3"/>
+          </svg>
+          Templates
+        </button>
+        <button class={sidebarNavClassBrands} data-view="brands" onclick={handleSidebarNav}>
+          <svg class="nav-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="10" cy="7" r="3" fill="currentColor"/>
+            <rect x="3" y="12" width="14" height="2" rx="1" fill="currentColor" opacity="0.6"/>
+            <rect x="5" y="15" width="10" height="2" rx="1" fill="currentColor" opacity="0.4"/>
+          </svg>
+          Brands
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <span class="sidebar-credit">Weave v1.0 · EC</span>
+      </div>
+    </aside>
+
+    <!-- ── Main panel ─────────────────────────────────────────────────────── -->
+    <div class={mainPanelClass}>
+
+      <!-- Error banner -->
+      <template if:true={errorMessage}>
+        <div class="error-banner">
+          <lightning-icon icon-name="utility:error" size="x-small"></lightning-icon>
+          <span>{errorMessage}</span>
+          <button class="error-banner__close" onclick={clearError}>✕</button>
+        </div>
+      </template>
+
+      <!-- ── LIBRARY VIEW ──────────────────────────────────────────────── -->
+      <template if:true={isLibraryView}>
+        <div class="library">
+
+          <!-- Page header -->
+          <div class="page-header">
+            <div class="page-header-left">
+              <p class="page-eyebrow">WEAVE</p>
+              <h1 class="page-title">Template Library</h1>
+            </div>
+            <div class="page-header-right">
+              <span class="env-badge">Sandbox</span>
+              <button class="btn-new-template" onclick={handleNew}>+ New Template</button>
+            </div>
+          </div>
+
+          <!-- Info banner -->
+          <template if:true={showInfoBanner}>
+            <div class="info-banner">
+              <lightning-icon icon-name="utility:info" size="x-small"></lightning-icon>
+              <span>Build dynamic email templates powered by Salesforce data. Select a template to edit, or create a new one to get started.</span>
+              <button class="info-banner__close" onclick={dismissInfoBanner}>✕</button>
+            </div>
+          </template>
+
+          <!-- Filter + search row -->
+          <div class="filter-row">
+            <div class="filter-tabs">
+              <button class={filterTabClassAll} data-filter="all" onclick={handleStatusFilter}>All</button>
+              <button class={filterTabClassActive} data-filter="active" onclick={handleStatusFilter}>Active</button>
+              <button class={filterTabClassDraft} data-filter="draft" onclick={handleStatusFilter}>Draft</button>
+              <button class={filterTabClassArchived} data-filter="inactive" onclick={handleStatusFilter}>Inactive</button>
+            </div>
+            <lightning-input
+              type="search"
+              placeholder="Search templates…"
+              value={searchTerm}
+              onchange={handleSearch}
+              variant="label-hidden"
+            ></lightning-input>
+          </div>
+
+          <!-- Templates table -->
+          <template if:true={hasTemplates}>
+            <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+              <thead>
+                <tr class="slds-line-height_reset">
+                  <th scope="col"><div class="slds-truncate">TEMPLATE NAME</div></th>
+                  <th scope="col"><div class="slds-truncate">PARENT OBJECT</div></th>
+                  <th scope="col"><div class="slds-truncate">STATUS</div></th>
+                  <th scope="col"><div class="slds-truncate">LAST MODIFIED</div></th>
+                  <th scope="col"><div class="slds-truncate">ACTIONS</div></th>
+                </tr>
+              </thead>
+              <tbody>
+                <template for:each={filteredTemplates} for:item="tmpl">
+                  <tr key={tmpl.id}>
+                    <td>
+                      <button class="template-name-link" data-id={tmpl.id} onclick={openTemplate}>
+                        {tmpl.name}
+                      </button>
+                    </td>
+                    <td><span class="slds-truncate">{tmpl.parentObjectLabel}</span></td>
+                    <td><span class={tmpl.statusClass}>{tmpl.statusLabel}</span></td>
+                    <td><span class="slds-truncate">{tmpl.lastModifiedDisplay}</span></td>
+                    <td>
+                      <span class="action-links">
+                        <button class="action-link edit-link" data-id={tmpl.id} onclick={openTemplate}>Edit</button>
+                        <button class="action-link delete-link" data-id={tmpl.id} onclick={deleteTemplateFromLibrary}>Delete</button>
+                      </span>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </template>
+
+          <!-- Empty state -->
+          <template if:false={hasTemplates}>
+            <div class="empty-state">
+              <lightning-icon icon-name="utility:email" size="large"></lightning-icon>
+              <p class="empty-state__title">No templates yet</p>
+              <p class="empty-state__sub">Create your first Weave template to get started.</p>
+              <button class="btn-new-template" onclick={handleNew}>+ New Template</button>
+            </div>
+          </template>
+
+        </div>
+      </template>
+
+      <!-- ── EDITOR VIEW ───────────────────────────────────────────────── -->
+      <template if:true={isEditorView}>
+        <div class="editor-view">
+
+          <!-- Editor header -->
+          <div class="editor-header">
+            <button class="editor-back-btn" onclick={handleBack}>← Templates</button>
+            <div class="editor-identity">
+              <span class="editor-name">{draftTemplate.name}</span>
+              <span class={templateStatusPillClass}>{draftTemplate.status}</span>
+            </div>
+            <div class="editor-tabs">
+              <button class={tabClass_settings} data-tab="settings" onclick={handleTabClick}>Settings</button>
+              <button class={tabClass_queries} data-tab="queries" onclick={handleTabClick}>Queries</button>
+              <button class={tabClass_body} data-tab="body" onclick={handleTabClick}>Body Builder</button>
+              <button class={tabClass_recipients} data-tab="recipients" onclick={handleTabClick}>Recipients</button>
+              <button class={tabClass_actions} data-tab="actions" onclick={handleTabClick}>Actions</button>
+              <button class={tabClass_files} data-tab="files" onclick={handleTabClick}>Files</button>
+              <button class={tabClass_schedules} data-tab="schedules" onclick={handleTabClick}>Scheduled Sends</button>
+              <button class={tabClass_preview} data-tab="preview" onclick={handleTabClick}>Preview</button>
+            </div>
+            <div class="editor-header-actions">
+              <button class="btn-save-template" onclick={handleSave}>Save Draft</button>
+              <button class="btn-activate-template" onclick={handleSaveActivate}>Save &amp; Activate</button>
+            </div>
+          </div>
+
+          <!-- ── Tab panels ──────────────────────────────────────────── -->
+
+          <!-- Settings -->
+          <template if:true={isTab_settings}>
+            <div class="tab-panel">
+              <div class="form-section">
+                <div class="form-row-2">
+                  <lightning-input
+                    label="Template Name"
+                    value={draftTemplate.name}
+                    data-field="name"
+                    onchange={handleFieldChange}
+                    required
+                  ></lightning-input>
+                  <lightning-input
+                    label="API Name"
+                    value={draftTemplate.apiName}
+                    data-field="apiName"
+                    onchange={handleFieldChange}
+                    disabled={hasId}
+                  ></lightning-input>
+                </div>
+                <div class="form-row-2">
+                  <lightning-combobox
+                    label="Parent Object"
+                    value={draftTemplate.parentObjectApiName}
+                    options={objectOptions}
+                    data-field="parentObjectApiName"
+                    onchange={handleFieldChange}
+                    required
+                    disabled={hasId}
+                  ></lightning-combobox>
+                  <lightning-combobox
+                    label="Status"
+                    value={draftTemplate.status}
+                    options={statusOptions}
+                    data-field="status"
+                    onchange={handleFieldChange}
+                  ></lightning-combobox>
+                </div>
+                <lightning-input
+                  label="Subject Template (Variant A)"
+                  value={draftTemplate.subjectTemplate}
+                  data-field="subjectTemplate"
+                  onchange={handleFieldChange}
+                  placeholder="Hello {{Parent.Name}}"
+                ></lightning-input>
+                <lightning-input
+                  label="Subject Variant B (optional A/B test)"
+                  value={draftTemplate.subjectVariantB}
+                  data-field="subjectVariantB"
+                  onchange={handleFieldChange}
+                  placeholder="Leave blank to disable A/B testing"
+                ></lightning-input>
+                <div class="form-row-2">
+                  <lightning-combobox
+                    label="From Email Type"
+                    value={fromEmailType}
+                    options={fromEmailTypeOptions}
+                    onchange={handleFromEmailTypeChange}
+                  ></lightning-combobox>
+                  <template if:true={isFromOrgWide}>
+                    <lightning-combobox
+                      label="Org Wide Email Address"
+                      value={draftTemplate.defaultFromEmail}
+                      options={orgWideEmailOptions}
+                      data-field="defaultFromEmail"
+                      onchange={handleFieldChange}
+                      placeholder="Select an org-wide email…"
+                    ></lightning-combobox>
+                  </template>
+                  <template if:true={isFromCurrentUser}>
+                    <div class="from-email-hint">
+                      <lightning-icon icon-name="utility:user" size="x-small"></lightning-icon>
+                      <span>Email will be sent from the running user's address.</span>
+                    </div>
+                  </template>
+                </div>
+                <lightning-combobox
+                  label="Brand"
+                  value={draftTemplate.brandId}
+                  options={brandOptions}
+                  data-field="brandId"
+                  onchange={handleTemplateBrandChange}
+                  placeholder="-- No Brand --"
+                ></lightning-combobox>
+                <template if:true={templateHasBrand}>
+                  <div class="brand-info-banner">
+                    <lightning-icon icon-name="utility:info" size="x-small"></lightning-icon>
+                    <span>Brand <strong>{selectedBrandName}</strong> will wrap this email with its header and footer. Its org-wide email address is used as a fallback when no From Email is set above.</span>
+                  </div>
+                </template>
+                <lightning-textarea
+                  label="Description"
+                  value={draftTemplate.description}
+                  data-field="description"
+                  onchange={handleFieldChange}
+                ></lightning-textarea>
+                <div class="form-row-2">
+                  <lightning-input
+                    type="checkbox"
+                    label="Allow User Edit Before Send"
+                    checked={draftTemplate.allowUserEditBeforeSend}
+                    data-field="allowUserEditBeforeSend"
+                    onchange={handleCheckboxChange}
+                  ></lightning-input>
+                  <lightning-input
+                    type="checkbox"
+                    label="Store Email History"
+                    checked={draftTemplate.storeEmailHistory}
+                    data-field="storeEmailHistory"
+                    onchange={handleCheckboxChange}
+                  ></lightning-input>
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <!-- Queries -->
+          <template if:true={isTab_queries}>
+            <div class="tab-panel">
+              <div class="tab-panel-header">
+                <h3 class="tab-section-title">Query Builder</h3>
+                <button class="btn-add-item" onclick={handleAddQuery}>+ Add Query</button>
+              </div>
+              <template if:true={hasQueries}>
+                <div class="item-list">
+                  <template for:each={draftTemplate.queries} for:item="q">
+                    <div key={q.localKey} class="item-card">
+                      <div class="item-card__info">
+                        <strong class="item-card__name">{q.name}</strong>
+                        <code class="item-card__soql">{q.soqlQuery}</code>
+                      </div>
+                      <div class="item-card__actions">
+                        <button class="action-link edit-link" data-key={q.localKey} onclick={handleEditQuery}>Edit</button>
+                        <button class="action-link delete-link" data-key={q.localKey} onclick={handleDeleteQuery}>Delete</button>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+              </template>
+              <template if:false={hasQueries}>
+                <p class="tab-empty">No queries yet. Queries let you load related records into your template.</p>
+              </template>
+            </div>
+          </template>
+
+          <!-- Body Builder -->
+          <template if:true={isTab_body}>
+            <div class="tab-panel">
+              <div class="tab-panel-header">
+                <h3 class="tab-section-title">Body Builder</h3>
+                <div class="add-item-controls">
+                  <lightning-combobox
+                    label=""
+                    value={newComponentType}
+                    options={componentTypeOptions}
+                    onchange={handleComponentTypeSelect}
+                    variant="label-hidden"
+                    placeholder="Component type…"
+                  ></lightning-combobox>
+                  <lightning-combobox
+                    label=""
+                    value={newComponentRegion}
+                    options={regionOptions}
+                    onchange={handleRegionSelect}
+                    variant="label-hidden"
+                    placeholder="Region…"
+                  ></lightning-combobox>
+                  <button class="btn-add-item" onclick={handleAddComponent}>+ Add</button>
+                </div>
+              </div>
+              <template for:each={regionGroups} for:item="group">
+                <div key={group.region} class="region-group">
+                  <h4 class="region-group__label">{group.region}</h4>
+                  <template if:true={group.hasComponents}>
+                    <template for:each={group.components} for:item="comp">
+                      <c-weave-builder-component-card
+                        key={comp.localKey}
+                        component={comp}
+                        oncomponentedit={handleEditComponent}
+                        oncomponentdelete={handleDeleteComponent}
+                      ></c-weave-builder-component-card>
+                    </template>
+                  </template>
+                  <template if:false={group.hasComponents}>
+                    <p class="region-group__empty">No components in {group.region}</p>
+                  </template>
+                </div>
+              </template>
+            </div>
+          </template>
+
+          <!-- Recipients -->
+          <template if:true={isTab_recipients}>
+            <div class="tab-panel">
+              <div class="tab-panel-header">
+                <h3 class="tab-section-title">Recipients</h3>
+                <button class="btn-add-item" onclick={handleAddRecipient}>+ Add Recipient</button>
+              </div>
+              <template if:true={hasRecipients}>
+                <div class="item-list">
+                  <template for:each={draftTemplate.recipients} for:item="r">
+                    <div key={r.localKey} class="item-card">
+                      <span class="item-card__badge">{r.recipientType}</span>
+                      <span class="item-card__name">{r.recipientSourceType}</span>
+                      <span class="item-card__meta">{r.emailFieldApiName}</span>
+                      <div class="item-card__actions">
+                        <button class="action-link edit-link" data-key={r.localKey} onclick={handleEditRecipient}>Edit</button>
+                        <button class="action-link delete-link" data-key={r.localKey} onclick={handleDeleteRecipient}>Delete</button>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+              </template>
+              <template if:false={hasRecipients}>
+                <p class="tab-empty">No recipients configured.</p>
+              </template>
+            </div>
+          </template>
+
+          <!-- Post-Send Actions -->
+          <template if:true={isTab_actions}>
+            <div class="tab-panel">
+              <div class="tab-panel-header">
+                <h3 class="tab-section-title">Post-Send Actions</h3>
+                <div class="add-item-controls">
+                  <lightning-combobox
+                    label=""
+                    value={newActionType}
+                    options={actionTypeOptions}
+                    onchange={handleActionTypeSelect}
+                    variant="label-hidden"
+                    placeholder="Action type…"
+                  ></lightning-combobox>
+                  <button class="btn-add-item" onclick={handleAddAction}>+ Add Action</button>
+                </div>
+              </div>
+              <template if:true={hasActions}>
+                <div class="item-list">
+                  <template for:each={draftTemplate.actions} for:item="action">
+                    <div key={action.localKey} class="item-card">
+                      <span class="item-card__badge">{action.actionType}</span>
+                      <template if:true={action.isUpdateField}>
+                        <span class="item-card__meta">{action.fieldApiName} → {action.valueType}: {action.value}</span>
+                      </template>
+                      <template if:true={action.isCreateTask}>
+                        <span class="item-card__meta">{action.taskSubject}</span>
+                      </template>
+                      <div class="item-card__actions">
+                        <lightning-input type="checkbox" label="Active" checked={action.active} data-key={action.localKey} onchange={handleActionActiveToggle}></lightning-input>
+                        <button class="action-link edit-link" data-key={action.localKey} onclick={handleEditAction}>Edit</button>
+                        <button class="action-link delete-link" data-key={action.localKey} onclick={handleDeleteAction}>Delete</button>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+              </template>
+              <template if:false={hasActions}>
+                <p class="tab-empty">No post-send actions configured.</p>
+              </template>
+            </div>
+          </template>
+
+          <!-- Files -->
+          <template if:true={isTab_files}>
+            <div class="tab-panel">
+              <template if:false={templateHasId}>
+                <p class="tab-empty">Save the template first to manage files.</p>
+              </template>
+              <template if:true={templateHasId}>
+
+                <!-- Images -->
+                <div class="tab-panel-header">
+                  <h3 class="tab-section-title">Images</h3>
+                </div>
+                <p class="comp-edit-hint">Upload images here and get a public URL to use in your email body.</p>
+                <lightning-file-upload
+                  label="Upload Image"
+                  name="imageUpload"
+                  accept=".png,.jpg,.jpeg,.gif,.svg,.webp"
+                  record-id={draftTemplate.id}
+                  onuploadfinished={handleImageUploadFinished}
+                  multiple
+                ></lightning-file-upload>
+                <template if:true={isLoadingFiles}>
+                  <p class="comp-edit-hint">Loading files…</p>
+                </template>
+                <template if:true={templateImages.length}>
+                  <div class="file-list">
+                    <template for:each={templateImages} for:item="img">
+                      <div key={img.contentDocumentId} class="file-row">
+                        <span class="file-row__name">{img.title}</span>
+                        <span class="file-row__type">{img.fileType}</span>
+                        <div class="file-row__actions">
+                          <button class="btn-file-link" data-cvid={img.contentVersionId} onclick={handleGetPublicUrl}>Get Public URL</button>
+                          <button class="action-link delete-link" data-cdid={img.contentDocumentId} onclick={handleDeleteFile}>Delete</button>
+                        </div>
+                      </div>
+                    </template>
+                  </div>
+                </template>
+                <template if:false={templateImages.length}>
+                  <p class="comp-edit-hint">No images uploaded yet.</p>
+                </template>
+
+                <!-- Default Attachments -->
+                <div class="tab-panel-header" style="margin-top:24px">
+                  <h3 class="tab-section-title">Default Attachments</h3>
+                </div>
+                <p class="comp-edit-hint">Files uploaded here are always attached when this template is sent.</p>
+                <lightning-file-upload
+                  label="Upload Attachment"
+                  name="attachmentUpload"
+                  record-id={draftTemplate.id}
+                  onuploadfinished={handleAttachmentUploadFinished}
+                  multiple
+                ></lightning-file-upload>
+                <template if:true={templateAttachments.length}>
+                  <div class="file-list">
+                    <template for:each={templateAttachments} for:item="att">
+                      <div key={att.contentDocumentId} class="file-row">
+                        <span class="file-row__name">{att.title}</span>
+                        <span class="file-row__type">{att.fileType}</span>
+                        <div class="file-row__actions">
+                          <button class="action-link delete-link" data-cdid={att.contentDocumentId} onclick={handleDeleteFile}>Delete</button>
+                        </div>
+                      </div>
+                    </template>
+                  </div>
+                </template>
+                <template if:false={templateAttachments.length}>
+                  <p class="comp-edit-hint">No default attachments yet.</p>
+                </template>
+
+                <!-- Attachment Rules -->
+                <div class="tab-panel-header" style="margin-top:28px">
+                  <h3 class="tab-section-title">Attachment Rules</h3>
+                  <button class="btn-secondary btn-sm" onclick={handleAddAttachmentRule}>+ Add Rule</button>
+                </div>
+                <p class="comp-edit-hint">Define dynamic attachment sources resolved at send time (Static File, Source Record Files, or Related Record Files).</p>
+                <template if:false={hasAttachmentRules}>
+                  <p class="comp-edit-hint">No attachment rules configured.</p>
+                </template>
+                <template if:true={hasAttachmentRules}>
+                  <div class="item-list">
+                    <template for:each={draftTemplate.attachments} for:item="ac">
+                      <div key={ac.localKey} class="item-card" data-key={ac.localKey} onclick={handleSelectAttachmentRule} style="cursor:pointer">
+                        <span class="item-card__badge">{ac.attachmentSource}</span>
+                        <div class="item-card__info">
+                          <span class="item-card__meta">Order: {ac.displayOrder}</span>
+                        </div>
+                        <div class="item-card__actions">
+                          <button class="action-link delete-link" data-key={ac.localKey} onclick={handleDeleteAttachmentRule}>Remove</button>
+                        </div>
+                      </div>
+                    </template>
+                  </div>
+                </template>
+                <template if:true={selectedAttachmentRule}>
+                  <div class="comp-edit-panel" style="margin-top:16px; border:1px solid #e0e0e0; border-radius:6px; padding:16px; background:#fafafa;">
+                    <div class="form-row-2">
+                      <lightning-input
+                        type="toggle"
+                        label="Active"
+                        checked={selectedAttachmentRule.active}
+                        data-key={selectedAttachmentRule.localKey}
+                        data-field="active"
+                        onchange={handleAttachmentRuleChecked}
+                      ></lightning-input>
+                      <lightning-input
+                        type="number"
+                        label="Display Order"
+                        value={selectedAttachmentRule.displayOrder}
+                        data-key={selectedAttachmentRule.localKey}
+                        data-field="displayOrder"
+                        onchange={handleAttachmentRuleNumberChange}
+                      ></lightning-input>
+                    </div>
+                    <lightning-combobox
+                      label="Attachment Source"
+                      value={selectedAttachmentRule.attachmentSource}
+                      options={attachmentSourceOptions}
+                      data-key={selectedAttachmentRule.localKey}
+                      data-field="attachmentSource"
+                      onchange={handleAttachmentRuleChange}
+                    ></lightning-combobox>
+                    <template if:true={isAttachmentRuleStatic}>
+                      <lightning-input
+                        label="Content Document Id"
+                        value={selectedAttachmentRule.staticContentDocumentId}
+                        placeholder="0691x000000XXXXX"
+                        data-key={selectedAttachmentRule.localKey}
+                        data-field="staticContentDocumentId"
+                        onchange={handleAttachmentRuleChange}
+                      ></lightning-input>
+                    </template>
+                    <template if:true={isAttachmentRuleRelated}>
+                      <lightning-combobox
+                        label="Linked Query"
+                        value={selectedAttachmentRule._linkedQueryLocalKey}
+                        options={queryOptions}
+                        placeholder="Select a query..."
+                        data-key={selectedAttachmentRule.localKey}
+                        onchange={handleAttachmentRuleLinkedQueryChange}
+                      ></lightning-combobox>
+                    </template>
+                    <template if:true={isAttachmentRuleDynamic}>
+                      <lightning-input
+                        label="File Title Filter (optional, supports *)"
+                        value={selectedAttachmentRule.fileTitleFilter}
+                        placeholder="e.g. Invoice*"
+                        data-key={selectedAttachmentRule.localKey}
+                        data-field="fileTitleFilter"
+                        onchange={handleAttachmentRuleChange}
+                      ></lightning-input>
+                      <lightning-input
+                        type="number"
+                        label="Max Attachments"
+                        value={selectedAttachmentRule.maxAttachments}
+                        data-key={selectedAttachmentRule.localKey}
+                        data-field="maxAttachments"
+                        onchange={handleAttachmentRuleNumberChange}
+                      ></lightning-input>
+                    </template>
+                  </div>
+                </template>
+
+              </template>
+            </div>
+          </template>
+
+          <!-- Preview -->
+          <template if:true={isTab_preview}>
+            <div class="tab-panel">
+              <h3 class="tab-section-title">Preview Template</h3>
+              <div class="form-row-2">
+                <lightning-record-picker
+                  label="Select Record"
+                  placeholder="Search for a record..."
+                  object-api-name={draftTemplate.parentObjectApiName}
+                  value={previewRecordId}
+                  onchange={handlePreviewRecordChange}
+                ></lightning-record-picker>
+                <div class="preview-btn-wrap">
+                  <button class="btn-activate-template" onclick={handlePreview}>Preview</button>
+                </div>
+              </div>
+              <template if:true={previewIsLoading}>
+                <lightning-spinner alternative-text="Rendering preview..."></lightning-spinner>
+              </template>
+              <template if:true={previewSubject}>
+                <div class="preview-subject"><strong>Subject:</strong> {previewSubject}</div>
+              </template>
+              <template if:true={previewHtml}>
+                <div class="preview-frame-wrapper">
+                  <lightning-formatted-rich-text value={previewHtml}></lightning-formatted-rich-text>
+                </div>
+              </template>
+
+              <!-- Send Test Email -->
+              <div class="preview-action-row">
+                <h4 class="preview-action-title">Send Test Email</h4>
+                <p class="preview-action-hint">Sends the rendered email to your user address. Select a record first.</p>
+                <button class="btn-secondary" onclick={handleSendTestEmail} disabled={isSendingTest}>
+                  <template if:true={isSendingTest}>Sending…</template>
+                  <template if:false={isSendingTest}>Send Test to Me</template>
+                </button>
+              </div>
+
+              <!-- Schedule Send -->
+              <div class="preview-action-row">
+                <h4 class="preview-action-title">Schedule Send</h4>
+                <p class="preview-action-hint">Schedule a live send to the template's configured recipients at a future date/time.</p>
+                <lightning-combobox
+                  label="Send Type"
+                  value={scheduleType}
+                  options={scheduleTypeOptions}
+                  onchange={handleScheduleTypeChange}
+                ></lightning-combobox>
+                <template if:true={isScheduleTypeBulk}>
+                  <div class="sched-filter-row">
+                    <label class="qed-label">Filter (WHERE clause)</label>
+                    <input type="text" class="qed-search" placeholder="e.g. Status__c = 'Active' AND Region__c = 'West'" value={scheduleBulkFilter} onchange={handleBulkFilterChange} />
+                    <p class="qed-hint">Leave blank to send to all records of the parent object.</p>
+                  </div>
+                </template>
+                <div class="form-row-2 sched-row-top">
+                  <lightning-input
+                    type="datetime-local"
+                    label="Send At"
+                    value={scheduleDateTime}
+                    onchange={handleScheduleDateTimeChange}
+                  ></lightning-input>
+                  <div class="preview-btn-wrap">
+                    <button class="btn-secondary" onclick={handleCreateScheduledSend} disabled={isScheduling}>
+                      <template if:true={isScheduling}>Scheduling…</template>
+                      <template if:false={isScheduling}>Schedule Send</template>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <!-- Scheduled Sends -->
+          <template if:true={isTab_schedules}>
+            <div class="tab-panel">
+              <h3 class="tab-section-title">Scheduled Sends</h3>
+              <template if:true={isLoadingSchedules}>
+                <lightning-spinner alternative-text="Loading..."></lightning-spinner>
+              </template>
+              <template if:false={isLoadingSchedules}>
+                <template if:false={hasScheduledSends}>
+                  <p class="empty-state-msg">No scheduled sends for this template yet.</p>
+                </template>
+                <template if:true={hasScheduledSends}>
+                  <table class="sched-table">
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Scheduled At</th>
+                        <th>Filter / Record</th>
+                        <th>Sent / Failed</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <template for:each={scheduledSends} for:item="ss">
+                        <tr key={ss.id}>
+                          <td>{ss.name}</td>
+                          <td>{ss.sendType}</td>
+                          <td><span class={ss.statusClass}>{ss.status}</span></td>
+                          <td>{ss.scheduledAt}</td>
+                          <td class="sched-filter-cell">
+                            <template if:true={ss.filterClause}>{ss.filterClause}</template>
+                            <template if:false={ss.filterClause}>{ss.recordId}</template>
+                          </td>
+                          <td>{ss.recordsSent} / {ss.recordsFailed}</td>
+                          <td class="sched-actions">
+                            <template if:true={ss.isPending}>
+                              <button class="btn-secondary btn-xs" data-id={ss.id} onclick={handleSendScheduledSendNow}>Send Now</button>
+                              <button class="btn-danger btn-xs" data-id={ss.id} onclick={handleCancelScheduledSend}>Cancel</button>
+                            </template>
+                          </td>
+                        </tr>
+                      </template>
+                    </tbody>
+                  </table>
+                </template>
+              </template>
+            </div>
+          </template>
+
+        </div>
+      </template>
+
+      <!-- ── BRAND LIBRARY VIEW ────────────────────────────────────────── -->
+      <template if:true={isBrandsView}>
+        <div class="library">
+          <div class="page-header">
+            <div class="page-header-left">
+              <p class="page-eyebrow">WEAVE</p>
+              <h1 class="page-title">Brand Library</h1>
+            </div>
+            <div class="page-header-right">
+              <button class="btn-new-template" onclick={handleNewBrand}>+ New Brand</button>
+            </div>
+          </div>
+
+          <div class="filter-row">
+            <div class="filter-tabs">
+              <button class={brandFilterTabClassAll}      data-filter="all"      onclick={handleBrandFilterChange}>All</button>
+              <button class={brandFilterTabClassActive}   data-filter="active"   onclick={handleBrandFilterChange}>Active</button>
+              <button class={brandFilterTabClassInactive} data-filter="inactive" onclick={handleBrandFilterChange}>Inactive</button>
+            </div>
+            <lightning-input
+              type="search"
+              placeholder="Search brands…"
+              value={brandSearchTerm}
+              onchange={handleBrandSearch}
+              variant="label-hidden"
+            ></lightning-input>
+          </div>
+
+          <template if:true={hasBrands}>
+            <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+              <thead>
+                <tr class="slds-line-height_reset">
+                  <th scope="col"><div class="slds-truncate">BRAND NAME</div></th>
+                  <th scope="col"><div class="slds-truncate">DISPLAY NAME</div></th>
+                  <th scope="col"><div class="slds-truncate">COLORS</div></th>
+                  <th scope="col"><div class="slds-truncate">STATUS</div></th>
+                  <th scope="col"><div class="slds-truncate">LAST MODIFIED</div></th>
+                  <th scope="col"><div class="slds-truncate">ACTIONS</div></th>
+                </tr>
+              </thead>
+              <tbody>
+                <template for:each={filteredBrands} for:item="brand">
+                  <tr key={brand.id}>
+                    <td>{brand.name}</td>
+                    <td>{brand.displayName}</td>
+                    <td>
+                      <div class="color-swatch-row">
+                        <span class="color-swatch" style={brand.primaryColorStyle} title={brand.primaryColor}></span>
+                        <span class="color-swatch" style={brand.secondaryColorStyle} title={brand.secondaryColor}></span>
+                      </div>
+                    </td>
+                    <td><span class={brand.statusPillClass}>{brand.status}</span></td>
+                    <td>{brand.lastModifiedDisplay}</td>
+                    <td>
+                      <span class="action-links">
+                        <button class="action-link edit-link" data-id={brand.id} onclick={handleEditBrand}>Edit</button>
+                        <button class="action-link delete-link" data-id={brand.id} onclick={handleDeleteBrand}>Delete</button>
+                      </span>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </template>
+
+          <template if:false={hasBrands}>
+            <div class="empty-state">
+              <p>No brands found. Create a brand to get started.</p>
+            </div>
+          </template>
+        </div>
+      </template>
+
+      <!-- ── BRAND EDITOR VIEW ──────────────────────────────────────────── -->
+      <template if:true={isBrandEditorView}>
+        <div class="editor-view">
+
+          <!-- Editor header -->
+          <div class="editor-header">
+            <button class="editor-back-btn" onclick={handleBackToBrandLibrary}>← Brands</button>
+            <div class="editor-identity">
+              <span class="editor-name">{draftBrand.name}</span>
+              <span class={brandStatusPillClass}>{draftBrand.status}</span>
+            </div>
+            <div class="editor-tabs">
+              <button class={brandTabClass_identity} data-tab="identity" onclick={handleBrandTabClick}>Identity</button>
+              <button class={brandTabClass_colors}   data-tab="colors"   onclick={handleBrandTabClick}>Colors</button>
+              <button class={brandTabClass_contact}  data-tab="contact"  onclick={handleBrandTabClick}>Contact &amp; Compliance</button>
+              <button class={brandTabClass_assets}   data-tab="assets"   onclick={handleBrandTabClick}>Assets</button>
+              <button class={brandTabClass_content}  data-tab="content"  onclick={handleBrandTabClick}>Header &amp; Footer</button>
+            </div>
+            <div class="editor-header-actions">
+              <button class="btn-save-template" onclick={handleSaveBrand}>Save Brand</button>
+            </div>
+          </div>
+
+          <template if:true={isBrandLoading}>
+            <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+          </template>
+
+          <!-- ── Tab 1: Identity ─────────────────────────────────────────── -->
+          <template if:true={isBrandTab_identity}>
+            <div class="tab-panel">
+              <div class="tab-panel-header">
+                <h3 class="tab-section-title">Brand Identity</h3>
+              </div>
+              <p class="tab-panel-desc">Define the name, display name, and status of this brand.</p>
+              <div class="form-section">
+                <div class="form-row-2">
+                  <lightning-input label="Brand Name *" value={draftBrand.name}
+                    data-field="name" onchange={handleBrandFieldChange} required></lightning-input>
+                  <lightning-input label="Display Name (shown in emails)" value={draftBrand.displayName}
+                    data-field="displayName" onchange={handleBrandFieldChange}></lightning-input>
+                </div>
+                <div class="form-row-2">
+                  <lightning-combobox label="Status" value={draftBrand.status}
+                    options={statusOptions} data-field="status" onchange={handleBrandFieldChange}></lightning-combobox>
+                </div>
+                <lightning-textarea label="Description (internal notes)" value={draftBrand.description}
+                  data-field="description" onchange={handleBrandFieldChange}></lightning-textarea>
+              </div>
+            </div>
+          </template>
+
+          <!-- ── Tab 2: Colors ──────────────────────────────────────────── -->
+          <template if:true={isBrandTab_colors}>
+            <div class="tab-panel">
+              <div class="tab-panel-header">
+                <h3 class="tab-section-title">Brand Colors</h3>
+              </div>
+              <p class="tab-panel-desc">Set primary and secondary brand colors used in email templates via &#123;&#123;Brand.PrimaryColor&#125;&#125; and &#123;&#123;Brand.SecondaryColor&#125;&#125;.</p>
+              <div class="form-section">
+                <div class="brand-color-grid">
+                  <div class="brand-color-field">
+                    <label class="brand-color-label">Primary Color</label>
+                    <div class="brand-color-row">
+                      <input type="color" class="color-picker-input"
+                        value={draftBrand.primaryColor}
+                        data-field="primaryColor"
+                        onchange={handleBrandColorPickerChange}/>
+                      <lightning-input label="" value={draftBrand.primaryColor}
+                        placeholder="#1f5f5b"
+                        data-field="primaryColor" onchange={handleBrandFieldChange}></lightning-input>
+                    </div>
+                    <div class="color-preview-bar" style={draftBrand.primaryColorStyle}></div>
+                  </div>
+                  <div class="brand-color-field">
+                    <label class="brand-color-label">Secondary Color</label>
+                    <div class="brand-color-row">
+                      <input type="color" class="color-picker-input"
+                        value={draftBrand.secondaryColor}
+                        data-field="secondaryColor"
+                        onchange={handleBrandColorPickerChange}/>
+                      <lightning-input label="" value={draftBrand.secondaryColor}
+                        placeholder="#4fb893"
+                        data-field="secondaryColor" onchange={handleBrandFieldChange}></lightning-input>
+                    </div>
+                    <div class="color-preview-bar" style={draftBrand.secondaryColorStyle}></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <!-- ── Tab 3: Contact & Compliance ───────────────────────────── -->
+          <template if:true={isBrandTab_contact}>
+            <div class="tab-panel">
+              <div class="tab-panel-header">
+                <h3 class="tab-section-title">Contact &amp; Compliance</h3>
+              </div>
+              <p class="tab-panel-desc">From-email fallback and CAN-SPAM / unsubscribe settings for this brand.</p>
+              <div class="form-section">
+                <lightning-combobox
+                  label="Org Wide Email Address (from-email fallback)"
+                  value={draftBrand.orgWideEmailAddress}
+                  options={orgWideEmailOptions}
+                  data-field="orgWideEmailAddress"
+                  onchange={handleBrandFieldChange}
+                  placeholder="-- Org Default --"></lightning-combobox>
+                <p class="field-hint">Used when the template's own From Email is blank. Must match an Org-Wide Email Address in Setup.</p>
+
+                <lightning-textarea
+                  label="Physical Address (CAN-SPAM — &#123;&#123;Brand.PhysicalAddress&#125;&#125;)"
+                  value={draftBrand.physicalAddress}
+                  data-field="physicalAddress"
+                  onchange={handleBrandFieldChange}
+                  placeholder="123 Main St, City, ST 00000"></lightning-textarea>
+
+                <div class="form-row-2">
+                  <lightning-input
+                    label="Unsubscribe URL (&#123;&#123;Brand.UnsubscribeLink&#125;&#125;)"
+                    value={draftBrand.unsubscribeUrl}
+                    data-field="unsubscribeUrl"
+                    onchange={handleBrandFieldChange}
+                    placeholder="https://..."></lightning-input>
+                  <lightning-input
+                    label="Unsubscribe Link Text"
+                    value={draftBrand.unsubscribeLabel}
+                    data-field="unsubscribeLabel"
+                    onchange={handleBrandFieldChange}
+                    placeholder="Unsubscribe"></lightning-input>
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <!-- ── Tab 4: Assets ──────────────────────────────────────────── -->
+          <template if:true={isBrandTab_assets}>
+            <div class="tab-panel">
+              <div class="tab-panel-header">
+                <h3 class="tab-section-title">Brand Assets</h3>
+              </div>
+              <p class="tab-panel-desc">Upload images (logo, banners) and generate public CDN links to use as &#123;&#123;Brand.LogoUrl&#125;&#125; or embed directly in header/footer HTML.</p>
+              <div class="form-section">
+                <template if:true={draftBrand.id}>
+                  <lightning-file-upload
+                    label="Upload Image"
+                    multiple
+                    accept=".png,.jpg,.jpeg,.gif,.svg,.webp"
+                    record-id={draftBrand.id}
+                    onuploadfinished={handleSaveBrand}></lightning-file-upload>
+                </template>
+                <template if:false={draftBrand.id}>
+                  <div class="info-banner">
+                    <lightning-icon icon-name="utility:info" size="x-small"></lightning-icon>
+                    <span>Save the brand first to enable image uploads.</span>
+                  </div>
+                </template>
+
+                <template if:true={hasBrandImages}>
+                  <div class="file-list" style="margin-top:16px">
+                    <template for:each={brandImages} for:item="img">
+                      <div key={img.contentDocumentId}>
+                        <div class="file-row">
+                          <span class="file-row__name">{img.title}</span>
+                          <span class="file-row__type">{img.fileType}</span>
+                          <span class="file-row__actions">
+                            <button class="btn-file-link" data-version-id={img.contentVersionId}
+                              onclick={handleCreateBrandPublicImageLink}>Get Public URL</button>
+                            <template if:true={img.publicUrl}>
+                              <span class="img-resize-wrap">
+                                <input type="number" class="img-resize-input"
+                                  value={img.imgWidth}
+                                  data-doc-id={img.contentDocumentId}
+                                  onchange={handleBrandImageWidthChange}
+                                  placeholder="600" min="1" max="2000"/>
+                                <span class="img-resize-unit">px</span>
+                              </span>
+                              <button class="merge-chip" data-tag={img.publicUrl}
+                                onclick={handleBrandTagCopy} title="Copy image URL">URL</button>
+                              <button class="merge-chip" data-tag={img.imgTag}
+                                onclick={handleBrandTagCopy} title="Copy &lt;img&gt; HTML tag">&lt;img&gt;</button>
+                            </template>
+                            <button class="action-link delete-link" data-doc-id={img.contentDocumentId}
+                              onclick={handleDeleteBrandFile}>Delete</button>
+                          </span>
+                        </div>
+                      </div>
+                    </template>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </template>
+
+          <!-- ── Tab 5: Header & Footer ─────────────────────────────────── -->
+          <template if:true={isBrandTab_content}>
+            <div class="tab-panel">
+              <div class="tab-panel-header">
+                <h3 class="tab-section-title">Header &amp; Footer HTML</h3>
+              </div>
+              <p class="tab-panel-desc">HTML injected above and below every email that uses this brand. Click any tag to copy it.</p>
+
+              <!-- Merge tag chips -->
+              <div class="brand-tags-panel">
+                <p class="brand-tags-label">Brand Merge Tags</p>
+                <div class="merge-group__chips">
+                  <template for:each={brandStaticTags} for:item="bt">
+                    <button key={bt.key} class="merge-chip" data-tag={bt.tag}
+                      onclick={handleBrandTagCopy}>{bt.label}</button>
+                  </template>
+                </div>
+                <template if:true={hasBrandImagesWithUrls}>
+                  <p class="brand-tags-label" style="margin-top:10px">Asset Image Tags</p>
+                  <div class="merge-group__chips">
+                    <template for:each={brandImagesWithUrls} for:item="img">
+                      <button key={img.contentDocumentId} class="merge-chip"
+                        data-tag={img.imgTag} onclick={handleBrandTagCopy}
+                        title={img.publicUrl}>{img.title} &lt;img&gt;</button>
+                    </template>
+                  </div>
+                </template>
+                <template if:true={copiedTag}>
+                  <p class="brand-tags-copied">✓ Copied to clipboard</p>
+                </template>
+                <template if:true={insertedTag}>
+                  <p class="brand-tags-copied">✓ Image inserted into editor</p>
+                </template>
+              </div>
+
+              <!-- Header -->
+              <div class="form-section">
+                <div class="section-label-row">
+                  <span class="section-label">Brand Header</span>
+                  <button class="btn-toggle-editor" onclick={handleBrandHeaderModeToggle}>
+                    {brandHeaderEditorIsRich ? '&lt;&gt; HTML Source' : 'Rich Text'}
+                  </button>
+                </div>
+                <template if:true={brandHeaderEditorIsRich}>
+                  <lightning-input-rich-text key={headerRteKey} value={draftBrand.headerHtml}
+                    onchange={handleBrandHeaderRichChange}></lightning-input-rich-text>
+                </template>
+                <template if:false={brandHeaderEditorIsRich}>
+                  <textarea class="html-source-editor" value={draftBrand.headerHtml}
+                    data-field="headerHtml" oninput={handleBrandFieldChange}></textarea>
+                </template>
+              </div>
+
+              <!-- Footer -->
+              <div class="form-section" style="margin-top:24px">
+                <div class="section-label-row">
+                  <span class="section-label">Brand Footer</span>
+                  <button class="btn-toggle-editor" onclick={handleBrandFooterModeToggle}>
+                    {brandFooterEditorIsRich ? '&lt;&gt; HTML Source' : 'Rich Text'}
+                  </button>
+                </div>
+                <template if:true={brandFooterEditorIsRich}>
+                  <lightning-input-rich-text key={footerRteKey} value={draftBrand.footerHtml}
+                    onchange={handleBrandFooterRichChange}></lightning-input-rich-text>
+                </template>
+                <template if:false={brandFooterEditorIsRich}>
+                  <textarea class="html-source-editor" value={draftBrand.footerHtml}
+                    data-field="footerHtml" oninput={handleBrandFieldChange}></textarea>
+                </template>
+              </div>
+            </div>
+          </template>
+
+        </div>
+      </template>
+
+    </div><!-- /main-panel -->
+
+    <!-- ── Component Edit Modal ────────────────────────────────────────── -->
+    <template if:true={showComponentModal}>
+      <section role="dialog" class="modal-backdrop">
+        <div class="modal-container modal-container_wide">
+          <header class="modal-header">
+            <h2 class="modal-title">Edit Component — {editingComponent.componentType}</h2>
+            <button class="modal-close" onclick={handleComponentModalClose}>✕</button>
+          </header>
+
+          <div class="modal-body modal-body_cols">
+
+            <!-- Left column: name + editor -->
+            <div class="comp-modal-left">
+              <lightning-input
+                label="Component Name"
+                value={editingComponent.name}
+                data-field="name"
+                onchange={handleComponentFieldChange}
+              ></lightning-input>
+
+              <!-- Text / HTML Block: rich text or HTML editor -->
+              <template if:true={editingComponentHasContent}>
+                <div class="comp-edit-section">
+                  <div class="comp-edit-toolbar">
+                    <label class="comp-edit-label">Content</label>
+                    <button class="comp-edit-mode-toggle" onclick={handleToggleEditorMode}>
+                      {componentEditorToggleLabel}
+                    </button>
+                  </div>
+
+                  <!-- Rich text mode -->
+                  <template if:true={componentEditorIsRich}>
+                    <lightning-input-rich-text
+                      value={editingComponent.htmlOutput}
+                      onchange={handleRichTextChange}
+                      placeholder="Start typing or click a merge tag →"
+                    ></lightning-input-rich-text>
+                  </template>
+
+                  <!-- HTML source mode -->
+                  <template if:true={componentEditorIsHtml}>
+                    <lightning-textarea
+                      label=""
+                      variant="label-hidden"
+                      value={editingComponent.htmlOutput}
+                      data-field="htmlOutput"
+                      onchange={handleComponentFieldChange}
+                      placeholder="Enter HTML. Click a merge tag to append it →"
+                      max-length="131072"
+                      class="comp-html-textarea"
+                    ></lightning-textarea>
+                  </template>
+                </div>
+              </template>
+
+              <!-- Related Table: query picker + column config -->
+              <template if:true={editingComponentIsRelatedTable}>
+                <div class="comp-edit-section">
+                  <lightning-combobox
+                    label="Linked Query"
+                    value={editingComponent._linkedQueryLocalKey}
+                    options={queryOptionsForComponent}
+                    onchange={handleComponentLinkedQueryChange}
+                    placeholder="Select a query…"
+                  ></lightning-combobox>
+                  <p class="comp-edit-hint">The selected query drives this table's rows.</p>
+                </div>
+
+                <!-- Column editor -->
+                <template if:true={editingComponentHasLinkedQuery}>
+                  <div class="comp-edit-section">
+                    <p class="comp-edit-label">Columns</p>
+                    <template if:true={editingComponentColumns.length}>
+                      <div class="col-editor">
+                        <div class="col-editor__header">
+                          <span class="col-editor__th col-editor__th--order">#</span>
+                          <span class="col-editor__th col-editor__th--api">Field</span>
+                          <span class="col-editor__th col-editor__th--label">Column Name</span>
+                          <span class="col-editor__th col-editor__th--actions"></span>
+                        </div>
+                        <template for:each={editingComponentColumns} for:item="col">
+                          <div key={col.apiName} class="col-editor__row">
+                            <span class="col-editor__order">{col.order}</span>
+                            <span class="col-editor__api">{col.apiName}</span>
+                            <input
+                              type="text"
+                              class="col-editor__input"
+                              value={col.label}
+                              data-idx={col._idx}
+                              onchange={handleColumnLabelChange}
+                            />
+                            <div class="col-editor__actions">
+                              <button
+                                class="col-btn col-btn--move"
+                                data-idx={col._idx}
+                                onclick={handleColumnMoveUp}
+                                disabled={col._isFirst}
+                                title="Move up"
+                              >↑</button>
+                              <button
+                                class="col-btn col-btn--move"
+                                data-idx={col._idx}
+                                onclick={handleColumnMoveDown}
+                                disabled={col._isLast}
+                                title="Move down"
+                              >↓</button>
+                              <button
+                                class="col-btn col-btn--remove"
+                                data-idx={col._idx}
+                                onclick={handleColumnRemove}
+                                title="Remove column"
+                              >×</button>
+                            </div>
+                          </div>
+                        </template>
+                      </div>
+                    </template>
+                    <template if:false={editingComponentColumns.length}>
+                      <p class="comp-edit-hint">No fields found in the linked query's SOQL.</p>
+                    </template>
+                  </div>
+                </template>
+              </template>
+
+              <!-- Button editor -->
+              <template if:true={editingComponentIsButton}>
+                <div class="comp-edit-section">
+                  <lightning-input
+                    label="Button Label"
+                    value={editingComponentButtonConfig.label}
+                    data-field="label"
+                    onchange={handleButtonConfigChange}
+                    placeholder="Click Here"
+                  ></lightning-input>
+                  <lightning-input
+                    label="Button URL"
+                    value={editingComponentButtonConfig.url}
+                    data-field="url"
+                    onchange={handleButtonConfigChange}
+                    placeholder="https://… or {{Parent.FieldName}}"
+                  ></lightning-input>
+                  <lightning-input
+                    label="Button Color (hex)"
+                    value={editingComponentButtonConfig.color}
+                    data-field="color"
+                    onchange={handleButtonConfigChange}
+                    placeholder="#1f5f5b"
+                  ></lightning-input>
+                </div>
+              </template>
+
+              <!-- Image editor -->
+              <template if:true={editingComponentIsImage}>
+                <div class="comp-edit-section">
+                  <lightning-input
+                    label="Image URL"
+                    value={editingComponentButtonConfig.imageUrl}
+                    data-field="imageUrl"
+                    onchange={handleButtonConfigChange}
+                    placeholder="Paste a public image URL or use Get Public URL from Files tab"
+                  ></lightning-input>
+                  <lightning-input
+                    label="Alt Text"
+                    value={editingComponentButtonConfig.altText}
+                    data-field="altText"
+                    onchange={handleButtonConfigChange}
+                    placeholder="Image description"
+                  ></lightning-input>
+                  <lightning-input
+                    label="Width (px or %)"
+                    value={editingComponentButtonConfig.width}
+                    data-field="width"
+                    onchange={handleButtonConfigChange}
+                    placeholder="e.g. 300 or 100%"
+                  ></lightning-input>
+                  <p class="comp-edit-hint">Upload images in the <strong>Files</strong> tab, then click "Get Public URL" and paste it here.</p>
+                </div>
+              </template>
+
+            </div>
+
+            <!-- Right column: merge tag browser (only for content types) -->
+            <template if:true={editingComponentHasContent}>
+              <div class="comp-modal-right">
+                <div class="merge-panel">
+                  <div class="merge-panel__header">
+                    <span class="merge-panel__title">Merge Tags</span>
+                    <span class="merge-panel__hint">Click to insert</span>
+                  </div>
+                  <input
+                    type="search"
+                    class="merge-panel__search"
+                    placeholder="Search fields…"
+                    value={mergeTagSearch}
+                    oninput={handleMergeTagSearch}
+                  />
+                  <template if:true={isLoadingMergeTags}>
+                    <p class="merge-panel__loading">Loading fields…</p>
+                  </template>
+                  <div class="merge-panel__groups">
+                    <template for:each={mergeTagGroups} for:item="group">
+                      <div key={group.key} class="merge-group">
+                        <p class="merge-group__label">{group.label}</p>
+                        <template if:true={group.hasFields}>
+                          <div class="merge-group__chips">
+                            <template for:each={group.fields} for:item="f">
+                              <button
+                                key={f.apiName}
+                                class="merge-chip"
+                                data-tag={f.tag}
+                                onclick={handleInsertMergeTag}
+                                title={f.tag}
+                              >
+                                {f.apiName}
+                                <span
+                                  class="merge-chip__copy"
+                                  data-tag={f.tag}
+                                  onclick={handleCopyMergeTag}
+                                  title="Copy to clipboard"
+                                >⎘</span>
+                              </button>
+                            </template>
+                          </div>
+                        </template>
+                        <template if:false={group.hasFields}>
+                          <p class="merge-group__empty">No matching fields</p>
+                        </template>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+              </div>
+            </template>
+
+          </div><!-- /modal-body_cols -->
+
+          <footer class="modal-footer">
+            <button class="btn-cancel" onclick={handleComponentModalClose}>Cancel</button>
+            <button class="btn-activate-template" onclick={handleComponentModalSave}>Save Component</button>
+          </footer>
+        </div>
+      </section>
+    </template>
+
+    <!-- ── Recipient Modal ───────────────────────────────────────────────── -->
+    <template if:true={showRecipientModal}>
+      <section role="dialog" class="modal-backdrop">
+        <div class="modal-container">
+          <header class="modal-header">
+            <h2 class="modal-title">Recipient</h2>
+            <button class="modal-close" onclick={handleRecipientModalClose}>✕</button>
+          </header>
+          <div class="modal-body">
+            <div class="form-row-2">
+              <lightning-combobox
+                label="Recipient Type"
+                value={editingRecipient.recipientType}
+                options={recipientTypeOptions}
+                data-field="recipientType"
+                onchange={handleRecipientFieldChange}
+              ></lightning-combobox>
+              <lightning-combobox
+                label="Source"
+                value={editingRecipient.recipientSourceType}
+                options={recipientSourceOptions}
+                data-field="recipientSourceType"
+                onchange={handleRecipientFieldChange}
+              ></lightning-combobox>
+            </div>
+
+            <!-- Parent Field -->
+            <template if:true={editingRecipientIsParentField}>
+              <div class="form-row-2">
+                <lightning-combobox
+                  label="Email Field"
+                  value={editingRecipient.emailFieldApiName}
+                  options={parentFieldOptions}
+                  data-field="emailFieldApiName"
+                  onchange={handleRecipientFieldChange}
+                  placeholder="Select field…"
+                ></lightning-combobox>
+                <lightning-combobox
+                  label="Name Field"
+                  value={editingRecipient.nameFieldApiName}
+                  options={parentFieldOptions}
+                  data-field="nameFieldApiName"
+                  onchange={handleRecipientFieldChange}
+                  placeholder="Select field…"
+                ></lightning-combobox>
+              </div>
+            </template>
+
+            <!-- Related Records: pick from template queries -->
+            <template if:true={editingRecipientIsRelatedRecords}>
+              <lightning-combobox
+                label="Linked Query"
+                value={editingRecipient._linkedQueryLocalKey}
+                options={templateQueryOptions}
+                placeholder="Select a query…"
+                onchange={handleRecipientQuerySelect}
+              ></lightning-combobox>
+              <p class="modal-hint">The query determines which records to fetch. Email + Name fields come from that object's records.</p>
+              <div class="form-row-2">
+                <lightning-input
+                  label="Email Field API Name"
+                  value={editingRecipient.emailFieldApiName}
+                  data-field="emailFieldApiName"
+                  onchange={handleRecipientFieldChange}
+                  placeholder="e.g. Email"
+                ></lightning-input>
+                <lightning-input
+                  label="Name Field API Name"
+                  value={editingRecipient.nameFieldApiName}
+                  data-field="nameFieldApiName"
+                  onchange={handleRecipientFieldChange}
+                  placeholder="e.g. Name"
+                ></lightning-input>
+              </div>
+            </template>
+
+            <!-- Manual: static email address -->
+            <template if:true={editingRecipientIsManual}>
+              <lightning-input
+                label="Email Address"
+                type="email"
+                value={editingRecipient.emailFieldApiName}
+                data-field="emailFieldApiName"
+                onchange={handleRecipientFieldChange}
+                placeholder="user@example.com"
+              ></lightning-input>
+            </template>
+
+            <lightning-input
+              label="Filter Logic"
+              value={editingRecipient.filterLogic}
+              data-field="filterLogic"
+              onchange={handleRecipientFieldChange}
+              placeholder="Optional WHERE clause for related queries"
+            ></lightning-input>
+
+            <div class="form-row-checks">
+              <lightning-input type="checkbox" label="Default Selected"
+                checked={editingRecipient.defaultSelected}
+                data-field="defaultSelected"
+                onchange={handleRecipientCheckboxChange}
+              ></lightning-input>
+              <lightning-input type="checkbox" label="Required"
+                checked={editingRecipient.required}
+                data-field="required"
+                onchange={handleRecipientCheckboxChange}
+              ></lightning-input>
+              <lightning-input type="checkbox" label="Allow Multiple"
+                checked={editingRecipient.allowMultiple}
+                data-field="allowMultiple"
+                onchange={handleRecipientCheckboxChange}
+              ></lightning-input>
+            </div>
+          </div>
+          <footer class="modal-footer">
+            <button class="btn-cancel" onclick={handleRecipientModalClose}>Cancel</button>
+            <button class="btn-activate-template" onclick={handleRecipientModalSave}>Save Recipient</button>
+          </footer>
+        </div>
+      </section>
+    </template>
+
+    <!-- ── Action Modal ───────────────────────────────────────────────────── -->
+    <template if:true={showActionModal}>
+      <section role="dialog" class="modal-backdrop">
+        <div class={actionModalContainerClass}>
+          <header class="modal-header">
+            <h2 class="modal-title">Post-Send Action — {editingAction.actionType}</h2>
+            <button class="modal-close" onclick={handleActionModalClose}>✕</button>
+          </header>
+          <div class={actionModalBodyClass}>
+
+            <!-- Left column: form fields -->
+            <div class={actionModalLeftClass}>
+
+              <!-- Update Field -->
+              <template if:true={editingActionIsUpdateField}>
+                <lightning-combobox
+                  label="Field to Update"
+                  value={editingAction.fieldApiName}
+                  options={updateableFieldOptions}
+                  data-field="fieldApiName"
+                  onchange={handleActionFieldChange}
+                  placeholder="Select field…"
+                ></lightning-combobox>
+                <lightning-combobox
+                  label="Value Type"
+                  value={editingAction.valueType}
+                  options={valueTypeOptions}
+                  data-field="valueType"
+                  onchange={handleActionFieldChange}
+                ></lightning-combobox>
+                <lightning-input
+                  label="Value"
+                  value={editingAction.value}
+                  data-field="value"
+                  onchange={handleActionFieldChange}
+                  onfocus={handleActionMergeTagFocus}
+                  placeholder="Static text or {{Parent.FieldName}}"
+                ></lightning-input>
+              </template>
+
+              <!-- Create Task -->
+              <template if:true={editingActionIsCreateTask}>
+                <lightning-input
+                  label="Task Subject"
+                  value={editingAction.taskSubject}
+                  data-field="taskSubject"
+                  onchange={handleActionFieldChange}
+                  onfocus={handleActionMergeTagFocus}
+                  required
+                ></lightning-input>
+                <lightning-combobox
+                  label="Assigned To"
+                  value={editingAction.assignedToType}
+                  options={assignedToOptions}
+                  data-field="assignedToType"
+                  onchange={handleActionFieldChange}
+                ></lightning-combobox>
+                <template if:true={editingActionAssignedSpecific}>
+                  <lightning-input
+                    label="User ID"
+                    value={editingAction.assignedUserId}
+                    data-field="assignedUserId"
+                    onchange={handleActionFieldChange}
+                    placeholder="Salesforce User Id"
+                  ></lightning-input>
+                </template>
+                <div class="form-row-2">
+                  <lightning-combobox
+                    label="Due Date"
+                    value={editingAction.dueDateStrategy}
+                    options={dueDateOptions}
+                    data-field="dueDateStrategy"
+                    onchange={handleActionFieldChange}
+                  ></lightning-combobox>
+                  <template if:true={editingActionDueDateIsDays}>
+                    <lightning-input
+                      type="number"
+                      label="Days After Send"
+                      value={editingAction.daysAfterSend}
+                      min="1"
+                      data-field="daysAfterSend"
+                      onchange={handleActionNumberChange}
+                    ></lightning-input>
+                  </template>
+                </div>
+                <div class="form-row-2">
+                  <lightning-combobox
+                    label="Status"
+                    value={editingAction.taskStatus}
+                    options={taskStatusOptions}
+                    data-field="taskStatus"
+                    onchange={handleActionFieldChange}
+                  ></lightning-combobox>
+                  <lightning-combobox
+                    label="Priority"
+                    value={editingAction.taskPriority}
+                    options={taskPriorityOptions}
+                    data-field="taskPriority"
+                    onchange={handleActionFieldChange}
+                  ></lightning-combobox>
+                </div>
+                <lightning-textarea
+                  label="Description"
+                  value={editingAction.taskDescription}
+                  data-field="taskDescription"
+                  onchange={handleActionFieldChange}
+                  onfocus={handleActionMergeTagFocus}
+                ></lightning-textarea>
+              </template>
+
+              <div class="form-row-checks" style="margin-top:12px">
+                <lightning-input type="checkbox" label="Active"
+                  checked={editingAction.active}
+                  data-field="active"
+                  onchange={handleActionCheckboxChange}
+                ></lightning-input>
+              </div>
+            </div><!-- /left column -->
+
+            <!-- Right column: merge tag picker -->
+            <template if:true={editingActionShowsMergeTags}>
+              <div class="comp-modal-right">
+                <div class="merge-panel">
+                  <div class="merge-panel__header">
+                    <span class="merge-panel__title">Merge Tags</span>
+                    <span class="merge-panel__hint">Click to insert · ⎘ to copy</span>
+                  </div>
+                  <input
+                    type="search"
+                    class="merge-panel__search"
+                    placeholder="Search fields…"
+                    value={mergeTagSearch}
+                    oninput={handleMergeTagSearch}
+                  />
+                  <template if:true={isLoadingMergeTags}>
+                    <p class="merge-panel__loading">Loading fields…</p>
+                  </template>
+                  <div class="merge-panel__groups">
+                    <template for:each={mergeTagGroups} for:item="group">
+                      <div key={group.key} class="merge-group">
+                        <p class="merge-group__label">{group.label}</p>
+                        <template if:true={group.hasFields}>
+                          <div class="merge-group__chips">
+                            <template for:each={group.fields} for:item="f">
+                              <button
+                                key={f.apiName}
+                                class="merge-chip"
+                                data-tag={f.tag}
+                                onclick={handleInsertActionMergeTag}
+                                title={f.tag}
+                              >
+                                {f.apiName}
+                                <span
+                                  class="merge-chip__copy"
+                                  data-tag={f.tag}
+                                  onclick={handleCopyActionMergeTag}
+                                  title="Copy to clipboard"
+                                >⎘</span>
+                              </button>
+                            </template>
+                          </div>
+                        </template>
+                        <template if:false={group.hasFields}>
+                          <p class="merge-group__empty">No matching fields</p>
+                        </template>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+              </div>
+            </template>
+
+          </div><!-- /modal-body -->
+          <footer class="modal-footer">
+            <button class="btn-cancel" onclick={handleActionModalClose}>Cancel</button>
+            <button class="btn-activate-template" onclick={handleActionModalSave}>Save Action</button>
+          </footer>
+        </div>
+      </section>
+    </template>
+
+    <!-- ── Query Modal ──────────────────────────────────────────────────── -->
+    <template if:true={showQueryModal}>
+      <section role="dialog" class="modal-backdrop">
+        <div class="modal-container">
+          <header class="modal-header">
+            <h2 class="modal-title">Query Editor</h2>
+            <button class="modal-close" onclick={handleQueryModalClose}>✕</button>
+          </header>
+          <div class="modal-body">
+            <lightning-input
+              label="Query Name"
+              value={editingQuery.name}
+              onchange={handleQueryNameChange}
+              required
+            ></lightning-input>
+            <c-weave-builder-query-editor
+              query={editingQuery}
+              related-object-options={relatedObjectOptions}
+              related-object-meta={relatedObjectMeta}
+              parent-object-api-name={draftTemplate.parentObjectApiName}
+              onquerychange={handleQueryEditorChange}
+            ></c-weave-builder-query-editor>
+          </div>
+          <footer class="modal-footer">
+            <button class="btn-cancel" onclick={handleQueryModalClose}>Cancel</button>
+            <button class="btn-activate-template" onclick={handleQueryModalSave}>Save Query</button>
+          </footer>
+        </div>
+      </section>
+    </template>
+  </div>
+</template>

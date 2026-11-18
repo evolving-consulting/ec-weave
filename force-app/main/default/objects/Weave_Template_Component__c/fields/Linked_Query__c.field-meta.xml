@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Linked_Query__c</fullName>
+    <description>The Weave query whose SOQL provides data for a Related Table component.</description>
+    <label>Linked Query</label>
+    <referenceTo>Weave_Template_Query__c</referenceTo>
+    <relationshipLabel>Weave Template Components</relationshipLabel>
+    <relationshipName>Weave_Template_Components</relationshipName>
+    <required>false</required>
+    <type>Lookup</type>
+</CustomField>

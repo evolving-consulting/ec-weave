@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomApplication xmlns="http://soap.sforce.com/2006/04/metadata">
+    <brand>
+        <headerColor>#1F5F5B</headerColor>
+        <logo>Weave_Logo</logo>
+        <logoVersion>1</logoVersion>
+        <shouldOverrideOrgTheme>true</shouldOverrideOrgTheme>
+    </brand>
+    <defaultLandingTab>weaveTemplateBuilder</defaultLandingTab>
+    <description>Design, govern, preview, and send dynamic communications with Weave — the EC template engine.</description>
+    <formFactors>Large</formFactors>
+    <isNavAutoTempTabsDisabled>false</isNavAutoTempTabsDisabled>
+    <isNavPersonalizationDisabled>false</isNavPersonalizationDisabled>
+    <isNavTabPersistenceDisabled>false</isNavTabPersistenceDisabled>
+    <label>Weave</label>
+    <navType>Standard</navType>
+    <tabs>weaveTemplateBuilder</tabs>
+    <tabs>Weave_Template_Config__c</tabs>
+    <tabs>Weave_Template_Query__c</tabs>
+    <tabs>Weave_Template_Component__c</tabs>
+    <tabs>Weave_Template_Recipient__c</tabs>
+    <tabs>Weave_Template_Action__c</tabs>
+    <tabs>Weave_Scheduled_Send__c</tabs>
+    <tabs>Weave_Send_Log__c</tabs>
+    <uiType>Lightning</uiType>
+</CustomApplication>

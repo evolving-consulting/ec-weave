@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <description>A post-send action associated with a Weave template. Replaces the unstructured JSON blob in the legacy model.</description>
+    <enableActivities>false</enableActivities>
+    <enableFeeds>false</enableFeeds>
+    <enableHistory>true</enableHistory>
+    <enableReports>true</enableReports>
+    <label>Weave Template Action</label>
+    <nameField>
+        <label>Weave Template Action Name</label>
+        <type>Text</type>
+    </nameField>
+    <pluralLabel>Weave Template Actions</pluralLabel>
+    <sharingModel>ControlledByParent</sharingModel>
+</CustomObject>

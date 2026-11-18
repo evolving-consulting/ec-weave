@@ -1,0 +1,35 @@
+<template>
+  <div class={cardClass}>
+    <div class="comp-card__handle" aria-hidden="true">
+      <svg viewBox="0 0 16 16" width="12" height="12">
+        <circle cx="5" cy="4" r="1.5" fill="currentColor"/>
+        <circle cx="11" cy="4" r="1.5" fill="currentColor"/>
+        <circle cx="5" cy="8" r="1.5" fill="currentColor"/>
+        <circle cx="11" cy="8" r="1.5" fill="currentColor"/>
+        <circle cx="5" cy="12" r="1.5" fill="currentColor"/>
+        <circle cx="11" cy="12" r="1.5" fill="currentColor"/>
+      </svg>
+    </div>
+    <div class="comp-card__body">
+      <span class={typeBadgeClass}>{component.componentType}</span>
+      <strong class="comp-card__name">{component.name}</strong>
+      <span class="comp-card__hint">{contentHint}</span>
+    </div>
+    <div class="comp-card__actions">
+      <lightning-button-icon
+        icon-name="utility:edit"
+        alternative-text="Edit component"
+        variant="bare"
+        size="small"
+        onclick={handleEdit}
+      ></lightning-button-icon>
+      <lightning-button-icon
+        icon-name="utility:delete"
+        alternative-text="Delete component"
+        variant="bare"
+        size="small"
+        onclick={handleDelete}
+      ></lightning-button-icon>
+    </div>
+  </div>
+</template>

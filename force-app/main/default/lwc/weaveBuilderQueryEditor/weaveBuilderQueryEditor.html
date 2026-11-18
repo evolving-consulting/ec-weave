@@ -1,0 +1,141 @@
+<template>
+  <div class="qed-root">
+
+    <!-- Object picker -->
+    <lightning-combobox
+      label="Object"
+      value={_query.soqlObject}
+      options={relatedObjectOptions}
+      onchange={handleObjectChange}
+      required
+    ></lightning-combobox>
+
+    <template if:true={hasObject}>
+
+      <!-- Fields -->
+      <div class="qed-section">
+        <p class="qed-label">Fields</p>
+
+        <!-- Selected chips -->
+        <template if:true={hasSelectedFields}>
+          <div class="qed-chips">
+            <template for:each={selectedFields} for:item="field">
+              <span key={field.apiName} class="qed-chip">
+                {field.label}
+                <template if:false={field.isId}>
+                  <button
+                    class="qed-chip-remove"
+                    data-field={field.apiName}
+                    onclick={handleFieldDeselect}
+                    title="Remove"
+                  >×</button>
+                </template>
+              </span>
+            </template>
+          </div>
+        </template>
+
+        <!-- Search + add fields -->
+        <div class="qed-search-row">
+          <input
+            type="search"
+            class="qed-search"
+            placeholder="Search fields to add…"
+            value={fieldSearchTerm}
+            oninput={handleSearchChange}
+          />
+        </div>
+
+        <template if:true={isLoadingFields}>
+          <p class="qed-hint">Loading fields…</p>
+        </template>
+
+        <template if:true={hasUnselectedFields}>
+          <div class="qed-field-list">
+            <template for:each={unselectedFilteredFields} for:item="field">
+              <button
+                key={field.apiName}
+                class="qed-field-row"
+                data-field={field.apiName}
+                onclick={handleFieldSelect}
+              >
+                <span class="qed-field-label">{field.label}</span>
+                <span class="qed-field-api">{field.apiName}</span>
+              </button>
+            </template>
+          </div>
+        </template>
+      </div>
+
+      <!-- Filter (WHERE clause) -->
+      <div class="qed-section">
+        <p class="qed-label">Filter (WHERE clause)</p>
+        <input
+          type="text"
+          class="qed-search"
+          placeholder="e.g. IsPrimary__c = true OR Status__c = 'Active'"
+          value={filterClause}
+          onchange={handleFilterChange}
+        />
+        <p class="qed-hint">Optional conditions appended after WHERE. Leave blank for no filter.</p>
+      </div>
+
+      <!-- Sort + Limit -->
+      <div class="qed-section">
+        <p class="qed-label">Sort &amp; Limit</p>
+        <div class="qed-row-inline">
+          <lightning-combobox
+            label="Sort Field"
+            value={sortField}
+            options={sortFieldOptions}
+            onchange={handleSortFieldChange}
+          ></lightning-combobox>
+          <lightning-combobox
+            label="Direction"
+            value={sortDirection}
+            options={sortDirectionOptions}
+            onchange={handleSortDirectionChange}
+          ></lightning-combobox>
+          <lightning-input
+            label="Limit"
+            type="number"
+            min="1"
+            max="200"
+            value={queryLimit}
+            onchange={handleLimitChange}
+          ></lightning-input>
+        </div>
+      </div>
+
+      <!-- Generated SOQL -->
+      <div class="qed-section">
+        <p class="qed-label">Generated SOQL</p>
+        <div class="qed-soql-preview">{generatedSoql}</div>
+      </div>
+
+      <!-- Parent Lookup Field — varies by relationship direction -->
+      <template if:true={isUpRelationship}>
+        <div class="qed-section">
+          <p class="qed-label">Relationship</p>
+          <p class="qed-hint qed-hint_up">
+            ↑ Related record — fetched via <strong>{_query.parentLookupField}</strong> on the parent object.
+            The renderer will query: <code>WHERE Id = :[parent.{_query.parentLookupField}]</code>
+          </p>
+        </div>
+      </template>
+      <template if:true={isDownRelationship}>
+        <div class="qed-section">
+          <lightning-combobox
+            label="Parent Lookup Field"
+            value={_query.parentLookupField}
+            options={parentLookupFieldOptions}
+            onchange={handleParentLookupChange}
+            required
+          ></lightning-combobox>
+          <p class="qed-hint">The field on {_query.soqlObject} that relates back to the parent record (e.g. OpportunityId).</p>
+        </div>
+      </template>
+
+    </template>
+  </div>
+</template>

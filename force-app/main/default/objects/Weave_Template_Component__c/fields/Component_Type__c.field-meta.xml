@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Component_Type__c</fullName>
+    <description>The kind of content this component renders.</description>
+    <label>Component Type</label>
+    <required>true</required>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>Text</fullName><default>true</default><label>Text</label></value>
+            <value><fullName>Field Row</fullName><default>false</default><label>Field Row</label></value>
+            <value><fullName>Related Table</fullName><default>false</default><label>Related Table</label></value>
+            <value><fullName>Divider</fullName><default>false</default><label>Divider</label></value>
+            <value><fullName>Spacer</fullName><default>false</default><label>Spacer</label></value>
+            <value><fullName>Image</fullName><default>false</default><label>Image</label></value>
+            <value><fullName>Button</fullName><default>false</default><label>Button</label></value>
+            <value><fullName>HTML Block</fullName><default>false</default><label>HTML Block</label></value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

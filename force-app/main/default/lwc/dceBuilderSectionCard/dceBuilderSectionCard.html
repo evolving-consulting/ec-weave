@@ -1,0 +1,26 @@
+<template>
+  <div class={cardClass}>
+    <div class="section-card__handle" aria-hidden="true">
+      <svg viewBox="0 0 16 16" width="12" height="12">
+        <circle cx="5" cy="4" r="1.5" fill="currentColor"/>
+        <circle cx="11" cy="4" r="1.5" fill="currentColor"/>
+        <circle cx="5" cy="8" r="1.5" fill="currentColor"/>
+        <circle cx="11" cy="8" r="1.5" fill="currentColor"/>
+        <circle cx="5" cy="12" r="1.5" fill="currentColor"/>
+        <circle cx="11" cy="12" r="1.5" fill="currentColor"/>
+      </svg>
+    </div>
+    <div class="section-card__body">
+      <span class={typeBadgeClass}>{section.sectionType}</span>
+      <strong class="section-card__name">{section.sectionName}</strong>
+      <span class="section-card__hint">{contentHint}</span>
+    </div>
+    <lightning-button-icon
+      icon-name="utility:delete"
+      alternative-text="Delete section"
+      variant="bare"
+      size="small"
+      onclick={handleDelete}
+    ></lightning-button-icon>
+  </div>
+</template>

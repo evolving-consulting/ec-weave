@@ -488,17 +488,17 @@ public with sharing class DceTemplateBuilderService {
         if (String.isBlank(sectionDto.sectionType)) {
             throw new AuraHandledException('Section type is required.');
         }
-        if (sectionDto.sectionType == 'Static Text' && String.isBlank(sectionDto.staticContent)) {
-            throw new AuraHandledException('Static Text sections require static content.');
+        if ((sectionDto.sectionType == 'Text' || sectionDto.sectionType == 'Static Text') && String.isBlank(sectionDto.staticContent)) {
+            throw new AuraHandledException('Text sections require static content.');
         }
-        if ((sectionDto.sectionType == 'Text Block' || sectionDto.sectionType == 'Table') && String.isBlank(sectionDto.childObjectApiName)) {
+        if ((sectionDto.sectionType == 'Text Block' || sectionDto.sectionType == 'Related' || sectionDto.sectionType == 'Table') && String.isBlank(sectionDto.childObjectApiName)) {
             throw new AuraHandledException('Select a data source for this section.');
         }
-        if ((sectionDto.sectionType == 'Text Block' || sectionDto.sectionType == 'Table') && String.isBlank(sectionDto.parentLookupFieldApiName)) {
+        if ((sectionDto.sectionType == 'Text Block' || sectionDto.sectionType == 'Related' || sectionDto.sectionType == 'Table') && String.isBlank(sectionDto.parentLookupFieldApiName)) {
             throw new AuraHandledException('Select the lookup field that connects this object to the parent record.');
         }
-        if (sectionDto.sectionType == 'Table' && (sectionDto.fields == null || sectionDto.fields.isEmpty())) {
-            throw new AuraHandledException('Add at least one column before saving this table section.');
+        if ((sectionDto.sectionType == 'Related' || sectionDto.sectionType == 'Table') && (sectionDto.fields == null || sectionDto.fields.isEmpty())) {
+            throw new AuraHandledException('Add at least one column before saving this section.');
         }
         DceHtmlPolicy.assertSafeTemplateHtml(sectionDto.staticContent, 'Section content');
         DceHtmlPolicy.assertSafeTemplateHtml(sectionDto.sectionHeader, 'Section header');

@@ -183,7 +183,7 @@ private class DceTemplateBuilderControllerTest {
         staticSection.sectionKey = 'StaticIntro';
         staticSection.active = true;
         staticSection.displayOrder = 1;
-        staticSection.sectionType = 'Static Text';
+        staticSection.sectionType = 'Text';
         staticSection.staticContent = 'Static intro for {{Name}}';
         dto.sections.add(staticSection);
 
@@ -218,7 +218,7 @@ private class DceTemplateBuilderControllerTest {
         table.sectionKey = 'ContactTable';
         table.active = true;
         table.displayOrder = 3;
-        table.sectionType = 'Table';
+        table.sectionType = 'Related';
         table.childObjectApiName = 'Contact';
         table.parentLookupFieldApiName = 'AccountId';
         table.sortFieldApiName = 'LastName';
@@ -362,7 +362,7 @@ private class DceTemplateBuilderControllerTest {
 
     private static void addReplacementField(List<DceBuilderSectionDTO> sections) {
         for (DceBuilderSectionDTO sectionDto : sections) {
-            if (sectionDto.sectionType == 'Table') {
+            if (sectionDto.sectionType == 'Related') {
                 DceBuilderSectionDTO.DceBuilderColumnDTO field = new DceBuilderSectionDTO.DceBuilderColumnDTO();
                 field.name = 'Replacement Name';
                 field.fieldApiName = 'Name';

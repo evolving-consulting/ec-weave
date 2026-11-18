@@ -1,2 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Section_Type__c</fullName><label>Section Type</label><required>false</required><type>Picklist</type><valueSet><restricted>true</restricted><valueSetDefinition><sorted>false</sorted><value><fullName>Static Text</fullName><default>false</default><label>Static Text</label></value><value><fullName>Text Block</fullName><default>false</default><label>Text Block</label></value><value><fullName>Table</fullName><default>false</default><label>Table</label></value></valueSetDefinition></valueSet></CustomField>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>Section_Type__c</fullName>
+  <label>Section Type</label>
+  <required>false</required>
+  <type>Picklist</type>
+  <valueSet>
+    <restricted>true</restricted>
+    <valueSetDefinition>
+      <sorted>false</sorted>
+      <value><fullName>Text</fullName><default>false</default><label>Text</label></value>
+      <value><fullName>Columns</fullName><default>false</default><label>Columns</label></value>
+      <value><fullName>Static Text</fullName><default>false</default><label>Static Text</label><isActive>false</isActive></value>
+      <value><fullName>Text Block</fullName><default>false</default><label>Text Block</label><isActive>false</isActive></value>
+      <value><fullName>Related</fullName><default>false</default><label>Related</label><isActive>false</isActive></value>
+      <value><fullName>Table</fullName><default>false</default><label>Table</label><isActive>false</isActive></value>
+    </valueSetDefinition>
+  </valueSet>
+</CustomField>

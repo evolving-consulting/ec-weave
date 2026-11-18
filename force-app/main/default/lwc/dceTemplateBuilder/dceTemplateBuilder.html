@@ -1,31 +1,58 @@
 <template>
-  <lightning-card>
-    <div class="builder">
-      <header class="hero">
-        <div class="brand-lockup">
-          <div class="brand-copy">
-            <p class="eyebrow">EC Compose Studio</p>
-            <h1>{title}</h1>
-            <p class="subtitle">
-              Design data-driven communications in a visual canvas or work
-              directly with HTML.
-            </p>
-          </div>
+  <div class="weave-shell">
+
+    <!-- ── Sidebar ───────────────────────────────────────────── -->
+    <nav class="sidebar">
+      <div class="sidebar-brand">
+        <div class="sidebar-mark">
+          <svg viewBox="0 0 24 24" aria-hidden="true" class="sidebar-mark-svg">
+            <line x1="4" y1="4" x2="20" y2="20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="20" y1="4" x2="4" y2="20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
         </div>
-        <div class="hero-actions">
-          <span class="html-ready">Visual + HTML</span>
-          <lightning-badge label={activeLabel}></lightning-badge>
-          <template if:true={isDirty}>
-            <span class="dirty">You have unsaved changes.</span>
-          </template>
-          <lightning-input
-            type="toggle"
-            label="Advanced"
-            checked={advanced}
-            onchange={toggleAdvanced}
-          ></lightning-input>
+        <div class="sidebar-identity">
+          <div class="sidebar-wordmark">weave <span class="ec-chip">EC</span></div>
+          <div class="sidebar-sub">DYNAMIC COMM. ENGINE</div>
         </div>
-      </header>
+      </div>
+
+      <ul class="sidebar-nav-list">
+        <li class={navClassTemplates} data-view="templates" onclick={handleNavClick}>
+          <svg class="nav-icon" viewBox="0 0 20 20" aria-hidden="true">
+            <rect x="2" y="2" width="7" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/>
+            <rect x="11" y="2" width="7" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/>
+            <rect x="2" y="11" width="7" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/>
+            <rect x="11" y="11" width="7" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          </svg>
+          Templates
+        </li>
+        <li class={navClassLearning} data-view="learning" onclick={handleNavClick}>
+          <svg class="nav-icon" viewBox="0 0 20 20" aria-hidden="true">
+            <circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
+            <line x1="10" y1="6" x2="10" y2="11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="10" cy="14" r="1" fill="currentColor"/>
+          </svg>
+          Learning Center
+        </li>
+        <li class={navClassUpdates} data-view="updates" onclick={handleNavClick}>
+          <svg class="nav-icon" viewBox="0 0 20 20" aria-hidden="true">
+            <path d="M10 2 L10 11 M6 7 L10 2 L14 7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <rect x="3" y="12" width="14" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          </svg>
+          Updates
+        </li>
+      </ul>
+
+      <div class="sidebar-footer">
+        <button class="sidebar-link-btn">Request a Feature</button>
+        <button class="sidebar-link-btn">Report a Bug</button>
+        <button class="sidebar-cta-btn" onclick={handleTalkToEC}>Talk to EC</button>
+        <p class="sidebar-credit">An <strong>Evolving Consulting</strong> product</p>
+      </div>
+    </nav>
+
+    <!-- ── Main panel ─────────────────────────────────────────── -->
+    <div class={mainPanelClass}>
 
       <template if:true={isLoading}>
         <lightning-spinner alternative-text="Loading"></lightning-spinner>
@@ -34,1283 +61,937 @@
         <div class="error-panel">{errorMessage}</div>
       </template>
 
-      <template if:true={showWizardChrome}>
-        <div class="wizard-path">
-          <lightning-progress-indicator current-step={currentStep} type="path">
-            <lightning-progress-step
-              label="Template Library"
-              value="library"
-              onclick={goToStep}
-            ></lightning-progress-step>
-            <lightning-progress-step
-              label="Template Details"
-              value="details"
-              onclick={goToStep}
-            ></lightning-progress-step>
-            <lightning-progress-step
-              label="Add Sections"
-              value="sections"
-              onclick={goToStep}
-            ></lightning-progress-step>
-            <lightning-progress-step
-              label="Section Lines"
-              value="lines"
-              onclick={goToStep}
-            ></lightning-progress-step>
-            <lightning-progress-step
-              label="Email Body"
-              value="body"
-              onclick={goToStep}
-            ></lightning-progress-step>
-            <lightning-progress-step
-              label="Recipients"
-              value="recipients"
-              onclick={goToStep}
-            ></lightning-progress-step>
-            <lightning-progress-step
-              label="Post-Send Actions"
-              value="postSendActions"
-              onclick={goToStep}
-            ></lightning-progress-step>
-            <lightning-progress-step
-              label="Preview & Save"
-              value="preview"
-              onclick={goToStep}
-            ></lightning-progress-step>
-          </lightning-progress-indicator>
+      <!-- ── Templates nav ──────────────────────────────────── -->
+      <template if:true={isTemplatesNav}>
+
+        <!-- Library view -->
+        <template if:true={isLibraryView}>
+          <div class="page-header">
+            <div class="page-header-left">
+              <p class="page-eyebrow">WEAVE</p>
+              <h1 class="page-title">Template Library</h1>
+            </div>
+            <div class="page-header-right">
+              <span class="env-badge">● Sandbox</span>
+              <button class="btn-new-template" onclick={openNewTemplateModal}>+ New Template</button>
+            </div>
+          </div>
+
+          <section class="library">
+            <template if:true={showInfoBanner}>
+              <div class="info-banner">
+                <span class="info-banner-text">
+                  Weave builds templates straight from related list data —
+                  true cross-object merge fields, no formula-field workarounds.
+                </span>
+                <button class="banner-close" onclick={dismissInfoBanner}>✕</button>
+              </div>
+            </template>
+
+            <div class="filter-row">
+              <div class="filter-tabs">
+                <button class={filterTabClassAll} data-filter="all" onclick={handleStatusFilter}>All</button>
+                <button class={filterTabClassActive} data-filter="active" onclick={handleStatusFilter}>Active</button>
+                <button class={filterTabClassDraft} data-filter="draft" onclick={handleStatusFilter}>Draft</button>
+                <button class={filterTabClassArchived} data-filter="archived" onclick={handleStatusFilter}>Archived</button>
+              </div>
+              <lightning-input
+                type="search"
+                label="Search templates"
+                value={searchTerm}
+                onchange={handleSearch}
+              ></lightning-input>
+            </div>
+
+            <template if:true={hasTemplates}>
+              <div class="table-wrap">
+                <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                  <thead>
+                    <tr>
+                      <th>TEMPLATE NAME</th>
+                      <th>PARENT OBJECT</th>
+                      <th>STATUS</th>
+                      <th>LAST MODIFIED</th>
+                      <th>ACTIONS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template for:each={filteredTemplates} for:item="row">
+                      <tr key={row.id}>
+                        <td>
+                          <strong>{row.name}</strong>
+                          <p class="muted">{row.description}</p>
+                        </td>
+                        <td>{row.parentObjectLabel}</td>
+                        <td><span class={row.statusClass}>{row.statusLabel}</span></td>
+                        <td>{row.lastModifiedDisplay}</td>
+                        <td>
+                          <div class="row-actions">
+                            <button class="action-link edit-link" data-id={row.id} onclick={openTemplate}>Edit</button>
+                            <button class="action-link clone-link" data-id={row.id} onclick={cloneTemplate}>Clone</button>
+                            <button class="action-link delete-link" data-id={row.id} onclick={deleteTemplateFromLibrary}>Delete</button>
+                          </div>
+                        </td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </div>
+            </template>
+            <template if:false={hasTemplates}>
+              <div class="empty-state">
+                <h2>Your communication canvas is ready.</h2>
+                <p>Create your first reusable visual or HTML template.</p>
+              </div>
+            </template>
+          </section>
+        </template>
+        <!-- end isLibraryView -->
+
+        <!-- Editor view -->
+        <template if:true={isEditorView}>
+          <div class="editor-view">
+
+            <!-- Editor header bar -->
+            <div class="editor-header">
+              <button class="editor-back-btn" onclick={backToLibrary}>&#8592; Library</button>
+              <div class="editor-identity">
+                <span class="editor-template-name">{template.name}</span>
+                <span class={templateStatusPillClass}>{template.status}</span>
+              </div>
+              <nav class="editor-tabs">
+                <button class={tabClass_settings} data-tab="settings" onclick={handleTabClick}>Settings</button>
+                <button class={tabClass_queryBuilder} data-tab="queryBuilder" onclick={handleTabClick}>Query Builder</button>
+                <button class={tabClass_bodyBuilder} data-tab="bodyBuilder" onclick={handleTabClick}>Body Builder</button>
+                <button class={tabClass_recipients} data-tab="recipients" onclick={handleTabClick}>Recipients</button>
+                <button class={tabClass_postSendActions} data-tab="postSendActions" onclick={handleTabClick}>Post-Send Actions</button>
+                <button class={tabClass_attachments} data-tab="attachments" onclick={handleTabClick}>Attachments</button>
+                <button class={tabClass_preview} data-tab="preview" onclick={handleTabClick}>Preview</button>
+              </nav>
+              <div class="editor-header-actions">
+                <template if:true={isDirty}>
+                  <span class="dirty-indicator">Unsaved changes</span>
+                </template>
+                <button class="btn-save-template" disabled={isLoading} onclick={saveFinal}>Save</button>
+              </div>
+            </div>
+
+            <!-- Settings tab -->
+            <template if:true={isSettingsTab}>
+              <div class="tab-panel">
+                <div class="form-grid">
+                  <lightning-input name="name" label="Template Name" required value={template.name} onchange={handleTemplateChange}></lightning-input>
+                  <lightning-input name="apiName" label="Template API Name" value={template.apiName} readonly={isApiNameReadonly} onchange={handleTemplateChange}></lightning-input>
+                  <lightning-combobox label="Parent Object" required value={template.parentObjectApiName} options={objectOptions} onchange={handleParentObjectChange}></lightning-combobox>
+                  <lightning-combobox name="status" label="Status" value={template.status} options={statusOptions} onchange={handleTemplateChange}></lightning-combobox>
+                  <lightning-textarea class="form-full-width" name="description" label="Description" value={template.description} onchange={handleTemplateChange}></lightning-textarea>
+                  <lightning-combobox name="defaultFromEmail" label="Default From Email" value={template.defaultFromEmail} options={orgWideEmailOptions} onchange={handleTemplateChange}></lightning-combobox>
+                  <lightning-input type="checkbox" name="storeEmailHistory" label="Store Email History" checked={template.storeEmailHistory} onchange={handleTemplateChecked}></lightning-input>
+                  <lightning-input type="checkbox" name="allowUserEditBeforeSend" label="Allow User Edit Before Send" checked={template.allowUserEditBeforeSend} onchange={handleTemplateChecked}></lightning-input>
+                </div>
+              </div>
+            </template>
+
+            <!-- Query Builder tab -->
+            <template if:true={isQueryBuilderTab}>
+              <div class="tab-panel tab-panel_full">
+                <div class="qb-layout">
+
+                  <!-- Left: object list -->
+                  <div class="qb-picker-panel">
+                    <div class="qb-panel-header">
+                      <h3>Objects</h3>
+                    </div>
+
+                    <!-- Object cards -->
+                    <template for:each={queryBuilderObjects} for:item="obj">
+                      <div class="qb-object-card" key={obj.id}>
+                        <div class="qb-object-card-header">
+                          <span class="qb-object-name">{obj.label}</span>
+                          <template if:true={obj.isParent}>
+                            <span class="qb-parent-badge">Parent</span>
+                          </template>
+                          <div class="qb-object-actions">
+                            <button class="qb-edit-btn" data-id={obj.id} onclick={handleQbEditObject}>Edit Fields</button>
+                            <template if:false={obj.isParent}>
+                              <button class="qb-remove-obj-btn" data-id={obj.id} onclick={handleQbRemoveObject} title="Remove object">×</button>
+                            </template>
+                          </div>
+                        </div>
+                        <div class="qb-object-fields-preview">
+                          <template if:true={obj.fields.length}>
+                            <template for:each={obj.fields} for:item="field">
+                              <span class="qb-field-chip" key={field.apiName}>{field.label}</span>
+                            </template>
+                          </template>
+                          <template if:false={obj.fields.length}>
+                            <span class="qb-no-fields">No fields selected — click Edit Fields</span>
+                          </template>
+                        </div>
+                      </div>
+                    </template>
+
+                    <!-- Add related object -->
+                    <template if:true={hasAvailableRelatedObjects}>
+                      <div class="qb-add-object-row">
+                        <lightning-combobox
+                          label="Add Related Object"
+                          value=""
+                          options={availableRelatedObjects}
+                          placeholder="Select a related object to add…"
+                          onchange={handleQbAddRelatedObject}
+                        ></lightning-combobox>
+                      </div>
+                    </template>
+
+                    <template if:false={queryBuilderObjects.length}>
+                      <div class="empty-state small">Switch to the Settings tab to select a parent object first.</div>
+                    </template>
+
+                  </div>
+
+                  <!-- Right: merge tags sheet -->
+                  <div class="qb-tags-panel">
+                    <div class="qb-panel-header">
+                      <h3>Merge Tags</h3>
+                      <span class="qb-tags-count">{queryBuilderFieldCount} selected</span>
+                    </div>
+                    <template if:true={hasCopyPasteTags}>
+                      <template for:each={copyPasteTagGroups} for:item="group">
+                        <div class="qb-tag-group" key={group.name}>
+                          <div class="qb-tag-group-name">{group.name}</div>
+                          <template for:each={group.tags} for:item="tag">
+                            <div class="qb-tag-row" key={tag.apiName}>
+                              <code class="qb-tag-code">{tag.tag}</code>
+                              <span class="qb-tag-label">{tag.label}</span>
+                              <button class="qb-copy-btn" data-tag={tag.tag} onclick={copyMergeTag}>Copy</button>
+                            </div>
+                          </template>
+                        </div>
+                      </template>
+                    </template>
+                    <template if:false={hasCopyPasteTags}>
+                      <div class="empty-state small">Edit fields on an object card to generate merge tags.</div>
+                    </template>
+                  </div>
+
+                </div>
+              </div>
+
+              <!-- Field picker modal -->
+              <template if:true={showQbFieldModal}>
+                <div class="qb-modal-backdrop" onclick={handleQbModalCancel}>
+                  <div class="qb-modal" onclick={stopPropagation}>
+                    <div class="qb-modal-header">
+                      <h3>{qbEditingObject.label} — Select Fields</h3>
+                      <button class="qb-modal-close" onclick={handleQbModalCancel} title="Close">×</button>
+                    </div>
+                    <div class="qb-modal-search">
+                      <lightning-input
+                        type="search"
+                        label="Search fields"
+                        variant="label-hidden"
+                        placeholder="Search fields…"
+                        value={qbModalSearch}
+                        onchange={handleQbModalSearch}
+                      ></lightning-input>
+                    </div>
+                    <div class="qb-modal-fields">
+                      <template if:true={qbModalFieldsLoading}>
+                        <div class="qb-modal-loading">
+                          <lightning-spinner size="small" alternative-text="Loading fields"></lightning-spinner>
+                        </div>
+                      </template>
+                      <template for:each={qbModalFields} for:item="field">
+                        <div class="qb-modal-field-row" key={field.apiName}>
+                          <input
+                            type="checkbox"
+                            class="qb-field-checkbox"
+                            data-apiname={field.apiName}
+                            data-label={field.label}
+                            checked={field.isSelected}
+                            onchange={toggleQbModalField}
+                          />
+                          <span class="qb-field-label">{field.label}</span>
+                          <span class="qb-field-api">{field.apiName}</span>
+                        </div>
+                      </template>
+                    </div>
+                    <div class="qb-modal-footer">
+                      <button class="qb-btn-cancel" onclick={handleQbModalCancel}>Cancel</button>
+                      <button class="qb-btn-save" onclick={handleQbModalSave}>Save</button>
+                    </div>
+                  </div>
+                </div>
+              </template>
+
+            </template>
+            <!-- end isQueryBuilderTab -->
+
+            <!-- Body Builder tab -->
+            <template if:true={isBodyBuilderTab}>
+              <div class="builder-layout builder-layout_3col">
+
+                <!-- Left: component palette -->
+                <aside class="builder-palette">
+                  <div class="palette-title">Components</div>
+                  <div class="palette-item" draggable="true" data-type="Text" ondragstart={handlePaletteDragStart}>
+                    <span class="palette-icon palette-icon_text">¶</span>
+                    <div class="palette-item-body">
+                      <strong>Text</strong>
+                      <span>HTML with merge tags</span>
+                    </div>
+                  </div>
+                  <div class="palette-item" draggable="true" data-type="Columns" ondragstart={handlePaletteDragStart}>
+                    <span class="palette-icon palette-icon_columns">⊞</span>
+                    <div class="palette-item-body">
+                      <strong>Columns</strong>
+                      <span>Multi-column layout</span>
+                    </div>
+                  </div>
+                  <div class="palette-hint">Drag onto canvas or click to add</div>
+                  <div class="palette-add-btns">
+                    <button class="palette-add-btn" data-type="Text" onclick={handlePaletteAddClick}>+ Text</button>
+                    <button class="palette-add-btn" data-type="Columns" data-columns="2" onclick={handleColumnsAdd}>+ 2 Col</button>
+                    <button class="palette-add-btn" data-type="Columns" data-columns="3" onclick={handleColumnsAdd}>+ 3 Col</button>
+                    <button class="palette-add-btn" data-type="Columns" data-columns="4" onclick={handleColumnsAdd}>+ 4 Col</button>
+                  </div>
+                </aside>
+
+                <!-- Center: email canvas -->
+                <main
+                  class={canvasClass}
+                  ondragover={handleCanvasDragOver}
+                  ondragleave={handleCanvasDragLeave}
+                  ondrop={handleCanvasDrop}
+                >
+                  <!-- Header zone -->
+                  <div class="canvas-zone canvas-zone_header" onclick={openHeaderFooterModal}>
+                    <span class="canvas-zone-label">Header</span>
+                    <template if:true={template.headerContent}>
+                      <lightning-formatted-rich-text value={template.headerContent}></lightning-formatted-rich-text>
+                    </template>
+                    <template if:false={template.headerContent}>
+                      <span class="canvas-zone-hint">Click to edit header</span>
+                    </template>
+                  </div>
+
+                  <!-- Subject bar -->
+                  <div class="canvas-subject-bar">
+                    <span class="canvas-subject-label">Subject</span>
+                    <lightning-input
+                      name="subjectTemplate"
+                      label="Subject Template"
+                      variant="label-hidden"
+                      placeholder="Enter subject with {{merge fields}}"
+                      value={template.subjectTemplate}
+                      onchange={handleTemplateChange}
+                    ></lightning-input>
+                    <lightning-combobox
+                      label="Insert Field"
+                      variant="label-hidden"
+                      placeholder="+ Field"
+                      options={parentFieldOptions}
+                      onchange={insertSubjectField}
+                    ></lightning-combobox>
+                  </div>
+
+                  <!-- Sections list (drag targets) -->
+                  <div class="canvas-sections-header">
+                    <span>Sections</span>
+                    <span class="canvas-sections-hint">{hasSections ? '' : 'Drag a component above to add'}</span>
+                  </div>
+                  <div class="canvas-sections-list">
+                    <template for:each={sectionsForCanvas} for:item="cs">
+                      <div
+                        key={cs.localKey}
+                        class={cs.wrapClass}
+                        data-key={cs.localKey}
+                        ondragover={handleSectionDragOver}
+                        ondragleave={handleSectionDragLeave}
+                        ondrop={handleSectionDrop}
+                      >
+                        <c-dce-builder-section-card
+                          section={cs}
+                          draggable="true"
+                          data-key={cs.localKey}
+                          onclick={handleCanvasSectionClick}
+                          ondragstart={handleSectionDragStart}
+                          onsectiondelete={handleSectionDeleteFromCanvas}
+                        ></c-dce-builder-section-card>
+                      </div>
+                    </template>
+
+                    <div
+                      class={endDropZoneClass}
+                      ondragover={handleEndDropZoneDragOver}
+                      ondragleave={handleEndDropZoneDragLeave}
+                      ondrop={handleEndDropZoneDrop}
+                    >
+                      <span>↓ Drop here to add at end</span>
+                    </div>
+                  </div>
+
+                  <!-- Footer zone -->
+                  <div class="canvas-zone canvas-zone_footer" onclick={openHeaderFooterModal}>
+                    <span class="canvas-zone-label">Footer</span>
+                    <template if:true={template.footerContent}>
+                      <lightning-formatted-rich-text value={template.footerContent}></lightning-formatted-rich-text>
+                    </template>
+                    <template if:false={template.footerContent}>
+                      <span class="canvas-zone-hint">Click to edit footer</span>
+                    </template>
+                  </div>
+                </main>
+
+                <!-- Right: properties panel -->
+                <aside class="builder-props">
+                  <template if:true={selectedSection}>
+                    <div class="props-header">
+                      <span class={selectedSectionTypeBadgeClass}>{selectedSection.sectionType}</span>
+                      <button class="icon-btn" title="Close" onclick={clearSectionSelection}>×</button>
+                    </div>
+
+                    <div class="props-group">
+                      <lightning-input name="sectionName" label="Section Name" value={selectedSection.sectionName} onchange={handleSectionChange}></lightning-input>
+                      <lightning-input name="sectionKey" label="Section Key" value={selectedSection.sectionKey} onchange={handleSectionChange}></lightning-input>
+                    </div>
+
+                    <!-- Text section -->
+                    <template if:true={isSelectedTextSection}>
+                      <div class="props-group">
+                        <div class="config-group-header">
+                          <span class="props-group-title">Content</span>
+                          <lightning-radio-group
+                            name="textEditorMode"
+                            label="Editor Mode"
+                            variant="label-hidden"
+                            value={selectedSectionEditorMode}
+                            options={editorModeOptions}
+                            type="button"
+                            onchange={handleSectionEditorModeChange}
+                          ></lightning-radio-group>
+                        </div>
+                        <template if:true={hasQueryBuilderFields}>
+                          <div class="field-insert-toolbar">
+                            <lightning-combobox
+                              label="Insert Tag"
+                              variant="label-hidden"
+                              placeholder="↗ Insert merge tag"
+                              options={queryBuilderTagOptions}
+                              onchange={insertTagIntoSection}
+                            ></lightning-combobox>
+                          </div>
+                        </template>
+                        <template if:true={isTextSectionVisualMode}>
+                          <lightning-input-rich-text
+                            name="staticContent"
+                            label="Content"
+                            value={selectedSection.staticContent}
+                            onchange={handleSectionChange}
+                          ></lightning-input-rich-text>
+                        </template>
+                        <template if:false={isTextSectionVisualMode}>
+                          <lightning-textarea
+                            class="html-source-editor"
+                            name="staticContent"
+                            label="HTML Source"
+                            max-length="1000000"
+                            value={selectedSection.staticContent}
+                            onchange={handleSectionChange}
+                          ></lightning-textarea>
+                        </template>
+                      </div>
+                    </template>
+
+                    <!-- Columns section -->
+                    <template if:true={isSelectedColumnsSection}>
+                      <div class="props-group">
+                        <lightning-radio-group
+                          name="columnCount"
+                          label="Column Count"
+                          value={selectedColumnsCountStr}
+                          options={columnCountOptions}
+                          type="button"
+                          onchange={handleColumnCountChange}
+                        ></lightning-radio-group>
+                      </div>
+                      <template for:each={selectedSectionColumns} for:item="col">
+                        <div class="props-group" key={col.localKey}>
+                          <label class="props-group-title">Column {col.colIndex}</label>
+                          <lightning-textarea
+                            name="content"
+                            label="Content"
+                            data-col-key={col.localKey}
+                            value={col.content}
+                            onchange={handleColumnContentChange}
+                          ></lightning-textarea>
+                        </div>
+                      </template>
+                    </template>
+
+                  </template>
+                  <template if:false={selectedSection}>
+                    <div class="empty-state">Select a block on the canvas to edit it.</div>
+                  </template>
+                </aside>
+
+              </div>
+            </template>
+            <!-- end isBodyBuilderTab -->
+
+            <!-- Recipients tab -->
+            <template if:true={isRecipientsTab}>
+              <div class="tab-panel">
+                <div class="tab-panel-header">
+                  <h2>Recipients</h2>
+                  <p class="muted">Configure who should receive emails generated from this template.</p>
+                </div>
+                <div class="split">
+                  <aside class="list-panel">
+                    <div class="panel-title">
+                      <h3>Rules</h3>
+                      <lightning-button label="Add Recipient" onclick={addRecipient}></lightning-button>
+                    </div>
+                    <template for:each={template.recipients} for:item="recipient">
+                      <article class="select-card" key={recipient.localKey} data-key={recipient.localKey} onclick={selectRecipient}>
+                        <strong>{recipient.recipientType}</strong>
+                        <span>{recipient.recipientSourceType}</span>
+                        <lightning-button-icon icon-name="utility:delete" alternative-text="Delete" data-key={recipient.localKey} onclick={deleteRecipient}></lightning-button-icon>
+                      </article>
+                    </template>
+                  </aside>
+                  <main class="edit-panel">
+                    <template if:true={selectedRecipient}>
+                      <div class="form-grid">
+                        <lightning-input name="name" label="Rule Name" value={selectedRecipient.name} onchange={handleRecipientChange}></lightning-input>
+                        <lightning-combobox name="recipientSourceType" label="Source" value={selectedRecipient.recipientSourceType} options={recipientSourceOptions} onchange={handleRecipientChange}></lightning-combobox>
+                        <lightning-combobox name="recipientType" label="Recipient Type" value={selectedRecipient.recipientType} options={recipientTypeOptions} onchange={handleRecipientChange}></lightning-combobox>
+                        <lightning-input type="checkbox" name="defaultSelected" label="Default Selected" checked={selectedRecipient.defaultSelected} onchange={handleRecipientChecked}></lightning-input>
+                        <lightning-input type="checkbox" name="allowMultiple" label="Allow Multiple" checked={selectedRecipient.allowMultiple} onchange={handleRecipientChecked}></lightning-input>
+                        <lightning-input type="checkbox" name="required" label="Required" checked={selectedRecipient.required} onchange={handleRecipientChecked}></lightning-input>
+                      </div>
+                      <template if:true={isParentRecipient}>
+                        <div class="form-grid">
+                          <lightning-combobox name="nameFieldApiName" label="Name Field" value={selectedRecipient.nameFieldApiName} options={parentFieldOptions} onchange={handleRecipientChange}></lightning-combobox>
+                          <lightning-combobox name="emailFieldApiName" label="Email Field" value={selectedRecipient.emailFieldApiName} options={parentFieldOptions} onchange={handleRecipientChange}></lightning-combobox>
+                        </div>
+                      </template>
+                      <template if:true={isRelatedRecipient}>
+                        <div class="form-grid">
+                          <lightning-combobox name="sourceObjectApiName" label="Source Object" value={selectedRecipient.sourceObjectApiName} options={objectOptions} onchange={handleRecipientChange}></lightning-combobox>
+                          <lightning-combobox name="parentLookupFieldApiName" label="Parent Lookup Field" value={selectedRecipient.parentLookupFieldApiName} options={recipientLookupFieldOptions} onchange={handleRecipientChange}></lightning-combobox>
+                          <lightning-combobox name="nameFieldApiName" label="Name Field" value={selectedRecipient.nameFieldApiName} options={recipientFieldOptions} onchange={handleRecipientChange}></lightning-combobox>
+                          <lightning-combobox name="emailFieldApiName" label="Email Field" value={selectedRecipient.emailFieldApiName} options={recipientFieldOptions} onchange={handleRecipientChange}></lightning-combobox>
+                        </div>
+                        <div class="filter-box">
+                          <h3>Filter Builder</h3>
+                          <div class="filter-row-fields">
+                            <lightning-combobox name="field" label="Field" value={recipientFilterDraft.field} options={recipientFieldOptions} onchange={handleRecipientFilterChange}></lightning-combobox>
+                            <lightning-combobox name="operator" label="Operator" value={recipientFilterDraft.operator} options={filterOperatorOptions} onchange={handleRecipientFilterChange}></lightning-combobox>
+                            <lightning-input name="value" label="Value" value={recipientFilterDraft.value} onchange={handleRecipientFilterChange}></lightning-input>
+                            <lightning-button label="Add Filter" onclick={addRecipientFilterCondition}></lightning-button>
+                          </div>
+                          <div class="query-preview">
+                            <span>{selectedRecipient.filterLogic}</span>
+                            <lightning-button label="Clear" onclick={clearRecipientFilter}></lightning-button>
+                          </div>
+                        </div>
+                      </template>
+                      <template if:true={isManualRecipient}>
+                        <div class="empty-state small">Manual recipients will be entered by the sender at runtime.</div>
+                      </template>
+                    </template>
+                    <template if:false={selectedRecipient}>
+                      <div class="empty-state">Select or add a recipient rule.</div>
+                    </template>
+                  </main>
+                </div>
+              </div>
+            </template>
+
+            <!-- Post-Send Actions tab -->
+            <template if:true={isPostSendActionsTab}>
+              <div class="tab-panel">
+                <div class="tab-panel-header">
+                  <h2>Post-Send Actions</h2>
+                  <p class="muted">Configure actions that run automatically after the email sends successfully.</p>
+                </div>
+                <div class="split">
+                  <aside class="list-panel">
+                    <div class="panel-title">
+                      <h3>Actions</h3>
+                      <lightning-button label="Add Action" onclick={addPostSendAction}></lightning-button>
+                    </div>
+                    <template for:each={template.postSendActions} for:item="action">
+                      <article class="select-card action-card" key={action.localKey} data-key={action.localKey} onclick={selectPostSendAction}>
+                        <strong>{action.actionType}</strong>
+                        <span>Run Order {action.runOrder}</span>
+                        <span>{action.fieldLabel}{action.subject}</span>
+                        <div class="row-actions">
+                          <lightning-button-icon icon-name="utility:up" alternative-text="Move Up" data-key={action.localKey} onclick={movePostSendActionUp}></lightning-button-icon>
+                          <lightning-button-icon icon-name="utility:down" alternative-text="Move Down" data-key={action.localKey} onclick={movePostSendActionDown}></lightning-button-icon>
+                          <lightning-button-icon icon-name="utility:delete" alternative-text="Delete" data-key={action.localKey} onclick={deletePostSendAction}></lightning-button-icon>
+                        </div>
+                      </article>
+                    </template>
+                  </aside>
+                  <main class="edit-panel">
+                    <template if:true={selectedAction}>
+                      <div class="form-grid">
+                        <lightning-input type="checkbox" name="active" label="Active" checked={selectedAction.active} onchange={handlePostSendActionChecked}></lightning-input>
+                        <lightning-input name="runOrder" type="number" label="Run Order" value={selectedAction.runOrder} onchange={handlePostSendActionChange}></lightning-input>
+                        <lightning-combobox name="actionType" label="Action Type" value={selectedAction.actionType} options={postSendActionTypeOptions} onchange={handlePostSendActionChange}></lightning-combobox>
+                      </div>
+                      <template if:true={isSelectedUpdateFieldAction}>
+                        <div class="form-grid">
+                          <lightning-combobox name="fieldApiName" label="Field API Name" value={selectedAction.fieldApiName} options={updateableParentFieldOptions} onchange={handlePostSendActionChange}></lightning-combobox>
+                          <lightning-combobox name="valueType" label="Value Type" value={selectedAction.valueType} options={postSendValueTypeOptions} onchange={handlePostSendActionChange}></lightning-combobox>
+                          <lightning-input name="value" label="Value" value={selectedAction.value} onchange={handlePostSendActionChange}></lightning-input>
+                        </div>
+                        <lightning-combobox label="Insert Parent Merge Field" options={parentFieldOptions} onchange={insertPostSendActionMergeField}></lightning-combobox>
+                      </template>
+                      <template if:true={isSelectedCreateTaskAction}>
+                        <div class="form-grid">
+                          <lightning-input name="subject" label="Subject" value={selectedAction.subject} onchange={handlePostSendActionChange}></lightning-input>
+                          <lightning-combobox name="assignedToType" label="Assigned To" value={selectedAction.assignedToType} options={taskAssignedToOptions} onchange={handlePostSendActionChange}></lightning-combobox>
+                          <template if:true={isSelectedSpecificUserTask}>
+                            <lightning-record-picker label="Specific User" object-api-name="User" value={selectedAction.assignedUserId} onchange={handleAssignedUserChange}></lightning-record-picker>
+                          </template>
+                          <lightning-combobox name="dueDateStrategy" label="Due Date Type" value={selectedAction.dueDateStrategy} options={taskDueDateStrategyOptions} onchange={handlePostSendActionChange}></lightning-combobox>
+                          <lightning-input name="daysAfterSend" type="number" label="Days After Send" value={selectedAction.daysAfterSend} onchange={handlePostSendActionChange}></lightning-input>
+                          <lightning-combobox name="status" label="Status" value={selectedAction.status} options={taskStatusOptions} onchange={handlePostSendActionChange}></lightning-combobox>
+                          <lightning-combobox name="priority" label="Priority" value={selectedAction.priority} options={taskPriorityOptions} onchange={handlePostSendActionChange}></lightning-combobox>
+                        </div>
+                        <lightning-textarea name="comments" label="Comments" value={selectedAction.comments} onchange={handlePostSendActionChange}></lightning-textarea>
+                      </template>
+                    </template>
+                    <template if:false={selectedAction}>
+                      <div class="empty-state">Add or select a post-send action.</div>
+                    </template>
+                  </main>
+                </div>
+              </div>
+            </template>
+
+            <!-- Attachments tab -->
+            <template if:true={isAttachmentsTab}>
+              <div class="tab-panel">
+                <div class="tab-panel-header">
+                  <h2>Attachments</h2>
+                  <p class="muted">Configure files that are automatically attached when this template is sent.</p>
+                </div>
+                <div class="split">
+                  <aside class="list-panel">
+                    <div class="panel-title">
+                      <h3>Attachments</h3>
+                      <lightning-button label="Add Attachment" onclick={addAttachment}></lightning-button>
+                    </div>
+                    <template for:each={template.attachments} for:item="att">
+                      <article class="select-card" key={att.localKey} data-key={att.localKey} onclick={selectAttachment}>
+                        <strong>{att.attachmentSource}</strong>
+                        <span class="muted">{att.fileTitleFilter}</span>
+                        <div class="row-actions">
+                          <lightning-button-icon icon-name="utility:delete" alternative-text="Delete" data-key={att.localKey} onclick={deleteAttachment}></lightning-button-icon>
+                        </div>
+                      </article>
+                    </template>
+                    <template if:false={hasAttachments}>
+                      <div class="empty-state">No attachments configured.</div>
+                    </template>
+                  </aside>
+                  <main class="edit-panel">
+                    <template if:true={selectedAttachment}>
+                      <div class="form-grid">
+                        <lightning-input type="checkbox" name="active" label="Active" checked={selectedAttachment.active} onchange={handleAttachmentChecked}></lightning-input>
+                        <lightning-input name="displayOrder" type="number" label="Display Order" value={selectedAttachment.displayOrder} onchange={handleAttachmentChange}></lightning-input>
+                        <lightning-combobox name="attachmentSource" label="Attachment Source" value={selectedAttachment.attachmentSource} options={attachmentSourceOptions} onchange={handleAttachmentChange}></lightning-combobox>
+                      </div>
+                      <template if:true={isStaticAttachment}>
+                        <div class="form-grid">
+                          <lightning-input name="staticContentDocumentId" label="Content Document ID" value={selectedAttachment.staticContentDocumentId} onchange={handleAttachmentChange}></lightning-input>
+                        </div>
+                      </template>
+                      <template if:true={isRelatedRecordAttachment}>
+                        <div class="form-grid">
+                          <lightning-combobox name="linkedQueryId" label="Linked Query" value={selectedAttachment.linkedQueryId} options={queryOptions} onchange={handleAttachmentChange}></lightning-combobox>
+                        </div>
+                      </template>
+                      <template if:false={isStaticAttachment}>
+                        <div class="form-grid">
+                          <lightning-input name="fileTitleFilter" label="File Title Filter (LIKE)" value={selectedAttachment.fileTitleFilter} onchange={handleAttachmentChange}></lightning-input>
+                          <lightning-input name="maxAttachments" type="number" label="Max Attachments" value={selectedAttachment.maxAttachments} onchange={handleAttachmentChange}></lightning-input>
+                        </div>
+                      </template>
+                    </template>
+                    <template if:false={selectedAttachment}>
+                      <div class="empty-state">Add or select an attachment config.</div>
+                    </template>
+                  </main>
+                </div>
+              </div>
+            </template>
+
+            <!-- Preview tab -->
+            <template if:true={isPreviewTab}>
+              <div class="tab-panel">
+                <div class="tab-panel-header">
+                  <h2>Preview</h2>
+                  <p class="muted">Save the template, then preview it against a real record.</p>
+                </div>
+                <div class="preview-grid">
+                  <div class="preview-controls">
+                    <template if:true={template.parentObjectApiName}>
+                      <lightning-record-picker label="Preview Record" object-api-name={template.parentObjectApiName} onchange={handlePreviewRecordChange}></lightning-record-picker>
+                    </template>
+                    <lightning-button label="Refresh Preview" disabled={previewDisabled} onclick={refreshPreview}></lightning-button>
+                    <template if:false={template.id}>
+                      <p class="muted">Save the template before previewing.</p>
+                    </template>
+                  </div>
+                  <div class="preview-panel">
+                    <h3>{previewSubject}</h3>
+                    <lightning-formatted-rich-text value={previewBody}></lightning-formatted-rich-text>
+                  </div>
+                </div>
+              </div>
+            </template>
+
+          </div>
+          <!-- end editor-view -->
+        </template>
+        <!-- end isEditorView -->
+
+      </template>
+      <!-- end isTemplatesNav -->
+
+      <!-- ── Learning Center nav ─────────────────────────────── -->
+      <template if:true={isLearningNav}>
+        <div class="page-header">
+          <div class="page-header-left">
+            <p class="page-eyebrow">WEAVE</p>
+            <h1 class="page-title">Learning Center</h1>
+          </div>
+        </div>
+        <div class="empty-state">
+          <h2>Coming Soon</h2>
+          <p>Guides and tutorials for EC Weave will appear here.</p>
         </div>
       </template>
 
-      <template if:true={isLibraryStep}>
-        <section class="library">
-          <div class="library-toolbar">
-            <lightning-button
-              variant="brand"
-              label="+ New Template"
-              onclick={startNewTemplate}
-            ></lightning-button>
-            <lightning-input
-              type="search"
-              label="Search templates"
-              value={searchTerm}
-              onchange={handleSearch}
-            ></lightning-input>
+      <!-- ── Updates nav ────────────────────────────────────── -->
+      <template if:true={isUpdatesNav}>
+        <div class="page-header">
+          <div class="page-header-left">
+            <p class="page-eyebrow">WEAVE</p>
+            <h1 class="page-title">Updates</h1>
           </div>
-          <template if:true={hasTemplates}>
-            <div class="table-wrap">
-              <table
-                class="slds-table slds-table_cell-buffer slds-table_bordered"
-              >
-                <thead>
-                  <tr>
-                    <th>Template Name</th>
-                    <th>Parent Object</th>
-                    <th>Status</th>
-                    <th>Last Modified</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <template for:each={filteredTemplates} for:item="row">
-                    <tr key={row.id}>
-                      <td>
-                        <strong>{row.name}</strong>
-                        <p class="muted">{row.description}</p>
-                      </td>
-                      <td>{row.parentObjectLabel}</td>
-                      <td>
-                        <lightning-badge
-                          label={row.statusLabel}
-                        ></lightning-badge>
-                      </td>
-                      <td>{row.lastModifiedDisplay}</td>
-                      <td>
-                        <div class="row-actions">
-                          <lightning-button
-                            label="Edit"
-                            data-id={row.id}
-                            onclick={openTemplate}
-                          ></lightning-button>
-                          <lightning-button
-                            label="Delete"
-                            data-id={row.id}
-                            onclick={deleteTemplateFromLibrary}
-                          ></lightning-button>
-                        </div>
-                      </td>
-                    </tr>
-                  </template>
-                </tbody>
-              </table>
-            </div>
-          </template>
-          <template if:false={hasTemplates}>
-            <div class="empty-state">
-              <h2>Your communication canvas is ready.</h2>
-              <p>Create your first reusable visual or HTML template.</p>
-            </div>
-          </template>
-        </section>
+        </div>
+        <div class="empty-state">
+          <h2>No updates yet</h2>
+          <p>Release notes and product updates will appear here.</p>
+        </div>
       </template>
 
-      <template if:true={isDetailsStep}>
-        <section class="step-card">
-          <div class="step-heading">
-            <span class="step-number">2</span>
-            <div>
-              <h2>Template Details</h2>
-              <p>
-                Choose the parent object and default behavior for this email
-                template.
-              </p>
-            </div>
-          </div>
-          <div class="form-grid">
-            <lightning-input
-              name="name"
-              label="Template Name"
-              required
-              value={template.name}
-              onchange={handleTemplateChange}
-            ></lightning-input>
-            <lightning-combobox
-              label="Parent Object"
-              required
-              value={template.parentObjectApiName}
-              options={objectOptions}
-              onchange={handleParentObjectChange}
-            ></lightning-combobox>
-            <lightning-textarea
-              name="description"
-              label="Description"
-              value={template.description}
-              onchange={handleTemplateChange}
-            ></lightning-textarea>
-            <lightning-combobox
-              name="defaultFromEmail"
-              label="Default From Email"
-              value={template.defaultFromEmail}
-              options={orgWideEmailOptions}
-              onchange={handleTemplateChange}
-            ></lightning-combobox>
-            <lightning-input
-              type="checkbox"
-              name="active"
-              label="Active"
-              checked={template.active}
-              onchange={handleTemplateChecked}
-            ></lightning-input>
-            <lightning-input
-              type="checkbox"
-              name="allowUserEditBeforeSend"
-              label="Allow User Edit Before Send"
-              checked={template.allowUserEditBeforeSend}
-              onchange={handleTemplateChecked}
-            ></lightning-input>
-            <lightning-input
-              type="checkbox"
-              name="storeEmailHistory"
-              label="Store Email History"
-              checked={template.storeEmailHistory}
-              onchange={handleTemplateChecked}
-            ></lightning-input>
-          </div>
-          <section class="branding-section">
-            <h3>Email Branding (Header & Footer)</h3>
-            <p class="muted">
-              Choose Visual for formatting tools or HTML Source for direct
-              control. Switching modes keeps the same HTML. Images must use a
-              public HTTPS URL.
-            </p>
-            <template if:true={showStarterHeaderButton}>
-              <lightning-button
-                label="Insert Starter Header"
-                onclick={insertStarterHeader}
-              ></lightning-button>
-            </template>
-            <lightning-combobox
-              label="Insert Header Field"
-              placeholder="Select a sender, owner, organization, or record field"
-              options={headerFooterFieldOptions}
-              onchange={insertHeaderField}
-            ></lightning-combobox>
-            <div class="editor-heading">
-              <lightning-radio-group
-                class="mode-switch"
-                name="headerEditorMode"
-                label="Header editing mode"
-                value={template.headerEditorMode}
-                options={editorModeOptions}
-                type="button"
-                onchange={handleTemplateChange}
-              ></lightning-radio-group>
-              <span class={headerCountClass}>{headerCharacterCount}</span>
-            </div>
-            <template if:true={isHeaderVisualMode}>
-              <lightning-input-rich-text
-                name="headerContent"
-                label="Header Content"
-                value={template.headerContent}
-                onchange={handleTemplateChange}
-              ></lightning-input-rich-text>
-            </template>
-            <template if:false={isHeaderVisualMode}>
-              <lightning-textarea
-                class="html-source-editor"
-                name="headerContent"
-                label="Header HTML Source"
-                max-length="1000000"
-                value={template.headerContent}
-                onchange={handleTemplateChange}
-              ></lightning-textarea>
-            </template>
-            <template if:true={headerUsesOverflow}>
-              <p class="overflow-note">
-                Stored across multiple managed chunks; no content will be
-                truncated.
-              </p>
-            </template>
-            <template if:true={showStarterFooterButton}>
-              <lightning-button
-                label="Insert Starter Footer"
-                onclick={insertStarterFooter}
-              ></lightning-button>
-            </template>
-            <lightning-combobox
-              label="Insert Footer Field"
-              placeholder="Select a sender, owner, organization, or record field"
-              options={headerFooterFieldOptions}
-              onchange={insertFooterField}
-            ></lightning-combobox>
-            <div class="editor-heading">
-              <lightning-radio-group
-                class="mode-switch"
-                name="footerEditorMode"
-                label="Footer editing mode"
-                value={template.footerEditorMode}
-                options={editorModeOptions}
-                type="button"
-                onchange={handleTemplateChange}
-              ></lightning-radio-group>
-              <span class={footerCountClass}>{footerCharacterCount}</span>
-            </div>
-            <template if:true={isFooterVisualMode}>
-              <lightning-input-rich-text
-                name="footerContent"
-                label="Footer Content"
-                value={template.footerContent}
-                onchange={handleTemplateChange}
-              ></lightning-input-rich-text>
-            </template>
-            <template if:false={isFooterVisualMode}>
-              <lightning-textarea
-                class="html-source-editor"
-                name="footerContent"
-                label="Footer HTML Source"
-                max-length="1000000"
-                value={template.footerContent}
-                onchange={handleTemplateChange}
-              ></lightning-textarea>
-            </template>
-            <template if:true={footerUsesOverflow}>
-              <p class="overflow-note">
-                Stored across multiple managed chunks; no content will be
-                truncated.
-              </p>
-            </template>
-          </section>
-          <div class="footer-actions">
-            <lightning-button
-              label="Back"
-              onclick={handleBack}
-            ></lightning-button>
-            <lightning-button
-              variant="brand"
-              label={detailContinueLabel}
-              onclick={handleNext}
-            ></lightning-button>
-          </div>
-        </section>
-      </template>
-
-      <template if:true={isSectionsStep}>
-        <section class="step-card">
-          <div class="step-heading">
-            <span class="step-number">3</span>
-            <div>
-              <h2>Add Sections</h2>
-              <p>
-                Build reusable static text, repeating text blocks, and tables.
-              </p>
-            </div>
-          </div>
-          <div class="split">
-            <aside class="list-panel">
-              <div class="panel-title">
-                <h3>Sections</h3>
-                <lightning-button
-                  label="Add Section"
-                  onclick={addSection}
-                ></lightning-button>
-              </div>
-              <template for:each={template.sections} for:item="section">
-                <article
-                  class="select-card"
-                  key={section.localKey}
-                  data-key={section.localKey}
-                  onclick={selectSection}
-                >
-                  <strong>{section.sectionName}</strong>
-                  <span>{section.sectionType}</span>
-                  <lightning-button-icon
-                    icon-name="utility:delete"
-                    alternative-text="Delete"
-                    data-key={section.localKey}
-                    onclick={deleteSection}
-                  ></lightning-button-icon>
-                </article>
-              </template>
-            </aside>
-            <main class="edit-panel">
-              <template if:true={selectedSection}>
-                <div class="form-grid">
-                  <lightning-input
-                    name="sectionName"
-                    label="Section Name"
-                    required
-                    value={selectedSection.sectionName}
-                    onchange={handleSectionChange}
-                  ></lightning-input>
-                  <lightning-input
-                    name="sectionKey"
-                    label="Section Key"
-                    required
-                    value={selectedSection.sectionKey}
-                    onchange={handleSectionChange}
-                  ></lightning-input>
-                  <lightning-input
-                    name="displayOrder"
-                    type="number"
-                    label="Display Order"
-                    required
-                    value={selectedSection.displayOrder}
-                    onchange={handleSectionChange}
-                  ></lightning-input>
-                  <lightning-combobox
-                    name="sectionType"
-                    label="Section Type"
-                    required
-                    value={selectedSection.sectionType}
-                    options={sectionTypeOptions}
-                    onchange={handleSectionChange}
-                  ></lightning-combobox>
-                  <lightning-input
-                    type="checkbox"
-                    name="active"
-                    label="Active"
-                    checked={selectedSection.active}
-                    onchange={handleSectionChecked}
-                  ></lightning-input>
-                </div>
-                <template if:true={isSelectedStaticSection}>
-                  <lightning-input-rich-text
-                    name="staticContent"
-                    label="Static Content"
-                    value={selectedSection.staticContent}
-                    onchange={handleSectionChange}
-                  ></lightning-input-rich-text>
-                </template>
-                <template if:true={isSelectedRepeatingSection}>
-                  <div class="form-grid">
-                    <lightning-combobox
-                      name="childObjectApiName"
-                      label="Child Object"
-                      value={selectedSection.childObjectApiName}
-                      options={objectOptions}
-                      onchange={handleSectionChange}
-                    ></lightning-combobox>
-                    <lightning-combobox
-                      name="parentLookupFieldApiName"
-                      label="Parent Lookup Field"
-                      value={selectedSection.parentLookupFieldApiName}
-                      options={lookupFieldOptions}
-                      onchange={handleSectionChange}
-                    ></lightning-combobox>
-                    <lightning-combobox
-                      name="sortFieldApiName"
-                      label="Sort Field"
-                      value={selectedSection.sortFieldApiName}
-                      options={childFieldOptions}
-                      onchange={handleSectionChange}
-                    ></lightning-combobox>
-                    <lightning-combobox
-                      name="sortDirection"
-                      label="Sort Direction"
-                      value={selectedSection.sortDirection}
-                      options={sortDirectionOptions}
-                      onchange={handleSectionChange}
-                    ></lightning-combobox>
-                    <lightning-input
-                      name="sectionHeader"
-                      label="Section Header"
-                      value={selectedSection.sectionHeader}
-                      onchange={handleSectionChange}
-                    ></lightning-input>
-                    <lightning-input
-                      name="sectionFooter"
-                      label="Section Footer"
-                      value={selectedSection.sectionFooter}
-                      onchange={handleSectionChange}
-                    ></lightning-input>
-                  </div>
-                  <template if:true={isSelectedTextBlockSection}>
-                    <div class="form-grid">
-                      <lightning-input
-                        name="repeatLabel"
-                        label="Repeat Label"
-                        value={selectedSection.repeatLabel}
-                        onchange={handleSectionChange}
-                      ></lightning-input>
-                      <lightning-input
-                        type="checkbox"
-                        name="includeAutoNumber"
-                        label="Include Auto Number"
-                        checked={selectedSection.includeAutoNumber}
-                        onchange={handleSectionChecked}
-                      ></lightning-input>
-                      <lightning-input
-                        type="number"
-                        name="autoNumberStart"
-                        label="Auto Number Start"
-                        value={selectedSection.autoNumberStart}
-                        onchange={handleSectionChange}
-                      ></lightning-input>
-                    </div>
-                  </template>
-                  <div class="filter-box">
-                    <h3>Filter Builder</h3>
-                    <div class="filter-row">
-                      <lightning-combobox
-                        name="field"
-                        label="Field"
-                        value={sectionFilterDraft.field}
-                        options={childFieldOptions}
-                        onchange={handleSectionFilterChange}
-                      ></lightning-combobox>
-                      <lightning-combobox
-                        name="operator"
-                        label="Operator"
-                        value={sectionFilterDraft.operator}
-                        options={filterOperatorOptions}
-                        onchange={handleSectionFilterChange}
-                      ></lightning-combobox>
-                      <lightning-input
-                        name="value"
-                        label="Value"
-                        value={sectionFilterDraft.value}
-                        onchange={handleSectionFilterChange}
-                      ></lightning-input>
-                      <lightning-button
-                        label="Add Filter"
-                        onclick={addSectionFilterCondition}
-                      ></lightning-button>
-                    </div>
-                    <div class="query-preview">
-                      <span>{selectedSection.filterLogic}</span>
-                      <lightning-button
-                        label="Clear"
-                        onclick={clearSectionFilter}
-                      ></lightning-button>
-                    </div>
-                  </div>
-                </template>
-              </template>
-              <template if:false={selectedSection}>
-                <div class="empty-state">
-                  Select a section or add a new one.
-                </div>
-              </template>
-            </main>
-          </div>
-          <div class="footer-actions">
-            <lightning-button
-              label="Back"
-              onclick={handleBack}
-            ></lightning-button>
-            <lightning-button
-              variant="brand"
-              label="Continue"
-              onclick={handleNext}
-            ></lightning-button>
-          </div>
-        </section>
-      </template>
-
-      <template if:true={isLinesStep}>
-        <section class="step-card">
-          <div class="step-heading">
-            <span class="step-number">4</span>
-            <div>
-              <h2>Section Lines</h2>
-              <p>Design repeating text lines and table columns with clicks.</p>
-            </div>
-          </div>
-          <template if:false={hasLineSections}>
-            <div class="empty-state">
-              No sections configured yet. You can skip this step or go back to
-              add sections.
-            </div>
-          </template>
-          <template if:true={hasLineSections}>
-            <lightning-layout class="section-lines-layout" multiple-rows>
-              <lightning-layout-item
-                size="12"
-                large-device-size="5"
-                padding="around-small"
-              >
-                <aside class="list-panel section-lines-list">
-                  <lightning-combobox
-                    label="Select Section"
-                    value={selectedSectionKey}
-                    options={lineSectionOptions}
-                    onchange={handleLineSectionChange}
-                  ></lightning-combobox>
-                  <template if:true={selectedSectionIsTextBlock}>
-                    <div class="panel-title">
-                      <h3>Lines</h3>
-                      <lightning-button
-                        label="Add Line"
-                        onclick={addLine}
-                      ></lightning-button>
-                    </div>
-                    <template for:each={selectedSection.lines} for:item="line">
-                      <article
-                        class="line-card slds-card slds-p-around_medium"
-                        key={line.localKey}
-                        data-key={line.localKey}
-                        aria-selected={line.isSelected}
-                        onclick={selectLine}
-                      >
-                        <div class="line-card-body">
-                          <strong>{line.name}</strong>
-                          <span>{line.lineTemplate}</span>
-                        </div>
-                        <lightning-button-icon
-                          icon-name="utility:delete"
-                          alternative-text="Delete"
-                          data-key={line.localKey}
-                          onclick={deleteLine}
-                        ></lightning-button-icon>
-                      </article>
-                    </template>
-                  </template>
-                  <template if:true={selectedSectionIsTable}>
-                    <div class="panel-title">
-                      <h3>Columns</h3>
-                      <lightning-button
-                        label="Add Column"
-                        onclick={addField}
-                      ></lightning-button>
-                    </div>
-                    <template
-                      for:each={selectedSection.fields}
-                      for:item="field"
-                    >
-                      <article
-                        class="line-card slds-card slds-p-around_medium"
-                        key={field.localKey}
-                        data-key={field.localKey}
-                        aria-selected={field.isSelected}
-                        onclick={selectField}
-                      >
-                        <div class="line-card-body">
-                          <strong>{field.labelOverride}</strong>
-                          <span>{field.fieldLabel}</span>
-                        </div>
-                        <lightning-button-icon
-                          icon-name="utility:delete"
-                          alternative-text="Delete"
-                          data-key={field.localKey}
-                          onclick={deleteField}
-                        ></lightning-button-icon>
-                      </article>
-                    </template>
-                  </template>
-                </aside>
-              </lightning-layout-item>
-              <lightning-layout-item
-                size="12"
-                large-device-size="7"
-                padding="around-small"
-              >
-                <main class="edit-panel section-lines-editor">
-                  <template if:true={selectedLine}>
-                    <div class="form-grid">
-                      <lightning-input
-                        data-key={selectedLine.localKey}
-                        name="name"
-                        label="Line Name"
-                        value={selectedLine.name}
-                        onchange={handleLineChange}
-                      ></lightning-input>
-                      <lightning-input
-                        data-key={selectedLine.localKey}
-                        name="displayOrder"
-                        type="number"
-                        label="Display Order"
-                        value={selectedLine.displayOrder}
-                        onchange={handleLineChange}
-                      ></lightning-input>
-                      <lightning-combobox
-                        data-key={selectedLine.localKey}
-                        name="displayStyle"
-                        label="Display Style"
-                        value={selectedLine.displayStyle}
-                        options={lineDisplayStyleOptions}
-                        onchange={handleLineChange}
-                      ></lightning-combobox>
-                      <lightning-input
-                        type="checkbox"
-                        data-key={selectedLine.localKey}
-                        name="active"
-                        label="Active"
-                        checked={selectedLine.active}
-                        onchange={handleLineChange}
-                      ></lightning-input>
-                      <lightning-input
-                        type="checkbox"
-                        data-key={selectedLine.localKey}
-                        name="renderOnlyIfNotBlank"
-                        label="Render Only If Not Blank"
-                        checked={selectedLine.renderOnlyIfNotBlank}
-                        onchange={handleLineChange}
-                      ></lightning-input>
-                    </div>
-                    <lightning-textarea
-                      data-key={selectedLine.localKey}
-                      name="lineTemplate"
-                      label="Line Template"
-                      value={selectedLine.lineTemplate}
-                      onchange={handleLineChange}
-                    ></lightning-textarea>
-                    <lightning-combobox
-                      label="Insert Field"
-                      options={childFieldOptions}
-                      onchange={insertChildFieldIntoLine}
-                    ></lightning-combobox>
-                    <section class="live-preview">
-                      <h3>Live Preview</h3>
-                      <div class="preview-text">
-                        {selectedLine.lineTemplate}
-                      </div>
-                    </section>
-                  </template>
-                  <template if:true={selectedField}>
-                    <div class="form-grid">
-                      <lightning-combobox
-                        data-key={selectedField.localKey}
-                        name="fieldApiName"
-                        label="Field"
-                        value={selectedField.fieldApiName}
-                        options={childFieldOptions}
-                        onchange={handleFieldChange}
-                      ></lightning-combobox>
-                      <lightning-input
-                        data-key={selectedField.localKey}
-                        name="labelOverride"
-                        label="Label Override"
-                        value={selectedField.labelOverride}
-                        onchange={handleFieldChange}
-                      ></lightning-input>
-                      <lightning-input
-                        data-key={selectedField.localKey}
-                        name="displayOrder"
-                        type="number"
-                        label="Display Order"
-                        value={selectedField.displayOrder}
-                        onchange={handleFieldChange}
-                      ></lightning-input>
-                      <lightning-combobox
-                        data-key={selectedField.localKey}
-                        name="displayStyle"
-                        label="Display Style"
-                        value={selectedField.displayStyle}
-                        options={displayStyleOptions}
-                        onchange={handleFieldChange}
-                      ></lightning-combobox>
-                      <lightning-input
-                        data-key={selectedField.localKey}
-                        name="tableColumnWidth"
-                        label="Table Column Width"
-                        value={selectedField.tableColumnWidth}
-                        onchange={handleFieldChange}
-                      ></lightning-input>
-                      <lightning-input
-                        type="checkbox"
-                        data-key={selectedField.localKey}
-                        name="active"
-                        label="Active"
-                        checked={selectedField.active}
-                        onchange={handleFieldChange}
-                      ></lightning-input>
-                      <lightning-input
-                        type="checkbox"
-                        data-key={selectedField.localKey}
-                        name="renderOnlyIfNotBlank"
-                        label="Render Only If Not Blank"
-                        checked={selectedField.renderOnlyIfNotBlank}
-                        onchange={handleFieldChange}
-                      ></lightning-input>
-                    </div>
-                    <section class="live-preview">
-                      <h3>Column Preview</h3>
-                      <div class="preview-text">
-                        {selectedField.labelOverride} {selectedField.fieldLabel}
-                      </div>
-                    </section>
-                  </template>
-                  <template if:false={selectedLine}>
-                    <template if:false={selectedField}>
-                      <div class="empty-state small">
-                        Select a line or column to edit.
-                      </div>
-                    </template>
-                  </template>
-                </main>
-              </lightning-layout-item>
-            </lightning-layout>
-          </template>
-          <div class="footer-actions">
-            <lightning-button
-              label="Back"
-              onclick={handleBack}
-            ></lightning-button>
-            <lightning-button
-              variant="brand"
-              label="Continue"
-              onclick={handleNext}
-            ></lightning-button>
-          </div>
-        </section>
-      </template>
-
-      <template if:true={isBodyStep}>
-        <section class="step-card">
-          <div class="step-heading">
-            <span class="step-number">5</span>
-            <div>
-              <h2>Email Body</h2>
-              <p>
-                Insert fields and sections by clicking. No merge syntax
-                memorization needed.
-              </p>
-            </div>
-          </div>
-          <lightning-input
-            name="subjectTemplate"
-            label="Subject Template"
-            value={template.subjectTemplate}
-            onchange={handleTemplateChange}
-          ></lightning-input>
-          <lightning-combobox
-            label="Insert Subject Field"
-            options={parentFieldOptions}
-            onchange={insertSubjectField}
-          ></lightning-combobox>
-          <div class="editor-heading">
-            <lightning-radio-group
-              class="mode-switch"
-              name="bodyEditorMode"
-              label="Body editing mode"
-              value={template.bodyEditorMode}
-              options={editorModeOptions}
-              type="button"
-              onchange={handleTemplateChange}
-            ></lightning-radio-group>
-            <span class={bodyCountClass}>{bodyCharacterCount}</span>
-          </div>
-          <template if:true={isBodyVisualMode}>
-            <lightning-input-rich-text
-              name="bodyTemplate"
-              label="Body Template"
-              value={template.bodyTemplate}
-              onchange={handleTemplateChange}
-            ></lightning-input-rich-text>
-          </template>
-          <template if:false={isBodyVisualMode}>
-            <lightning-textarea
-              class="html-source-editor"
-              name="bodyTemplate"
-              label="Body HTML Source"
-              max-length="1000000"
-              value={template.bodyTemplate}
-              onchange={handleTemplateChange}
-            ></lightning-textarea>
-          </template>
-          <template if:true={bodyUsesOverflow}>
-            <p class="overflow-note">
-              Stored across multiple managed chunks; no content will be
-              truncated.
-            </p>
-          </template>
-          <div class="insert-row">
-            <lightning-combobox
-              label="Insert Body Field"
-              options={parentFieldOptions}
-              onchange={insertBodyField}
-            ></lightning-combobox>
-            <lightning-combobox
-              label="Insert Section"
-              options={sectionTokenOptions}
-              onchange={insertSectionToken}
-            ></lightning-combobox>
-          </div>
-          <div class="footer-actions">
-            <lightning-button
-              label="Back"
-              onclick={handleBack}
-            ></lightning-button>
-            <lightning-button
-              variant="brand"
-              label="Continue"
-              onclick={handleNext}
-            ></lightning-button>
-          </div>
-        </section>
-      </template>
-
-      <template if:true={isRecipientsStep}>
-        <section class="step-card">
-          <div class="step-heading">
-            <span class="step-number">6</span>
-            <div>
-              <h2>Recipients</h2>
-              <p>
-                Configure who should receive emails generated from this
-                template.
-              </p>
-            </div>
-          </div>
-          <div class="split">
-            <aside class="list-panel">
-              <div class="panel-title">
-                <h3>Rules</h3>
-                <lightning-button
-                  label="Add Recipient"
-                  onclick={addRecipient}
-                ></lightning-button>
-              </div>
-              <template for:each={template.recipients} for:item="recipient">
-                <article
-                  class="select-card"
-                  key={recipient.localKey}
-                  data-key={recipient.localKey}
-                  onclick={selectRecipient}
-                >
-                  <strong>{recipient.recipientType}</strong>
-                  <span>{recipient.recipientSourceType}</span>
-                  <lightning-button-icon
-                    icon-name="utility:delete"
-                    alternative-text="Delete"
-                    data-key={recipient.localKey}
-                    onclick={deleteRecipient}
-                  ></lightning-button-icon>
-                </article>
-              </template>
-            </aside>
-            <main class="edit-panel">
-              <template if:true={selectedRecipient}>
-                <div class="form-grid">
-                  <lightning-input
-                    name="name"
-                    label="Rule Name"
-                    value={selectedRecipient.name}
-                    onchange={handleRecipientChange}
-                  ></lightning-input>
-                  <lightning-combobox
-                    name="recipientSourceType"
-                    label="Source"
-                    value={selectedRecipient.recipientSourceType}
-                    options={recipientSourceOptions}
-                    onchange={handleRecipientChange}
-                  ></lightning-combobox>
-                  <lightning-combobox
-                    name="recipientType"
-                    label="Recipient Type"
-                    value={selectedRecipient.recipientType}
-                    options={recipientTypeOptions}
-                    onchange={handleRecipientChange}
-                  ></lightning-combobox>
-                  <lightning-input
-                    type="checkbox"
-                    name="defaultSelected"
-                    label="Default Selected"
-                    checked={selectedRecipient.defaultSelected}
-                    onchange={handleRecipientChecked}
-                  ></lightning-input>
-                  <lightning-input
-                    type="checkbox"
-                    name="allowMultiple"
-                    label="Allow Multiple"
-                    checked={selectedRecipient.allowMultiple}
-                    onchange={handleRecipientChecked}
-                  ></lightning-input>
-                  <lightning-input
-                    type="checkbox"
-                    name="required"
-                    label="Required"
-                    checked={selectedRecipient.required}
-                    onchange={handleRecipientChecked}
-                  ></lightning-input>
-                </div>
-                <template if:true={isParentRecipient}>
-                  <div class="form-grid">
-                    <lightning-combobox
-                      name="nameFieldApiName"
-                      label="Name Field"
-                      value={selectedRecipient.nameFieldApiName}
-                      options={parentFieldOptions}
-                      onchange={handleRecipientChange}
-                    ></lightning-combobox>
-                    <lightning-combobox
-                      name="emailFieldApiName"
-                      label="Email Field"
-                      value={selectedRecipient.emailFieldApiName}
-                      options={parentFieldOptions}
-                      onchange={handleRecipientChange}
-                    ></lightning-combobox>
-                  </div>
-                </template>
-                <template if:true={isRelatedRecipient}>
-                  <div class="form-grid">
-                    <lightning-combobox
-                      name="sourceObjectApiName"
-                      label="Source Object"
-                      value={selectedRecipient.sourceObjectApiName}
-                      options={objectOptions}
-                      onchange={handleRecipientChange}
-                    ></lightning-combobox>
-                    <lightning-combobox
-                      name="parentLookupFieldApiName"
-                      label="Parent Lookup Field"
-                      value={selectedRecipient.parentLookupFieldApiName}
-                      options={recipientLookupFieldOptions}
-                      onchange={handleRecipientChange}
-                    ></lightning-combobox>
-                    <lightning-combobox
-                      name="nameFieldApiName"
-                      label="Name Field"
-                      value={selectedRecipient.nameFieldApiName}
-                      options={recipientFieldOptions}
-                      onchange={handleRecipientChange}
-                    ></lightning-combobox>
-                    <lightning-combobox
-                      name="emailFieldApiName"
-                      label="Email Field"
-                      value={selectedRecipient.emailFieldApiName}
-                      options={recipientFieldOptions}
-                      onchange={handleRecipientChange}
-                    ></lightning-combobox>
-                  </div>
-                  <div class="filter-box">
-                    <h3>Filter Builder</h3>
-                    <div class="filter-row">
-                      <lightning-combobox
-                        name="field"
-                        label="Field"
-                        value={recipientFilterDraft.field}
-                        options={recipientFieldOptions}
-                        onchange={handleRecipientFilterChange}
-                      ></lightning-combobox>
-                      <lightning-combobox
-                        name="operator"
-                        label="Operator"
-                        value={recipientFilterDraft.operator}
-                        options={filterOperatorOptions}
-                        onchange={handleRecipientFilterChange}
-                      ></lightning-combobox>
-                      <lightning-input
-                        name="value"
-                        label="Value"
-                        value={recipientFilterDraft.value}
-                        onchange={handleRecipientFilterChange}
-                      ></lightning-input>
-                      <lightning-button
-                        label="Add Filter"
-                        onclick={addRecipientFilterCondition}
-                      ></lightning-button>
-                    </div>
-                    <div class="query-preview">
-                      <span>{selectedRecipient.filterLogic}</span>
-                      <lightning-button
-                        label="Clear"
-                        onclick={clearRecipientFilter}
-                      ></lightning-button>
-                    </div>
-                  </div>
-                </template>
-                <template if:true={isManualRecipient}>
-                  <div class="empty-state small">
-                    Manual recipients will be entered by the sender at runtime.
-                  </div>
-                </template>
-              </template>
-              <template if:false={selectedRecipient}>
-                <div class="empty-state">Select or add a recipient rule.</div>
-              </template>
-            </main>
-          </div>
-          <div class="footer-actions">
-            <lightning-button
-              label="Back"
-              onclick={handleBack}
-            ></lightning-button>
-            <lightning-button
-              variant="brand"
-              label="Continue"
-              onclick={handleNext}
-            ></lightning-button>
-          </div>
-        </section>
-      </template>
-
-      <template if:true={isPostSendActionsStep}>
-        <section class="step-card">
-          <div class="step-heading">
-            <span class="step-number">7</span>
-            <div>
-              <h2>Post-Send Actions</h2>
-              <p>
-                Configure actions that run automatically after the email sends
-                successfully.
-              </p>
-            </div>
-          </div>
-          <div class="split">
-            <aside class="list-panel">
-              <div class="panel-title">
-                <h3>Actions</h3>
-                <lightning-button
-                  label="Add Action"
-                  onclick={addPostSendAction}
-                ></lightning-button>
-              </div>
-              <template for:each={template.postSendActions} for:item="action">
-                <article
-                  class="select-card action-card"
-                  key={action.localKey}
-                  data-key={action.localKey}
-                  onclick={selectPostSendAction}
-                >
-                  <strong>{action.actionType}</strong>
-                  <span>Run Order {action.runOrder}</span>
-                  <span>{action.fieldLabel}{action.subject}</span>
-                  <div class="row-actions">
-                    <lightning-button-icon
-                      icon-name="utility:up"
-                      alternative-text="Move Up"
-                      data-key={action.localKey}
-                      onclick={movePostSendActionUp}
-                    ></lightning-button-icon>
-                    <lightning-button-icon
-                      icon-name="utility:down"
-                      alternative-text="Move Down"
-                      data-key={action.localKey}
-                      onclick={movePostSendActionDown}
-                    ></lightning-button-icon>
-                    <lightning-button-icon
-                      icon-name="utility:delete"
-                      alternative-text="Delete"
-                      data-key={action.localKey}
-                      onclick={deletePostSendAction}
-                    ></lightning-button-icon>
-                  </div>
-                </article>
-              </template>
-            </aside>
-            <main class="edit-panel">
-              <template if:true={selectedAction}>
-                <div class="form-grid">
-                  <lightning-input
-                    type="checkbox"
-                    name="active"
-                    label="Active"
-                    checked={selectedAction.active}
-                    onchange={handlePostSendActionChecked}
-                  ></lightning-input>
-                  <lightning-input
-                    name="runOrder"
-                    type="number"
-                    label="Run Order"
-                    value={selectedAction.runOrder}
-                    onchange={handlePostSendActionChange}
-                  ></lightning-input>
-                  <lightning-combobox
-                    name="actionType"
-                    label="Action Type"
-                    value={selectedAction.actionType}
-                    options={postSendActionTypeOptions}
-                    onchange={handlePostSendActionChange}
-                  ></lightning-combobox>
-                </div>
-                <template if:true={isSelectedUpdateFieldAction}>
-                  <div class="form-grid">
-                    <lightning-combobox
-                      name="fieldApiName"
-                      label="Field API Name"
-                      value={selectedAction.fieldApiName}
-                      options={updateableParentFieldOptions}
-                      onchange={handlePostSendActionChange}
-                    ></lightning-combobox>
-                    <lightning-combobox
-                      name="valueType"
-                      label="Value Type"
-                      value={selectedAction.valueType}
-                      options={postSendValueTypeOptions}
-                      onchange={handlePostSendActionChange}
-                    ></lightning-combobox>
-                    <lightning-input
-                      name="value"
-                      label="Value"
-                      value={selectedAction.value}
-                      onchange={handlePostSendActionChange}
-                    ></lightning-input>
-                  </div>
-                  <lightning-combobox
-                    label="Insert Parent Merge Field"
-                    options={parentFieldOptions}
-                    onchange={insertPostSendActionMergeField}
-                  ></lightning-combobox>
-                </template>
-                <template if:true={isSelectedCreateTaskAction}>
-                  <div class="form-grid">
-                    <lightning-input
-                      name="subject"
-                      label="Subject"
-                      value={selectedAction.subject}
-                      onchange={handlePostSendActionChange}
-                    ></lightning-input>
-                    <lightning-combobox
-                      name="assignedToType"
-                      label="Assigned To"
-                      value={selectedAction.assignedToType}
-                      options={taskAssignedToOptions}
-                      onchange={handlePostSendActionChange}
-                    ></lightning-combobox>
-                    <template if:true={isSelectedSpecificUserTask}>
-                      <lightning-record-picker
-                        label="Specific User"
-                        object-api-name="User"
-                        value={selectedAction.assignedUserId}
-                        onchange={handleAssignedUserChange}
-                      ></lightning-record-picker>
-                    </template>
-                    <lightning-combobox
-                      name="dueDateStrategy"
-                      label="Due Date Type"
-                      value={selectedAction.dueDateStrategy}
-                      options={taskDueDateStrategyOptions}
-                      onchange={handlePostSendActionChange}
-                    ></lightning-combobox>
-                    <lightning-input
-                      name="daysAfterSend"
-                      type="number"
-                      label="Days After Send"
-                      value={selectedAction.daysAfterSend}
-                      onchange={handlePostSendActionChange}
-                    ></lightning-input>
-                    <lightning-combobox
-                      name="status"
-                      label="Status"
-                      value={selectedAction.status}
-                      options={taskStatusOptions}
-                      onchange={handlePostSendActionChange}
-                    ></lightning-combobox>
-                    <lightning-combobox
-                      name="priority"
-                      label="Priority"
-                      value={selectedAction.priority}
-                      options={taskPriorityOptions}
-                      onchange={handlePostSendActionChange}
-                    ></lightning-combobox>
-                  </div>
-                  <lightning-textarea
-                    name="comments"
-                    label="Comments"
-                    value={selectedAction.comments}
-                    onchange={handlePostSendActionChange}
-                  ></lightning-textarea>
-                </template>
-              </template>
-              <template if:false={selectedAction}>
-                <div class="empty-state">Add or select a post-send action.</div>
-              </template>
-            </main>
-          </div>
-          <div class="footer-actions">
-            <lightning-button
-              label="Back"
-              onclick={handleBack}
-            ></lightning-button>
-            <lightning-button
-              variant="brand"
-              label="Continue"
-              onclick={handleNext}
-            ></lightning-button>
-          </div>
-        </section>
-      </template>
-
-      <template if:true={isPreviewStep}>
-        <section class="step-card">
-          <div class="step-heading">
-            <span class="step-number">8</span>
-            <div>
-              <h2>Preview & Save</h2>
-              <p>
-                Save the final configuration, then preview it against a real
-                record.
-              </p>
-            </div>
-          </div>
-          <div class="preview-grid">
-            <div class="preview-controls">
-              <template if:true={template.parentObjectApiName}>
-                <lightning-record-picker
-                  label="Preview Record"
-                  object-api-name={template.parentObjectApiName}
-                  onchange={handlePreviewRecordChange}
-                ></lightning-record-picker>
-              </template>
-              <lightning-button
-                label="Refresh Preview"
-                disabled={previewDisabled}
-                onclick={refreshPreview}
-              ></lightning-button>
-              <template if:false={template.id}>
-                <p class="muted">Save the template before previewing.</p>
-              </template>
-            </div>
-            <div class="preview-panel">
-              <h3>{previewSubject}</h3>
-              <lightning-formatted-rich-text
-                value={previewBody}
-              ></lightning-formatted-rich-text>
-            </div>
-          </div>
-          <div class="footer-actions">
-            <lightning-button
-              label="Back"
-              onclick={handleBack}
-            ></lightning-button>
-            <lightning-button
-              variant="brand"
-              label="Save Template"
-              onclick={saveFinal}
-            ></lightning-button>
-          </div>
-        </section>
-      </template>
     </div>
-  </lightning-card>
+    <!-- end main-panel -->
+
+  </div>
+  <!-- end weave-shell -->
+
+  <!-- ── Section Editor Modal ────────────────────────────────── -->
+  <template if:true={showSectionModal}>
+    <div class="modal-backdrop" onclick={closeSectionModal}></div>
+    <div class="modal modal_section-editor" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <div class="modal-header-left">
+          <span class={selectedSectionTypeBadgeClass}>{selectedSection.sectionType}</span>
+          <h2>{selectedSection.sectionName}</h2>
+        </div>
+        <button class="modal-close" onclick={closeSectionModal} aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body">
+
+        <!-- Common: name, key, active -->
+        <div class="props-group">
+          <lightning-input name="sectionName" label="Section Name" value={selectedSection.sectionName} onchange={handleSectionChange}></lightning-input>
+          <lightning-input name="sectionKey" label="Section Key" value={selectedSection.sectionKey} onchange={handleSectionChange}></lightning-input>
+          <lightning-input type="checkbox" name="active" label="Active" checked={selectedSection.active} onchange={handleSectionChecked}></lightning-input>
+        </div>
+
+        <!-- Static Text: rich text editor -->
+        <template if:true={isSelectedStaticSection}>
+          <div class="props-group props-group_titled">
+            <div class="props-group-title">Content</div>
+            <lightning-input-rich-text name="staticContent" label="Content" value={selectedSection.staticContent} onchange={handleSectionChange}></lightning-input-rich-text>
+          </div>
+        </template>
+
+        <!-- Text Block / Related: query config -->
+        <template if:true={isSelectedRepeatingSection}>
+          <div class="props-group props-group_titled">
+            <div class="props-group-title">Query Configuration</div>
+            <c-dce-builder-query-config
+              section={selectedSection}
+              object-options={objectOptions}
+              lookup-field-options={lookupFieldOptions}
+              child-field-options={childFieldOptions}
+              filter-operator-options={filterOperatorOptions}
+              sort-direction-options={sortDirectionOptions}
+              is-text-block={isSelectedTextBlockSection}
+              is-related={isSelectedRelatedSection}
+              onconfigchange={handleQueryConfigChange}
+              onchildobjectchange={handleSectionChildObjectChange}
+            ></c-dce-builder-query-config>
+          </div>
+        </template>
+
+        <!-- Text Block: lines editor -->
+        <template if:true={isSelectedTextBlockSection}>
+          <div class="props-group props-group_titled">
+            <div class="props-group-title-row">
+              <div class="props-group-title">Lines</div>
+              <lightning-button label="Add Line" onclick={addLine}></lightning-button>
+            </div>
+            <template for:each={selectedSection.lines} for:item="line">
+              <article class="line-card slds-p-around_x-small" key={line.localKey} data-key={line.localKey} aria-selected={line.isSelected} onclick={selectLine}>
+                <div class="line-card-body">
+                  <strong>{line.name}</strong>
+                  <span>{line.lineTemplate}</span>
+                </div>
+                <lightning-button-icon icon-name="utility:delete" alternative-text="Delete" size="x-small" data-key={line.localKey} onclick={deleteLine}></lightning-button-icon>
+              </article>
+            </template>
+            <template if:true={selectedLine}>
+              <div class="props-line-editor">
+                <lightning-input data-key={selectedLine.localKey} name="name" label="Line Name" value={selectedLine.name} onchange={handleLineChange}></lightning-input>
+                <lightning-combobox data-key={selectedLine.localKey} name="displayStyle" label="Display Style" value={selectedLine.displayStyle} options={lineDisplayStyleOptions} onchange={handleLineChange}></lightning-combobox>
+                <lightning-input type="checkbox" data-key={selectedLine.localKey} name="active" label="Active" checked={selectedLine.active} onchange={handleLineChange}></lightning-input>
+                <lightning-input type="checkbox" data-key={selectedLine.localKey} name="renderOnlyIfNotBlank" label="Skip if Blank" checked={selectedLine.renderOnlyIfNotBlank} onchange={handleLineChange}></lightning-input>
+                <lightning-textarea data-key={selectedLine.localKey} name="lineTemplate" label="Line Template" value={selectedLine.lineTemplate} onchange={handleLineChange}></lightning-textarea>
+                <lightning-combobox label="Insert Field" options={childFieldOptions} onchange={insertChildFieldIntoLine}></lightning-combobox>
+              </div>
+            </template>
+          </div>
+        </template>
+
+        <!-- Related: columns editor -->
+        <template if:true={isSelectedRelatedSection}>
+          <div class="props-group props-group_titled">
+            <div class="props-group-title-row">
+              <div class="props-group-title">Columns</div>
+              <lightning-button label="Add Column" onclick={addField}></lightning-button>
+            </div>
+            <template for:each={selectedSection.fields} for:item="field">
+              <article class="line-card slds-p-around_x-small" key={field.localKey} data-key={field.localKey} aria-selected={field.isSelected} onclick={selectField}>
+                <div class="line-card-body">
+                  <strong>{field.labelOverride}</strong>
+                  <span>{field.fieldLabel}</span>
+                </div>
+                <lightning-button-icon icon-name="utility:delete" alternative-text="Delete" size="x-small" data-key={field.localKey} onclick={deleteField}></lightning-button-icon>
+              </article>
+            </template>
+            <template if:true={selectedField}>
+              <div class="props-line-editor">
+                <lightning-combobox data-key={selectedField.localKey} name="fieldApiName" label="Field" value={selectedField.fieldApiName} options={childFieldOptions} onchange={handleFieldChange}></lightning-combobox>
+                <lightning-input data-key={selectedField.localKey} name="labelOverride" label="Label Override" value={selectedField.labelOverride} onchange={handleFieldChange}></lightning-input>
+                <lightning-combobox data-key={selectedField.localKey} name="displayStyle" label="Display Style" value={selectedField.displayStyle} options={displayStyleOptions} onchange={handleFieldChange}></lightning-combobox>
+                <lightning-input data-key={selectedField.localKey} name="tableColumnWidth" label="Column Width" value={selectedField.tableColumnWidth} onchange={handleFieldChange}></lightning-input>
+                <lightning-input type="checkbox" data-key={selectedField.localKey} name="active" label="Active" checked={selectedField.active} onchange={handleFieldChange}></lightning-input>
+                <lightning-input type="checkbox" data-key={selectedField.localKey} name="renderOnlyIfNotBlank" label="Skip if Blank" checked={selectedField.renderOnlyIfNotBlank} onchange={handleFieldChange}></lightning-input>
+              </div>
+            </template>
+          </div>
+        </template>
+
+      </div>
+      <div class="modal-footer">
+        <button class="btn-primary" onclick={closeSectionModal}>Done</button>
+      </div>
+    </div>
+  </template>
+
+  <!-- ── Header / Footer Modal ────────────────────────────────── -->
+  <template if:true={showHeaderFooterModal}>
+    <div class="modal-backdrop" onclick={closeHeaderFooterModal}></div>
+    <div class="modal modal_hf-editor" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <h2>Email Header &amp; Footer</h2>
+        <button class="modal-close" onclick={closeHeaderFooterModal} aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <section class="branding-section">
+          <p class="muted">Choose Visual for formatting tools or HTML Source for direct control. Images must use a public HTTPS URL.</p>
+
+          <h3 class="hf-section-title">Header</h3>
+          <template if:true={showStarterHeaderButton}>
+            <lightning-button label="Insert Starter Header" onclick={insertStarterHeader}></lightning-button>
+          </template>
+          <lightning-combobox label="Insert Header Field" placeholder="Select a sender, owner, organization, or record field" options={headerFooterFieldOptions} onchange={insertHeaderField}></lightning-combobox>
+          <div class="editor-heading">
+            <lightning-radio-group class="mode-switch" name="headerEditorMode" label="Header editing mode" value={template.headerEditorMode} options={editorModeOptions} type="button" onchange={handleTemplateChange}></lightning-radio-group>
+            <span class={headerCountClass}>{headerCharacterCount}</span>
+          </div>
+          <template if:true={isHeaderVisualMode}>
+            <lightning-input-rich-text name="headerContent" label="Header Content" value={template.headerContent} onchange={handleTemplateChange}></lightning-input-rich-text>
+          </template>
+          <template if:false={isHeaderVisualMode}>
+            <lightning-textarea class="html-source-editor" name="headerContent" label="Header HTML Source" max-length="1000000" value={template.headerContent} onchange={handleTemplateChange}></lightning-textarea>
+          </template>
+          <template if:true={headerUsesOverflow}>
+            <p class="overflow-note">Stored across multiple managed chunks; no content will be truncated.</p>
+          </template>
+
+          <h3 class="hf-section-title">Footer</h3>
+          <template if:true={showStarterFooterButton}>
+            <lightning-button label="Insert Starter Footer" onclick={insertStarterFooter}></lightning-button>
+          </template>
+          <lightning-combobox label="Insert Footer Field" placeholder="Select a sender, owner, organization, or record field" options={headerFooterFieldOptions} onchange={insertFooterField}></lightning-combobox>
+          <div class="editor-heading">
+            <lightning-radio-group class="mode-switch" name="footerEditorMode" label="Footer editing mode" value={template.footerEditorMode} options={editorModeOptions} type="button" onchange={handleTemplateChange}></lightning-radio-group>
+            <span class={footerCountClass}>{footerCharacterCount}</span>
+          </div>
+          <template if:true={isFooterVisualMode}>
+            <lightning-input-rich-text name="footerContent" label="Footer Content" value={template.footerContent} onchange={handleTemplateChange}></lightning-input-rich-text>
+          </template>
+          <template if:false={isFooterVisualMode}>
+            <lightning-textarea class="html-source-editor" name="footerContent" label="Footer HTML Source" max-length="1000000" value={template.footerContent} onchange={handleTemplateChange}></lightning-textarea>
+          </template>
+          <template if:true={footerUsesOverflow}>
+            <p class="overflow-note">Stored across multiple managed chunks; no content will be truncated.</p>
+          </template>
+        </section>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-primary" onclick={closeHeaderFooterModal}>Done</button>
+      </div>
+    </div>
+  </template>
+
+  <!-- ── New Template Modal ───────────────────────────────────── -->
+  <template if:true={showNewTemplateModal}>
+    <div class="modal-backdrop"></div>
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <h2>New Template</h2>
+        <button class="modal-close" onclick={closeNewTemplateModal} aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <lightning-input name="name" label="Template Name" required value={newTemplateDraft.name} onchange={handleNewTemplateNameChange}></lightning-input>
+          <lightning-input name="apiName" label="Template API Name" value={newTemplateDraft.apiName} onchange={handleNewTemplateDraftChange}></lightning-input>
+          <lightning-textarea class="form-full-width" name="description" label="Description" value={newTemplateDraft.description} onchange={handleNewTemplateDraftChange}></lightning-textarea>
+          <lightning-combobox name="parentObjectApiName" label="Parent Object" required value={newTemplateDraft.parentObjectApiName} options={objectOptions} onchange={handleNewTemplateDraftChange}></lightning-combobox>
+          <lightning-combobox name="defaultFromEmail" label="Default From Email" value={newTemplateDraft.defaultFromEmail} options={orgWideEmailOptions} onchange={handleNewTemplateDraftChange}></lightning-combobox>
+          <lightning-input type="checkbox" name="storeEmailHistory" label="Store Email History" checked={newTemplateDraft.storeEmailHistory} onchange={handleNewTemplateDraftChecked}></lightning-input>
+          <lightning-input type="checkbox" name="allowUserEditBeforeSend" label="Allow User Edit Before Send" checked={newTemplateDraft.allowUserEditBeforeSend} onchange={handleNewTemplateDraftChecked}></lightning-input>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick={closeNewTemplateModal}>Cancel</button>
+        <button class="btn-primary" onclick={confirmNewTemplate}>Save &amp; Continue</button>
+      </div>
+    </div>
+  </template>
+
 </template>

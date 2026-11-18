@@ -1,0 +1,225 @@
+<template>
+  <div class="query-config">
+
+    <!-- Data source: child object + lookup + sort + extras + filters -->
+    <div class="qc-datasource">
+
+      <lightning-combobox
+        name="childObjectApiName"
+        label="Child Object"
+        value={section.childObjectApiName}
+        options={objectOptions}
+        onchange={handleChildObjectChange}
+      ></lightning-combobox>
+
+      <lightning-combobox
+        name="parentLookupFieldApiName"
+        label="Parent Lookup Field"
+        value={section.parentLookupFieldApiName}
+        options={lookupFieldOptions}
+        onchange={handleFieldChange}
+      ></lightning-combobox>
+
+      <div class="qc-row">
+        <lightning-combobox
+          name="sortFieldApiName"
+          label="Sort Field"
+          value={section.sortFieldApiName}
+          options={childFieldOptions}
+          onchange={handleFieldChange}
+        ></lightning-combobox>
+        <lightning-combobox
+          name="sortDirection"
+          label="Direction"
+          value={section.sortDirection}
+          options={sortDirectionOptions}
+          onchange={handleFieldChange}
+        ></lightning-combobox>
+      </div>
+
+      <lightning-input
+        name="sectionHeader"
+        label="Section Header"
+        value={section.sectionHeader}
+        onchange={handleFieldChange}
+      ></lightning-input>
+      <lightning-input
+        name="sectionFooter"
+        label="Section Footer"
+        value={section.sectionFooter}
+        onchange={handleFieldChange}
+      ></lightning-input>
+
+      <template if:true={isTextBlock}>
+        <lightning-input
+          name="repeatLabel"
+          label="Item Label"
+          value={section.repeatLabel}
+          onchange={handleFieldChange}
+        ></lightning-input>
+        <lightning-input
+          type="checkbox"
+          name="includeAutoNumber"
+          label="Include Auto Number"
+          checked={section.includeAutoNumber}
+          onchange={handleChecked}
+        ></lightning-input>
+        <template if:true={section.includeAutoNumber}>
+          <lightning-input
+            type="number"
+            name="autoNumberStart"
+            label="Start At"
+            value={section.autoNumberStart}
+            onchange={handleFieldChange}
+          ></lightning-input>
+        </template>
+      </template>
+
+      <div class="qc-filter-box">
+        <div class="qc-filter-title">
+          <span>Filter Builder</span>
+          <template if:true={section.filterLogic}>
+            <button class="qc-clear-btn" onclick={clearFilter}>Clear</button>
+          </template>
+        </div>
+        <div class="qc-filter-row">
+          <lightning-combobox
+            name="field"
+            label="Field"
+            value={filterDraft.field}
+            options={childFieldOptions}
+            onchange={handleFilterDraftChange}
+          ></lightning-combobox>
+          <lightning-combobox
+            name="operator"
+            label="Operator"
+            value={filterDraft.operator}
+            options={filterOperatorOptions}
+            onchange={handleFilterDraftChange}
+          ></lightning-combobox>
+          <template if:false={isBlankOperator}>
+            <lightning-input
+              name="value"
+              label="Value"
+              value={filterDraft.value}
+              onchange={handleFilterDraftChange}
+            ></lightning-input>
+          </template>
+          <button class="btn-add-filter" onclick={addFilter}>Add</button>
+        </div>
+        <template if:true={section.filterLogic}>
+          <div class="qc-filter-preview">{section.filterLogic}</div>
+        </template>
+      </div>
+
+    </div>
+    <!-- end qc-datasource -->
+
+    <!-- Field picker: only for Related sections when child object is set -->
+    <template if:true={isRelated}>
+      <template if:true={hasChildObject}>
+        <div class="qc-field-picker">
+
+          <div class="qc-picker-header">
+            <span class="qc-object-pill">{section.childObjectApiName}</span>
+            <span class="qc-field-count">{selectedFieldCount} selected</span>
+          </div>
+
+          <!-- Search -->
+          <div class="qc-search-wrap">
+            <lightning-input
+              type="search"
+              label="Search fields"
+              variant="label-hidden"
+              placeholder="Search all fields and relationships..."
+              value={fieldSearchTerm}
+              onchange={handleFieldSearch}
+            ></lightning-input>
+          </div>
+
+          <!-- Selected field chips -->
+          <template if:true={selectedFieldChips.length}>
+            <div class="qc-chips">
+              <template for:each={selectedFieldChips} for:item="chip">
+                <div class="qc-chip" key={chip.localKey}>
+                  <span class="qc-chip-label">{chip.label}</span>
+                  <button
+                    class="qc-chip-remove"
+                    data-local-key={chip.localKey}
+                    onclick={removeFieldChip}
+                    title="Remove"
+                  >×</button>
+                </div>
+              </template>
+            </div>
+          </template>
+
+          <!-- Relationship groups -->
+          <template for:each={visibleRelGroups} for:item="rel">
+            <div class="qc-rel-group" key={rel.relationshipName}>
+              <div
+                class="qc-rel-header"
+                data-rel={rel.relationshipName}
+                onclick={toggleRelGroup}
+              >
+                <span class="qc-rel-toggle">{rel.toggleIcon}</span>
+                <span class="qc-rel-label">{rel.label}</span>
+                <span class="qc-rel-api">{rel.relationshipName}</span>
+                <template if:true={rel.selectedCount}>
+                  <span class="qc-rel-count">{rel.selectedCount}</span>
+                </template>
+              </div>
+              <template if:true={rel.isExpanded}>
+                <div class="qc-rel-fields">
+                  <template if:true={rel.fieldsLoaded}>
+                    <template for:each={rel.fields} for:item="field">
+                      <div class="qc-field-row" key={field.qualifiedApiName} data-api-name={field.qualifiedApiName} onclick={toggleField}>
+                        <input
+                          type="checkbox"
+                          class="qc-field-checkbox"
+                          checked={field.isSelected}
+                          data-api-name={field.qualifiedApiName}
+                          onchange={toggleField}
+                        />
+                        <span class="qc-field-name">{field.label}</span>
+                        <span class="qc-field-api">{field.apiName}</span>
+                      </div>
+                    </template>
+                    <template if:false={rel.fields.length}>
+                      <div class="qc-empty-rel">No fields found.</div>
+                    </template>
+                  </template>
+                  <template if:false={rel.fieldsLoaded}>
+                    <div class="qc-loading-rel">
+                      <lightning-spinner size="x-small" alternative-text="Loading fields"></lightning-spinner>
+                      <span>Loading fields...</span>
+                    </div>
+                  </template>
+                </div>
+              </template>
+            </div>
+          </template>
+
+          <!-- Direct fields -->
+          <div class="qc-direct-fields">
+            <template for:each={visibleDirectFields} for:item="field">
+              <div class="qc-field-row" key={field.apiName} data-api-name={field.apiName} onclick={toggleField}>
+                <input
+                  type="checkbox"
+                  class="qc-field-checkbox"
+                  checked={field.isSelected}
+                  data-api-name={field.apiName}
+                  onchange={toggleField}
+                />
+                <span class="qc-field-name">{field.label}</span>
+                <span class="qc-field-api">{field.apiName}</span>
+              </div>
+            </template>
+          </div>
+
+        </div>
+      </template>
+    </template>
+
+  </div>
+</template>

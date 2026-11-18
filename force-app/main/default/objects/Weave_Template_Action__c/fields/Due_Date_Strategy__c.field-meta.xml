@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Due_Date_Strategy__c</fullName>
+    <label>Due Date Strategy</label>
+    <required>false</required>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>Same Day</fullName><default>true</default><label>Same Day</label></value>
+            <value><fullName>N Days After Send</fullName><default>false</default><label>N Days After Send</label></value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

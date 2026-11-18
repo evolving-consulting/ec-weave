@@ -62,7 +62,7 @@ public class DceTestDataFactory {
             Section_Key__c = 'Static' + orderNum,
             Active__c = true,
             Display_Order__c = orderNum,
-            Section_Type__c = 'Static Text',
+            Section_Type__c = 'Text',
             Static_Content__c = 'Static content for {{Name}}'
         );
         insert section;
@@ -95,7 +95,7 @@ public class DceTestDataFactory {
             Section_Key__c = 'ContactsTable',
             Active__c = true,
             Display_Order__c = orderNum,
-            Section_Type__c = 'Table',
+            Section_Type__c = 'Related',
             Child_Object_API_Name__c = 'Contact',
             Parent_Lookup_Field_API_Name__c = 'AccountId',
             Sort_Field_API_Name__c = 'LastName',
