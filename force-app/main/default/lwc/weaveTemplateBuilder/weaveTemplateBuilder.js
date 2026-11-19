@@ -15,6 +15,7 @@ import deleteTemplateFile from '@salesforce/apex/WeaveTemplateBuilderController.
 import previewTemplate from '@salesforce/apex/WeaveTemplateBuilderController.previewTemplate';
 import sendTestEmail from '@salesforce/apex/WeaveTemplateBuilderController.sendTestEmail';
 import createScheduledSend from '@salesforce/apex/WeaveTemplateBuilderController.createScheduledSend';
+import scheduleRecurringEmail from '@salesforce/apex/WeaveEmailTemplateController.scheduleRecurringEmail';
 import getScheduledSends from '@salesforce/apex/WeaveTemplateBuilderController.getScheduledSends';
 import cancelScheduledSend from '@salesforce/apex/WeaveTemplateBuilderController.cancelScheduledSend';
 import sendScheduledSendNow from '@salesforce/apex/WeaveTemplateBuilderController.sendScheduledSendNow';
@@ -171,9 +172,18 @@ export default class WeaveTemplateBuilder extends LightningElement {
   @track previewIsLoading = false;
   @track isSendingTest = false;
   @track scheduleDateTime = '';
+  @track scheduleDate = '';
+  @track scheduleTime = '09:00';
   @track scheduleType = 'Individual';
+  @track scheduleMode = 'once';
   @track scheduleBulkFilter = '';
   @track isScheduling = false;
+  @track recurringDays = [];
+  @track recurringTime = '09:00';
+  @track recurringStartDate = '';
+  @track recurringEndType = 'noEnd';
+  @track recurringEndDate = '';
+  @track recurringMaxSends = '';
   @track scheduledSends = [];
   @track isLoadingSchedules = false;
   @track libraryFilter = 'all';
@@ -470,6 +480,30 @@ export default class WeaveTemplateBuilder extends LightningElement {
   get tabClass_schedules() { return 'editor-tab' + (this.activeTab === 'schedules' ? ' editor-tab_active' : ''); }
   get isScheduleTypeBulk() { return this.scheduleType === 'Bulk'; }
   get scheduleTypeOptions() { return [{ label: 'Individual Record', value: 'Individual' }, { label: 'Bulk (by filter)', value: 'Bulk' }]; }
+  get scheduleModeOptions() { return [{ label: 'Send Once', value: 'once' }, { label: 'Recurring', value: 'recurring' }]; }
+  get isScheduleModeOnce() { return this.scheduleMode === 'once'; }
+  get isScheduleModeRecurring() { return this.scheduleMode === 'recurring'; }
+  get isRecurringEndByDate() { return this.recurringEndType === 'endDate'; }
+  get isRecurringEndByMaxSends() { return this.recurringEndType === 'maxSends'; }
+  get minScheduleDate() {
+    const d = new Date();
+    return d.toISOString().substring(0, 10);
+  }
+  get dayOfWeekOptions() {
+    return [
+      { label: 'Sun', value: 'sun' }, { label: 'Mon', value: 'mon' },
+      { label: 'Tue', value: 'tue' }, { label: 'Wed', value: 'wed' },
+      { label: 'Thu', value: 'thu' }, { label: 'Fri', value: 'fri' },
+      { label: 'Sat', value: 'sat' }
+    ];
+  }
+  get recurringEndTypeOptions() {
+    return [
+      { label: 'No end', value: 'noEnd' },
+      { label: 'End on date', value: 'endDate' },
+      { label: 'Stop after X sends', value: 'maxSends' }
+    ];
+  }
   get hasScheduledSends() { return this.scheduledSends && this.scheduledSends.length > 0; }
   get templateHasId() { return !!this.draftTemplate.id; }
   get hasAttachmentRules() { return (this.draftTemplate.attachments || []).length > 0; }
@@ -1258,6 +1292,18 @@ export default class WeaveTemplateBuilder extends LightningElement {
     this.scheduleDateTime = event.target.value;
   }
 
+  handleScheduleDateChange(event) {
+    this.scheduleDate = event.detail.value;
+  }
+
+  handleScheduleTimeChange(event) {
+    this.scheduleTime = event.detail.value;
+  }
+
+  handleScheduleModeChange(event) {
+    this.scheduleMode = event.detail.value;
+  }
+
   handleScheduleTypeChange(event) {
     this.scheduleType = event.detail.value;
   }
@@ -1266,34 +1312,113 @@ export default class WeaveTemplateBuilder extends LightningElement {
     this.scheduleBulkFilter = event.target.value;
   }
 
+  handleRecurringDaysChange(event) {
+    this.recurringDays = event.detail.value;
+  }
+
+  handleRecurringTimeChange(event) {
+    this.recurringTime = event.detail.value;
+  }
+
+  handleRecurringStartDateChange(event) {
+    this.recurringStartDate = event.detail.value;
+  }
+
+  handleRecurringEndTypeChange(event) {
+    this.recurringEndType = event.detail.value;
+  }
+
+  handleRecurringEndDateChange(event) {
+    this.recurringEndDate = event.detail.value;
+  }
+
+  handleRecurringMaxSendsChange(event) {
+    this.recurringMaxSends = event.detail.value;
+  }
+
   handleCreateScheduledSend() {
     if (!this.draftTemplate.id) {
       this.errorMessage = 'Save the template before scheduling.';
       return;
     }
-    if (!this.scheduleDateTime) {
+    if (!this.scheduleDate || !this.scheduleTime) {
       this.errorMessage = 'Select a date and time before scheduling.';
       return;
     }
     if (this.scheduleType === 'Individual' && !this.previewRecordId) {
-      this.errorMessage = 'Select a record for Individual sends.';
+      this.errorMessage = 'Select a record on the Preview tab for Individual sends.';
       return;
     }
+    const scheduledDateTimeStr = this.scheduleDate + 'T' + this.scheduleTime;
+    const scheduledMs = new Date(scheduledDateTimeStr).getTime();
     this.isScheduling = true;
     this.errorMessage = '';
     createScheduledSend({
       templateId: this.draftTemplate.id,
-      scheduledDateTime: this.scheduleDateTime,
+      scheduledDateTime: scheduledDateTimeStr,
       sendType: this.scheduleType,
       recordId: this.scheduleType === 'Individual' ? this.previewRecordId : null,
       filterClause: this.scheduleType === 'Bulk' ? this.scheduleBulkFilter : null
     })
       .then(() => {
-        this.dispatchEvent(new ShowToastEvent({ title: 'Send scheduled', message: 'Scheduled for ' + this.scheduleDateTime, variant: 'success' }));
-        this.scheduleDateTime = '';
+        this.dispatchEvent(new ShowToastEvent({ title: 'Send scheduled', message: 'Scheduled for ' + scheduledDateTimeStr, variant: 'success' }));
+        this.scheduleDate = '';
         this.scheduleBulkFilter = '';
+        this.loadScheduledSends();
       })
       .catch(err => { this.errorMessage = err.body?.message || 'Scheduling failed.'; })
+      .finally(() => { this.isScheduling = false; });
+  }
+
+  handleCreateRecurringSchedule() {
+    if (!this.draftTemplate.id) {
+      this.errorMessage = 'Save the template before scheduling.';
+      return;
+    }
+    if (!this.previewRecordId) {
+      this.errorMessage = 'Select a record on the Preview tab before creating a recurring schedule.';
+      return;
+    }
+    if (!this.recurringDays || this.recurringDays.length === 0) {
+      this.errorMessage = 'Select at least one day of the week.';
+      return;
+    }
+    if (!this.recurringStartDate) {
+      this.errorMessage = 'Select a start date.';
+      return;
+    }
+    const recurringConfigJson = JSON.stringify({
+      daysOfWeek: this.recurringDays,
+      timeOfDay: this.recurringTime,
+      startDate: this.recurringStartDate,
+      endType: this.recurringEndType,
+      endDate: this.recurringEndType === 'endDate' ? this.recurringEndDate : null,
+      maxSends: this.recurringEndType === 'maxSends' ? Number(this.recurringMaxSends) : null
+    });
+    const request = {
+      templateId: this.draftTemplate.id,
+      recordId: this.previewRecordId,
+      subject: this.draftTemplate.subjectTemplate || this.draftTemplate.name || 'Email',
+      htmlBody: null,
+      toRecipients: [],
+      ccRecipients: [],
+      bccRecipients: [],
+      attachmentContentDocumentIds: [],
+      storeHistory: null
+    };
+    this.isScheduling = true;
+    this.errorMessage = '';
+    scheduleRecurringEmail({ request, recurringConfigJson })
+      .then(() => {
+        this.dispatchEvent(new ShowToastEvent({ title: 'Recurring schedule created', message: 'First send will occur on ' + this.recurringStartDate, variant: 'success' }));
+        this.recurringDays = [];
+        this.recurringStartDate = '';
+        this.recurringEndDate = '';
+        this.recurringMaxSends = '';
+        this.recurringEndType = 'noEnd';
+        this.loadScheduledSends();
+      })
+      .catch(err => { this.errorMessage = err.body?.message || 'Failed to create recurring schedule.'; })
       .finally(() => { this.isScheduling = false; });
   }
 

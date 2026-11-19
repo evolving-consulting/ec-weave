@@ -101,6 +101,55 @@ public with sharing class WeaveEmailTemplateController {
         }
     }
 
+    @AuraEnabled
+    public static Id scheduleRecurringEmail(GenericEmailSendRequest request, String recurringConfigJson) {
+        try {
+            if (request == null) throw new AuraHandledException('Send request is required.');
+            if (request.recordId == null) throw new AuraHandledException('Record Id is required.');
+            if (String.isBlank(recurringConfigJson)) throw new AuraHandledException('Recurring configuration is required.');
+
+            WeaveRecurringEmailJob.RecurringConfig config = WeaveRecurringEmailJob.parseConfig(recurringConfigJson);
+            if (config == null) throw new AuraHandledException('Invalid recurring configuration format.');
+            if (config.daysOfWeek == null || config.daysOfWeek.isEmpty()) {
+                throw new AuraHandledException('At least one day of the week is required.');
+            }
+            if (String.isBlank(config.startDate)) throw new AuraHandledException('Start date is required.');
+
+            Datetime firstOccurrence = WeaveRecurringEmailJob.getFirstOccurrence(config);
+            if (firstOccurrence == null) {
+                throw new AuraHandledException('No upcoming occurrence found for the selected days and start date. Ensure the first send is at least 5 minutes in the future.');
+            }
+
+            if (!Weave_Scheduled_Send__c.SObjectType.getDescribe(SObjectDescribeOptions.DEFERRED).isCreateable()) {
+                throw new AuraHandledException('You do not have permission to schedule email sends.');
+            }
+
+            String subjectTrunc = request.subject != null
+                ? (request.subject.length() > 240 ? request.subject.substring(0, 240) : request.subject)
+                : 'Email';
+
+            Weave_Scheduled_Send__c scheduledSend = new Weave_Scheduled_Send__c(
+                Template__c          = request.templateId,
+                Record_Id__c         = request.recordId == null ? null : String.valueOf(request.recordId),
+                Scheduled_At__c      = firstOccurrence,
+                Status__c            = 'Pending',
+                Send_Type__c         = 'Recurring',
+                Job_Name__c          = 'Recurring: ' + subjectTrunc,
+                Recurring_Config__c  = recurringConfigJson
+            );
+            insert as user scheduledSend;
+
+            String cron = WeaveRecurringEmailJob.buildCron(firstOccurrence);
+            System.schedule('WeaveRecurring-' + scheduledSend.Id, cron, new WeaveRecurringEmailJob(scheduledSend.Id));
+
+            return scheduledSend.Id;
+        } catch (AuraHandledException handledException) {
+            throw handledException;
+        } catch (Exception unexpectedException) {
+            throw new AuraHandledException('Unable to create recurring schedule. Please contact your administrator.');
+        }
+    }
+
     @AuraEnabled(cacheable=true)
     public static Map<String, String> getRecordSummary(Id recordId) {
         if (recordId == null) throw new AuraHandledException('Record Id is required.');
