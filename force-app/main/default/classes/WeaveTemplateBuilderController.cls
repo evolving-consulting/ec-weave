@@ -219,6 +219,11 @@ public with sharing class WeaveTemplateBuilderController {
         update rec;
     }
 
+    @AuraEnabled(cacheable=true)
+    public static List<Weave_Recipient_Segment__c> getActiveSegments(String objectApiName) {
+        return WeaveRecipientSegmentController.getActiveSegments(objectApiName);
+    }
+
     @AuraEnabled
     public static void sendScheduledSendNow(Id scheduledSendId) {
         if (scheduledSendId == null) throw new AuraHandledException('Scheduled send ID is required.');

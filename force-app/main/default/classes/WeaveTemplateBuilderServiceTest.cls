@@ -199,4 +199,67 @@ private class WeaveTemplateBuilderServiceTest {
         }
         System.assert(hasName, 'Account fields should include Name.');
     }
+
+    @IsTest
+    static void saveTemplate_withDynamicSegmentRecipient_roundTrips() {
+        WeaveTemplateSecurityService.enableManagementForTest();
+
+        Weave_Recipient_Segment__c seg = new Weave_Recipient_Segment__c(
+            Name = 'Test Segment',
+            Object_API_Name__c = 'Contact',
+            Email_Field_API_Name__c = 'Email',
+            Status__c = 'Active'
+        );
+        insert seg;
+
+        WeaveBuilderDTOs.WeaveBuilderTemplateDTO dto = new WeaveBuilderDTOs.WeaveBuilderTemplateDTO();
+        dto.name = 'Segment Recipient Template';
+        dto.parentObjectApiName = 'Contact';
+        dto.status = 'Draft';
+        WeaveBuilderDTOs.WeaveBuilderRecipientDTO r = new WeaveBuilderDTOs.WeaveBuilderRecipientDTO();
+        r.localKey = 'local-seg-1';
+        r.recipientType = 'To';
+        r.recipientSourceType = 'Dynamic Segment';
+        r.segmentId = seg.Id;
+        r.active = true;
+        r.defaultSelected = true;
+        dto.recipients = new List<WeaveBuilderDTOs.WeaveBuilderRecipientDTO>{ r };
+
+        Test.startTest();
+        WeaveBuilderDTOs.WeaveBuilderTemplateDTO saved = WeaveTemplateBuilderService.saveTemplate(dto);
+        WeaveBuilderDTOs.WeaveBuilderTemplateDTO loaded = WeaveTemplateBuilderService.loadTemplate(saved.id);
+        Test.stopTest();
+
+        System.assertEquals(1, loaded.recipients.size(), 'One recipient should be saved.');
+        System.assertEquals('Dynamic Segment', loaded.recipients[0].recipientSourceType, 'Source type should be Dynamic Segment.');
+        System.assertEquals(String.valueOf(seg.Id), loaded.recipients[0].segmentId, 'Segment Id should round-trip.');
+    }
+
+    @IsTest
+    static void validateRecipient_dynamicSegmentWithoutSegmentId_throws() {
+        WeaveTemplateSecurityService.enableManagementForTest();
+
+        WeaveBuilderDTOs.WeaveBuilderTemplateDTO dto = new WeaveBuilderDTOs.WeaveBuilderTemplateDTO();
+        dto.name = 'Invalid Segment Recipient';
+        dto.parentObjectApiName = 'Account';
+        dto.status = 'Draft';
+        WeaveBuilderDTOs.WeaveBuilderRecipientDTO r = new WeaveBuilderDTOs.WeaveBuilderRecipientDTO();
+        r.localKey = 'local-bad';
+        r.recipientType = 'To';
+        r.recipientSourceType = 'Dynamic Segment';
+        r.segmentId = null;
+        r.active = true;
+        dto.recipients = new List<WeaveBuilderDTOs.WeaveBuilderRecipientDTO>{ r };
+
+        Boolean threw = false;
+        Test.startTest();
+        try {
+            WeaveTemplateBuilderService.saveTemplate(dto);
+        } catch (AuraHandledException e) {
+            threw = true;
+        }
+        Test.stopTest();
+
+        System.assert(threw, 'Should throw when Dynamic Segment recipient has no segmentId.');
+    }
 }

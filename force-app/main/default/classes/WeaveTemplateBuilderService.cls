@@ -326,6 +326,7 @@ public with sharing class WeaveTemplateBuilderService {
                 Parent_Lookup_Field_API_Name__c = r.parentLookupFieldApiName,
                 Name_Field_API_Name__c = r.nameFieldApiName,
                 Email_Field_API_Name__c = r.emailFieldApiName,
+                Segment_Id__c = r.segmentId,
                 Filter_Logic__c = r.filterLogic,
                 Default_Selected__c = r.defaultSelected != false,
                 Allow_Multiple__c = r.allowMultiple != false,
@@ -449,7 +450,8 @@ public with sharing class WeaveTemplateBuilderService {
         for (Weave_Template_Recipient__c r : [
             SELECT Id, Name, Active__c, Display_Order__c, Recipient_Type__c, Recipient_Source_Type__c,
                 Source_Object_API_Name__c, Parent_Lookup_Field_API_Name__c, Name_Field_API_Name__c,
-                Email_Field_API_Name__c, Filter_Logic__c, Default_Selected__c, Allow_Multiple__c, Required__c
+                Email_Field_API_Name__c, Filter_Logic__c, Default_Selected__c, Allow_Multiple__c, Required__c,
+                Segment_Id__c
             FROM Weave_Template_Recipient__c
             WHERE Weave_Template_Config__c = :templateId
             WITH USER_MODE
@@ -475,6 +477,7 @@ public with sharing class WeaveTemplateBuilderService {
             dto.defaultSelected = r.Default_Selected__c;
             dto.allowMultiple = r.Allow_Multiple__c;
             dto.required = r.Required__c;
+            dto.segmentId = r.Segment_Id__c;
             dtos.add(dto);
         }
         return dtos;
@@ -582,6 +585,9 @@ public with sharing class WeaveTemplateBuilderService {
             if (String.isBlank(r.emailFieldApiName)) {
                 throw new AuraHandledException('Email field is required for Related Records recipients.');
             }
+        }
+        if (r.recipientSourceType == 'Dynamic Segment' && String.isBlank(r.segmentId)) {
+            throw new AuraHandledException('A segment must be selected for Dynamic Segment recipients.');
         }
     }
 

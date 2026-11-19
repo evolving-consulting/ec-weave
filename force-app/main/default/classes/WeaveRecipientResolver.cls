@@ -2,6 +2,7 @@ public with sharing class WeaveRecipientResolver {
     private static final String SOURCE_TYPE_PARENT_FIELD = 'Parent Field';
     private static final String SOURCE_TYPE_RELATED_RECORDS = 'Related Records';
     private static final String SOURCE_TYPE_MANUAL = 'Manual';
+    private static final String SOURCE_TYPE_DYNAMIC_SEGMENT = 'Dynamic Segment';
     private static final String EMAIL_REGEX = '^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$';
 
     public static List<RecipientOptionDTO> getRecipientOptions(Id templateId, Id recordId) {
@@ -13,6 +14,7 @@ public with sharing class WeaveRecipientResolver {
         List<RecipientOptionDTO> options = new List<RecipientOptionDTO>();
         List<Weave_Template_Recipient__c> parentFieldConfigs = new List<Weave_Template_Recipient__c>();
         List<Weave_Template_Recipient__c> manualConfigs = new List<Weave_Template_Recipient__c>();
+        List<Weave_Template_Recipient__c> dynamicSegmentConfigs = new List<Weave_Template_Recipient__c>();
         Weave_Template_Recipient__c relatedRecordConfig;
 
         for (Weave_Template_Recipient__c config : configs) {
@@ -25,11 +27,16 @@ public with sharing class WeaveRecipientResolver {
                 relatedRecordConfig = config;
             } else if (config.Recipient_Source_Type__c == SOURCE_TYPE_MANUAL) {
                 manualConfigs.add(config);
+            } else if (config.Recipient_Source_Type__c == SOURCE_TYPE_DYNAMIC_SEGMENT) {
+                dynamicSegmentConfigs.add(config);
             }
         }
 
         if (relatedRecordConfig != null) options.addAll(resolveRelatedRecordRecipients(template, relatedRecordConfig, recordId));
         for (Weave_Template_Recipient__c manualConfig : manualConfigs) options.add(buildManualOption(manualConfig));
+        for (Weave_Template_Recipient__c segmentConfig : dynamicSegmentConfigs) {
+            options.addAll(resolveSegmentRecipients(segmentConfig));
+        }
 
         List<RecipientOptionDTO> allOptions = resolveParentFieldRecipients(template, parentFieldConfigs, recordId);
         allOptions.addAll(options);
@@ -54,7 +61,8 @@ public with sharing class WeaveRecipientResolver {
         return [
             SELECT Id, Name, Active__c, Display_Order__c, Recipient_Source_Type__c, Recipient_Type__c,
                 Source_Object_API_Name__c, Parent_Lookup_Field_API_Name__c, Name_Field_API_Name__c,
-                Email_Field_API_Name__c, Filter_Logic__c, Default_Selected__c, Allow_Multiple__c, Required__c
+                Email_Field_API_Name__c, Filter_Logic__c, Default_Selected__c, Allow_Multiple__c, Required__c,
+                Segment_Id__c
             FROM Weave_Template_Recipient__c
             WHERE Weave_Template_Config__c = :templateId AND Active__c = true
             WITH USER_MODE
@@ -98,6 +106,20 @@ public with sharing class WeaveRecipientResolver {
             options.add(buildRecipientOption(String.valueOf(relatedRecord.get('Id')), name, email, config, SOURCE_TYPE_RELATED_RECORDS));
         }
         return options;
+    }
+
+    private static List<RecipientOptionDTO> resolveSegmentRecipients(Weave_Template_Recipient__c config) {
+        if (String.isBlank(config.Segment_Id__c)) return new List<RecipientOptionDTO>();
+        List<RecipientOptionDTO> segmentOptions = WeaveRecipientSegmentController.resolveSegmentRecipients(
+            (Id) config.Segment_Id__c
+        );
+        for (RecipientOptionDTO opt : segmentOptions) {
+            opt.recipientType = config.Recipient_Type__c;
+            opt.selected = config.Default_Selected__c == true;
+            opt.required = config.Required__c == true;
+            opt.allowMultiple = config.Allow_Multiple__c == true;
+        }
+        return segmentOptions;
     }
 
     private static RecipientOptionDTO buildManualOption(Weave_Template_Recipient__c config) {
