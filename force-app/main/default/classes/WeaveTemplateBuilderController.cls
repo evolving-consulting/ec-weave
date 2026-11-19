@@ -10,7 +10,7 @@ public with sharing class WeaveTemplateBuilderController {
         return WeaveTemplateBuilderService.getOrgWideEmailAddresses();
     }
 
-    @AuraEnabled(cacheable=true)
+    @AuraEnabled
     public static List<WeaveBuilderDTOs.WeaveBuilderTemplateSummaryDTO> getTemplates() {
         return WeaveTemplateBuilderService.getTemplates();
     }
@@ -79,7 +79,7 @@ public with sharing class WeaveTemplateBuilderController {
 
     // ── Brand methods ─────────────────────────────────────────────────────────
 
-    @AuraEnabled(cacheable=true)
+    @AuraEnabled
     public static List<WeaveBuilderDTOs.WeaveBrandSummaryDTO> getBrands() {
         return WeaveBrandService.getBrands();
     }

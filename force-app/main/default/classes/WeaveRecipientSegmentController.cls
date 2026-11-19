@@ -1,6 +1,6 @@
 public with sharing class WeaveRecipientSegmentController {
 
-    @AuraEnabled(cacheable=true)
+    @AuraEnabled
     public static List<Weave_Recipient_Segment__c> getActiveSegments(String objectApiName) {
         try {
             List<Weave_Recipient_Segment__c> segments = [
