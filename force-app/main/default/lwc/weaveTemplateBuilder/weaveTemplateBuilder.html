@@ -359,24 +359,14 @@
                   <button class="btn-add-item" onclick={handleAddComponent}>+ Add</button>
                 </div>
               </div>
-              <template for:each={regionGroups} for:item="group">
-                <div key={group.region} class="region-group">
-                  <h4 class="region-group__label">{group.region}</h4>
-                  <template if:true={group.hasComponents}>
-                    <template for:each={group.components} for:item="comp">
-                      <c-weave-builder-component-card
-                        key={comp.localKey}
-                        component={comp}
-                        oncomponentedit={handleEditComponent}
-                        oncomponentdelete={handleDeleteComponent}
-                      ></c-weave-builder-component-card>
-                    </template>
-                  </template>
-                  <template if:false={group.hasComponents}>
-                    <p class="region-group__empty">No components in {group.region}</p>
-                  </template>
-                </div>
-              </template>
+              <c-weave-canvas-designer
+                draft-template={draftTemplate}
+                preview-record-id={previewRecordId}
+                parent-fields={parentFieldsForMergeTags}
+                oncomponentschanged={handleCanvasComponentsChanged}
+                oncomponentedit={handleEditComponent}
+                oncomponentdelete={handleDeleteComponent}
+              ></c-weave-canvas-designer>
             </div>
           </template>
 

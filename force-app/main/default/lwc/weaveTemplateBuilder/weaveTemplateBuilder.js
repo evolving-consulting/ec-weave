@@ -123,7 +123,8 @@ function emptyTemplate() {
     brandId: null, brandName: null,
     queries: [], components: [], recipients: [], actions: [],
     deletedQueryIds: [], deletedComponentIds: [], deletedRecipientIds: [], deletedActionIds: [],
-    attachments: [], deletedAttachmentIds: []
+    attachments: [], deletedAttachmentIds: [],
+    canvasPageSize: 'Letter', canvasOrientation: 'Portrait'
   };
 }
 
@@ -846,6 +847,11 @@ export default class WeaveTemplateBuilder extends LightningElement {
 
   handleComponentTypeSelect(event) { this.newComponentType = event.detail.value; }
   handleRegionSelect(event) { this.newComponentRegion = event.detail.value; }
+
+  handleCanvasComponentsChanged(event) {
+    this.draftTemplate = { ...this.draftTemplate, components: event.detail.components };
+    this.isDirty = true;
+  }
 
   handleAddComponent() {
     const newComp = {

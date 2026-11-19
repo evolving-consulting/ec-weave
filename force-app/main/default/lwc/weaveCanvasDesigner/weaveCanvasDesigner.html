@@ -1,0 +1,242 @@
+<template>
+  <div class="canvas-designer">
+
+    <!-- Mode toggle -->
+    <div class="canvas-toolbar">
+      <div class="mode-tabs">
+        <button class={emailModeClass} data-mode="email" onclick={handleModeChange}>
+          &#x2709;&nbsp; Email Mode
+        </button>
+        <button class={documentModeClass} data-mode="document" onclick={handleModeChange}>
+          &#x2630;&nbsp; Document Mode
+        </button>
+      </div>
+      <template if:true={isDocumentMode}>
+        <div class="toolbar-actions">
+          <button class="toolbar-btn" onclick={handleUndo} disabled={cannotUndo} title="Undo">&#x21A9; Undo</button>
+          <button class="toolbar-btn" onclick={handleRedo} disabled={cannotRedo} title="Redo">&#x21AA; Redo</button>
+          <label class="snap-toggle">
+            <input type="checkbox" checked={gridSnap} onchange={handleSnapToggle} />
+            <span>Snap 1/8"</span>
+          </label>
+        </div>
+      </template>
+    </div>
+
+    <!-- EMAIL MODE -->
+    <template if:true={isEmailMode}>
+      <div class="email-mode-content">
+        <template for:each={emailRegionGroups} for:item="group">
+          <div key={group.region} class="region-group">
+            <h4 class="region-group__label">{group.region}</h4>
+            <template if:true={group.hasComponents}>
+              <template for:each={group.components} for:item="comp">
+                <c-weave-builder-component-card
+                  key={comp.localKey}
+                  component={comp}
+                ></c-weave-builder-component-card>
+              </template>
+            </template>
+            <template if:false={group.hasComponents}>
+              <p class="region-group__empty">No components in {group.region}</p>
+            </template>
+          </div>
+        </template>
+        <template if:false={hasEmailComponents}>
+          <div class="empty-state">
+            <p class="empty-state__title">No email components yet</p>
+            <p class="empty-state__sub">Use the controls above to add Header, Body, or Footer components.</p>
+          </div>
+        </template>
+      </div>
+    </template>
+
+    <!-- DOCUMENT MODE -->
+    <template if:true={isDocumentMode}>
+      <div class="document-workspace"
+           onmousemove={handleWorkspaceMouseMove}
+           onmouseup={handleWorkspaceMouseUp}
+           onmouseleave={handleWorkspaceMouseUp}>
+
+        <!-- Toolbox (left rail) -->
+        <div class="toolbox">
+          <p class="toolbox-label">TOOLS</p>
+
+          <button class={toolClass_select} data-tool="select" onclick={handleToolChange} title="Select / Move">
+            <svg class="tool-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M5 3l11 7-6 2-2 6L5 3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+            </svg>
+            <span>Select</span>
+          </button>
+
+          <button class={toolClass_text} data-tool="text" onclick={handleToolChange} title="Text Box">
+            <svg class="tool-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="3" y="4" width="14" height="12" rx="1" stroke="currentColor" stroke-width="1.5"/>
+              <line x1="6" y1="8" x2="14" y2="8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <line x1="6" y1="11" x2="11" y2="11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <span>Text</span>
+          </button>
+
+          <button class={toolClass_table} data-tool="table" onclick={handleToolChange} title="Table">
+            <svg class="tool-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="3" y="4" width="14" height="12" rx="1" stroke="currentColor" stroke-width="1.5"/>
+              <line x1="3" y1="8" x2="17" y2="8" stroke="currentColor" stroke-width="1.5"/>
+              <line x1="10" y1="4" x2="10" y2="16" stroke="currentColor" stroke-width="1.5"/>
+            </svg>
+            <span>Table</span>
+          </button>
+
+          <button class={toolClass_image} data-tool="image" onclick={handleToolChange} title="Image">
+            <svg class="tool-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="3" y="4" width="14" height="12" rx="1" stroke="currentColor" stroke-width="1.5"/>
+              <circle cx="8" cy="8.5" r="1.5" fill="currentColor" opacity="0.6"/>
+              <path d="M3 13l4-3 3 3 2-2 5 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Image</span>
+          </button>
+
+          <button class={toolClass_shape} data-tool="shape" onclick={handleToolChange} title="Shape">
+            <svg class="tool-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="4" y="4" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/>
+            </svg>
+            <span>Shape</span>
+          </button>
+        </div>
+
+        <!-- Artboard area (center) -->
+        <div class="artboard-area">
+          <template for:each={pageGroups} for:item="pg">
+            <div key={pg.pageKey} class="artboard-page-wrapper">
+              <span class="page-label">Page {pg.pageNum}</span>
+              <div
+                class={artboardClass}
+                style={artboardStyle}
+                data-page={pg.pageNum}
+                onmousedown={handleArtboardMouseDown}
+              >
+                <template for:each={pg.boxes} for:item="box">
+                  <div
+                    key={box.id}
+                    class={box.boxClass}
+                    style={box.style}
+                    data-boxid={box.id}
+                    onmousedown={handleBoxMouseDown}
+                  >
+                    <span class="box-type-badge">{box.typeLabel}</span>
+                    <p class="box-preview-text">{box.previewText}</p>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </template>
+          <div class="add-page-row">
+            <button class="btn-add-page" onclick={handleAddPage}>+ Add Page</button>
+          </div>
+        </div>
+
+        <!-- Properties rail (right) -->
+        <div class="properties-rail">
+          <template if:true={selectedBox}>
+            <div class="edit-panel">
+              <div class="edit-panel-header">
+                <p class="edit-panel-title">BOX PROPERTIES</p>
+                <button class="edit-panel-close" onclick={handleDeselect}>&#x2715;</button>
+              </div>
+
+              <div class="form-row">
+                <lightning-input
+                  label="X (inches)"
+                  type="number"
+                  value={selectedBox.x}
+                  min="0"
+                  step="0.125"
+                  data-prop="x"
+                  onchange={handleBoxPropChange}
+                  formatter="decimal"
+                ></lightning-input>
+              </div>
+              <div class="form-row">
+                <lightning-input
+                  label="Y (inches)"
+                  type="number"
+                  value={selectedBox.y}
+                  min="0"
+                  step="0.125"
+                  data-prop="y"
+                  onchange={handleBoxPropChange}
+                  formatter="decimal"
+                ></lightning-input>
+              </div>
+              <div class="form-row">
+                <lightning-input
+                  label="Width (inches)"
+                  type="number"
+                  value={selectedBox.w}
+                  min="0.5"
+                  step="0.125"
+                  data-prop="w"
+                  onchange={handleBoxPropChange}
+                  formatter="decimal"
+                ></lightning-input>
+              </div>
+              <div class="form-row">
+                <lightning-input
+                  label="Height (inches)"
+                  type="number"
+                  value={selectedBox.h}
+                  min="0.25"
+                  step="0.125"
+                  data-prop="h"
+                  onchange={handleBoxPropChange}
+                  formatter="decimal"
+                ></lightning-input>
+              </div>
+              <div class="form-row">
+                <lightning-combobox
+                  label="Font"
+                  value={selectedBox.font}
+                  options={fontOptions}
+                  data-prop="font"
+                  onchange={handleBoxPropChange}
+                ></lightning-combobox>
+              </div>
+              <div class="form-row">
+                <lightning-textarea
+                  label="HTML Content"
+                  value={selectedBox.html}
+                  data-prop="html"
+                  onchange={handleBoxPropChange}
+                ></lightning-textarea>
+              </div>
+
+              <div class="form-actions">
+                <button class="btn-prop-cancel" onclick={handleDeselect}>Close</button>
+                <button class="btn-prop-delete" onclick={handleDeleteBox}>Delete</button>
+              </div>
+            </div>
+          </template>
+          <template if:false={selectedBox}>
+            <div class="properties-hint">
+              <p>Select a box to edit its properties, or choose a tool and click the artboard to place a new element.</p>
+            </div>
+          </template>
+        </div>
+
+      </div>
+    </template>
+
+    <!-- Footer -->
+    <div class="canvas-footer">
+      <template if:true={isDocumentMode}>
+        <template if:true={isPreviewingPdf}>
+          <lightning-spinner alternative-text="Generating PDF" size="small"></lightning-spinner>
+        </template>
+        <button class="btn-preview-pdf" onclick={handlePreviewPdf} disabled={isPreviewingPdf}>
+          Preview PDF
+        </button>
+      </template>
+    </div>
+
+  </div>
+</template>
