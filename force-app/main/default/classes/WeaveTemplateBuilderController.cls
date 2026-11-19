@@ -63,6 +63,21 @@ public with sharing class WeaveTemplateBuilderController {
     }
 
     @AuraEnabled
+    public static String previewTemplatePdf(Id templateId, Id recordId) {
+        try {
+            WeaveEmailTemplateRenderer.RenderedEmailDTO rendered =
+                WeaveEmailTemplateRenderer.renderEmail(templateId, recordId, false);
+            String title = String.isNotBlank(rendered.subject) ? rendered.subject : 'Preview';
+            ContentVersion cv = WeavePdfService.previewPdf(rendered.htmlBody, title);
+            return cv.ContentDocumentId;
+        } catch (AuraHandledException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AuraHandledException('Unable to generate PDF preview. Please contact your administrator.');
+        }
+    }
+
+    @AuraEnabled
     public static List<Map<String,String>> getTemplateFiles(Id templateId, String fileType) {
         return WeaveTemplateBuilderService.getTemplateFiles(templateId, fileType);
     }

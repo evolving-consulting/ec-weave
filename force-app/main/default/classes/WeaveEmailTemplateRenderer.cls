@@ -84,7 +84,8 @@ public with sharing class WeaveEmailTemplateRenderer {
         return [
             SELECT Id, Name, Component_Type__c, Region__c, Display_Order__c,
                 Linked_Query__c, Linked_Query__r.SOQL_Query__c, Linked_Query__r.Parent_Lookup_Field__c,
-                Config_JSON__c, HTML_Output__c
+                Config_JSON__c, HTML_Output__c,
+                Canvas_Mode__c, Canvas_X__c, Canvas_Y__c, Canvas_W__c, Canvas_H__c, Canvas_Page__c
             FROM Weave_Template_Component__c
             WHERE Weave_Template_Config__c = :templateId
             WITH USER_MODE
@@ -371,6 +372,77 @@ public with sharing class WeaveEmailTemplateRenderer {
         }
         result = result.replace('{{Brand.UnsubscribeLink}}', unsubLink);
         return result;
+    }
+
+    // ── Canvas rendering ──────────────────────────────────────────────────────
+
+    public static RenderedEmailDTO renderCanvas(Id templateId, Id recordId) {
+        return renderCanvas(templateId, recordId, true);
+    }
+
+    public static RenderedEmailDTO renderCanvas(Id templateId, Id recordId, Boolean enforceActive) {
+        if (templateId == null) throw new AuraHandledException('Template Id is required.');
+        if (recordId == null) throw new AuraHandledException('Record Id is required.');
+
+        Weave_Template_Config__c template = enforceActive ? loadTemplate(templateId) : loadTemplateForPreview(templateId);
+        List<Weave_Template_Component__c> components = loadComponents(templateId);
+
+        SObject parentRecord = loadParentRecord(template, components, recordId);
+        GenericMergeFieldResolver.MergeContext context = buildContext(parentRecord, template.Parent_Object_API_Name__c);
+        context.renderHtmlFormattedFields = true;
+
+        // Determine page dimensions
+        String pageSizeField = 'Canvas_Page_Size__c';
+        String orientField   = 'Canvas_Orientation__c';
+        Boolean landscape    = false;
+        Decimal pageW = 8.5;
+        Decimal pageH = 11.0;
+        try {
+            String pageSize = (String) template.get(pageSizeField);
+            String orient   = (String) template.get(orientField);
+            if (pageSize == 'A4') { pageW = 8.27; pageH = 11.69; }
+            if (orient == 'Landscape') { Decimal tmp = pageW; pageW = pageH; pageH = tmp; landscape = true; }
+        } catch (Exception ex) { /* fields not yet deployed — use Letter portrait defaults */ }
+
+        // Group canvas components by page
+        Map<Integer, List<Weave_Template_Component__c>> byPage = new Map<Integer, List<Weave_Template_Component__c>>();
+        for (Weave_Template_Component__c c : components) {
+            if (c.Canvas_Mode__c != true) continue;
+            Integer pg = c.Canvas_Page__c != null ? c.Canvas_Page__c.intValue() : 1;
+            if (!byPage.containsKey(pg)) byPage.put(pg, new List<Weave_Template_Component__c>());
+            byPage.get(pg).add(c);
+        }
+        if (byPage.isEmpty()) {
+            // No canvas components — fall back to email rendering
+            return renderEmail(templateId, recordId, enforceActive);
+        }
+
+        List<Integer> pageNums = new List<Integer>(byPage.keySet());
+        pageNums.sort();
+
+        List<String> pageDivs = new List<String>();
+        for (Integer pg : pageNums) {
+            if (!pageDivs.isEmpty()) pageDivs.add('<div style="page-break-before:always;"></div>');
+            String pageHtml = '<div style="position:relative;width:' + pageW + 'in;height:' + pageH + 'in;overflow:hidden;">';
+            for (Weave_Template_Component__c c : byPage.get(pg)) {
+                Decimal x = c.Canvas_X__c != null ? c.Canvas_X__c : 0;
+                Decimal y = c.Canvas_Y__c != null ? c.Canvas_Y__c : 0;
+                Decimal w = c.Canvas_W__c != null ? c.Canvas_W__c : 1;
+                Decimal h = c.Canvas_H__c != null ? c.Canvas_H__c : 0.5;
+                String boxStyle = 'position:absolute;left:' + x + 'in;top:' + y + 'in;width:' + w + 'in;height:' + h + 'in;overflow:hidden;';
+                String innerHtml = renderComponent(c, parentRecord, template.Parent_Object_API_Name__c, recordId, context);
+                pageHtml += '<div style="' + boxStyle + '">' + (innerHtml != null ? innerHtml : '') + '</div>';
+            }
+            pageHtml += '</div>';
+            pageDivs.add(pageHtml);
+        }
+
+        String fullHtml = String.join(pageDivs, '\n');
+        String subject  = String.isNotBlank(template.Subject_Template__c)
+            ? GenericMergeFieldResolver.resolveTemplate(template.Subject_Template__c, buildContext(parentRecord, template.Parent_Object_API_Name__c))
+            : template.Name;
+
+        return new RenderedEmailDTO(subject, fullHtml, stripHtml(fullHtml));
     }
 
     // ── Rendered Email DTO ────────────────────────────────────────────────────

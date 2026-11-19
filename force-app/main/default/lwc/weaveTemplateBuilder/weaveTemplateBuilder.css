@@ -430,6 +430,20 @@
 }
 .btn-activate-template:hover { background: var(--ec-brand-teal-mid); }
 
+.btn-preview-pdf {
+  background: transparent;
+  border: 1px solid var(--ec-brand-teal);
+  border-radius: 6px;
+  color: var(--ec-brand-teal);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  margin-left: 8px;
+  padding: 7px 14px;
+}
+.btn-preview-pdf:hover { background: var(--ec-brand-teal-bg); }
+.btn-preview-pdf:disabled { opacity: 0.6; cursor: not-allowed; }
+
 /* ── Tab panels ──────────────────────────────────────────────────────────── */
 .tab-panel {
   flex: 1;

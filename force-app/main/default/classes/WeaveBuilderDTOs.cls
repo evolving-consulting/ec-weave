@@ -122,6 +122,12 @@ public with sharing class WeaveBuilderDTOs {
         @AuraEnabled public String linkedQueryName { get; set; }
         @AuraEnabled public String configJson { get; set; }
         @AuraEnabled public String htmlOutput { get; set; }
+        @AuraEnabled public Boolean canvasMode { get; set; }
+        @AuraEnabled public Decimal canvasX { get; set; }
+        @AuraEnabled public Decimal canvasY { get; set; }
+        @AuraEnabled public Decimal canvasW { get; set; }
+        @AuraEnabled public Decimal canvasH { get; set; }
+        @AuraEnabled public Integer canvasPage { get; set; }
     }
 
     public class WeaveBuilderRecipientDTO {

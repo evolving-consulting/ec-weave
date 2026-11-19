@@ -302,6 +302,36 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>false</editable>
+        <field>Weave_Template_Component__c.Canvas_Mode__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>Weave_Template_Component__c.Canvas_X__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>Weave_Template_Component__c.Canvas_Y__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>Weave_Template_Component__c.Canvas_W__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>Weave_Template_Component__c.Canvas_H__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>Weave_Template_Component__c.Canvas_Page__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
         <field>Weave_Template_Config__c.Allow_User_Edit_Before_Send__c</field>
         <readable>true</readable>
     </fieldPermissions>
@@ -343,6 +373,21 @@
     <fieldPermissions>
         <editable>false</editable>
         <field>Weave_Template_Config__c.Subject_Variant_B__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>Weave_Template_Config__c.Template_Output_Type__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>Weave_Template_Config__c.Canvas_Page_Size__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>Weave_Template_Config__c.Canvas_Orientation__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>

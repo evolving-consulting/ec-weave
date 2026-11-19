@@ -49,6 +49,25 @@ public with sharing class WeavePdfService {
         return saved[0];
     }
 
+    public static ContentVersion previewPdf(String htmlBody, String title) {
+        if (String.isBlank(htmlBody)) throw new AuraHandledException('HTML content is required.');
+        if (String.isBlank(title)) title = 'Preview';
+
+        Blob pdfBlob = Test.isRunningTest()
+            ? Blob.valueOf('PDF_TEST')
+            : Blob.toPdf(wrapForPdf(htmlBody, title));
+
+        ContentVersion cv = new ContentVersion();
+        cv.Title = '[PREVIEW] ' + sanitizeTitle(title);
+        cv.PathOnClient = sanitizeFileName(title) + '_preview.pdf';
+        cv.VersionData = pdfBlob;
+        // No FirstPublishLocationId — not linked to any record
+        insert as user cv;
+
+        List<ContentVersion> saved = [SELECT Id, ContentDocumentId FROM ContentVersion WHERE Id = :cv.Id WITH USER_MODE LIMIT 1];
+        return saved[0];
+    }
+
     private static String wrapForPdf(String htmlBody, String title) {
         String safeTitle = title != null ? title.escapeHtml4() : 'Document';
         String safeBody = htmlBody != null ? htmlBody : '';

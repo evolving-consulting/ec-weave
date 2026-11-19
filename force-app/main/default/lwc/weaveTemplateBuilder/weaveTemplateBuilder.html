@@ -632,7 +632,11 @@
                   onchange={handlePreviewRecordChange}
                 ></lightning-record-picker>
                 <div class="preview-btn-wrap">
-                  <button class="btn-activate-template" onclick={handlePreview}>Preview</button>
+                  <button class="btn-activate-template" onclick={handlePreview}>Preview Email</button>
+                  <button class="btn-preview-pdf" onclick={handlePreviewPdf} disabled={isPreviewingPdf}>
+                    <template if:true={isPreviewingPdf}>Generating…</template>
+                    <template if:false={isPreviewingPdf}>Preview as PDF</template>
+                  </button>
                 </div>
               </div>
               <template if:true={previewIsLoading}>

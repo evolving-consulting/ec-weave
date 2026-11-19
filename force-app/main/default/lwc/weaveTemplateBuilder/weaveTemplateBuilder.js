@@ -13,6 +13,7 @@ import getTemplateFiles from '@salesforce/apex/WeaveTemplateBuilderController.ge
 import createPublicImageLink from '@salesforce/apex/WeaveTemplateBuilderController.createPublicImageLink';
 import deleteTemplateFile from '@salesforce/apex/WeaveTemplateBuilderController.deleteTemplateFile';
 import previewTemplate from '@salesforce/apex/WeaveTemplateBuilderController.previewTemplate';
+import previewTemplatePdf from '@salesforce/apex/WeaveTemplateBuilderController.previewTemplatePdf';
 import sendTestEmail from '@salesforce/apex/WeaveTemplateBuilderController.sendTestEmail';
 import createScheduledSend from '@salesforce/apex/WeaveTemplateBuilderController.createScheduledSend';
 import scheduleRecurringEmail from '@salesforce/apex/WeaveEmailTemplateController.scheduleRecurringEmail';
@@ -172,6 +173,7 @@ export default class WeaveTemplateBuilder extends LightningElement {
   @track previewSubject = '';
   @track previewHtml = '';
   @track previewIsLoading = false;
+  @track isPreviewingPdf = false;
   @track isSendingTest = false;
   @track scheduleDateTime = '';
   @track scheduleDate = '';
@@ -1303,6 +1305,22 @@ export default class WeaveTemplateBuilder extends LightningElement {
         this.errorMessage = err.body?.message || 'Preview failed.';
       })
       .finally(() => { this.previewIsLoading = false; });
+  }
+
+  handlePreviewPdf() {
+    if (!this.previewRecordId || !this.draftTemplate.id) {
+      this.errorMessage = 'Select a record to preview the PDF.';
+      return;
+    }
+    this.isPreviewingPdf = true;
+    this.errorMessage = '';
+    previewTemplatePdf({ templateId: this.draftTemplate.id, recordId: this.previewRecordId })
+      .then(docId => {
+        const url = '/sfc/servlet.shepherd/document/download/' + docId;
+        window.open(url, '_blank');
+      })
+      .catch(err => { this.errorMessage = err.body?.message || 'PDF preview failed.'; })
+      .finally(() => { this.isPreviewingPdf = false; });
   }
 
   handleSendTestEmail() {

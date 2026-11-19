@@ -297,7 +297,13 @@ public with sharing class WeaveTemplateBuilderService {
                 Display_Order__c = c.displayOrder,
                 Linked_Query__c = c.linkedQueryId,
                 Config_JSON__c = c.configJson,
-                HTML_Output__c = c.htmlOutput
+                HTML_Output__c = c.htmlOutput,
+                Canvas_Mode__c = c.canvasMode != null ? c.canvasMode : false,
+                Canvas_X__c = c.canvasX,
+                Canvas_Y__c = c.canvasY,
+                Canvas_W__c = c.canvasW,
+                Canvas_H__c = c.canvasH,
+                Canvas_Page__c = c.canvasPage
             ));
         }
         upsert as user records;
@@ -424,7 +430,8 @@ public with sharing class WeaveTemplateBuilderService {
         List<WeaveBuilderDTOs.WeaveBuilderComponentDTO> dtos = new List<WeaveBuilderDTOs.WeaveBuilderComponentDTO>();
         for (Weave_Template_Component__c c : [
             SELECT Id, Name, Component_Type__c, Region__c, Display_Order__c,
-                Linked_Query__c, Linked_Query__r.Name, Config_JSON__c, HTML_Output__c
+                Linked_Query__c, Linked_Query__r.Name, Config_JSON__c, HTML_Output__c,
+                Canvas_Mode__c, Canvas_X__c, Canvas_Y__c, Canvas_W__c, Canvas_H__c, Canvas_Page__c
             FROM Weave_Template_Component__c
             WHERE Weave_Template_Config__c = :templateId
             WITH USER_MODE
@@ -440,6 +447,12 @@ public with sharing class WeaveTemplateBuilderService {
             dto.linkedQueryName = c.Linked_Query__c != null ? c.Linked_Query__r.Name : null;
             dto.configJson = c.Config_JSON__c;
             dto.htmlOutput = c.HTML_Output__c;
+            dto.canvasMode = c.Canvas_Mode__c;
+            dto.canvasX = c.Canvas_X__c;
+            dto.canvasY = c.Canvas_Y__c;
+            dto.canvasW = c.Canvas_W__c;
+            dto.canvasH = c.Canvas_H__c;
+            dto.canvasPage = c.Canvas_Page__c != null ? c.Canvas_Page__c.intValue() : null;
             dtos.add(dto);
         }
         return dtos;
