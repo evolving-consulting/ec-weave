@@ -4,8 +4,9 @@ public with sharing class WeavePdfService {
         if (templateId == null) throw new AuraHandledException('Template Id is required.');
         if (recordId == null) throw new AuraHandledException('Record Id is required.');
 
-        WeaveEmailTemplateRenderer.RenderedEmailDTO rendered =
-            WeaveEmailTemplateRenderer.renderEmail(templateId, recordId);
+        WeaveEmailTemplateRenderer.RenderedEmailDTO rendered = isDocumentTemplate(templateId)
+            ? WeaveEmailTemplateRenderer.renderCanvas(templateId, recordId)
+            : WeaveEmailTemplateRenderer.renderEmail(templateId, recordId);
 
         Blob pdfBlob = Test.isRunningTest()
             ? Blob.valueOf('PDF_TEST')
@@ -66,6 +67,16 @@ public with sharing class WeavePdfService {
 
         List<ContentVersion> saved = [SELECT Id, ContentDocumentId FROM ContentVersion WHERE Id = :cv.Id WITH USER_MODE LIMIT 1];
         return saved[0];
+    }
+
+    private static Boolean isDocumentTemplate(Id templateId) {
+        try {
+            List<Weave_Template_Config__c> t = [
+                SELECT Template_Output_Type__c FROM Weave_Template_Config__c
+                WHERE Id = :templateId WITH USER_MODE LIMIT 1
+            ];
+            return !t.isEmpty() && t[0].get('Template_Output_Type__c') == 'Document';
+        } catch (Exception e) { return false; }
     }
 
     private static String wrapForPdf(String htmlBody, String title) {

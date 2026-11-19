@@ -65,8 +65,10 @@ public with sharing class WeaveTemplateBuilderController {
     @AuraEnabled
     public static String previewTemplatePdf(Id templateId, Id recordId) {
         try {
-            WeaveEmailTemplateRenderer.RenderedEmailDTO rendered =
-                WeaveEmailTemplateRenderer.renderEmail(templateId, recordId, false);
+            Boolean isDocument = isDocumentOutputType(templateId);
+            WeaveEmailTemplateRenderer.RenderedEmailDTO rendered = isDocument
+                ? WeaveEmailTemplateRenderer.renderCanvas(templateId, recordId, false)
+                : WeaveEmailTemplateRenderer.renderEmail(templateId, recordId, false);
             String title = String.isNotBlank(rendered.subject) ? rendered.subject : 'Preview';
             ContentVersion cv = WeavePdfService.previewPdf(rendered.htmlBody, title);
             return cv.ContentDocumentId;
@@ -75,6 +77,16 @@ public with sharing class WeaveTemplateBuilderController {
         } catch (Exception e) {
             throw new AuraHandledException('Unable to generate PDF preview. Please contact your administrator.');
         }
+    }
+
+    private static Boolean isDocumentOutputType(Id templateId) {
+        try {
+            List<Weave_Template_Config__c> t = [
+                SELECT Template_Output_Type__c FROM Weave_Template_Config__c
+                WHERE Id = :templateId WITH USER_MODE LIMIT 1
+            ];
+            return !t.isEmpty() && t[0].get('Template_Output_Type__c') == 'Document';
+        } catch (Exception e) { return false; }
     }
 
     @AuraEnabled
