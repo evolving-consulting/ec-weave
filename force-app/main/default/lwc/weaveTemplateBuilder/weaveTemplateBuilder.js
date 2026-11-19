@@ -99,6 +99,15 @@ const FROM_EMAIL_TYPE_OPTIONS = [
   { label: 'Current User', value: 'CurrentUser' },
   { label: 'Org Wide Email', value: 'OrgWide' }
 ];
+const OUTPUT_TYPE_OPTIONS = [
+  { label: 'Email', value: 'Email' },
+  { label: 'Document (PDF)', value: 'Document' },
+  { label: 'Both (Email + PDF)', value: 'Both' }
+];
+const PAGE_SIZE_OPTIONS = [
+  { label: 'Letter (8.5 × 11 in)', value: 'Letter' },
+  { label: 'A4 (210 × 297 mm)', value: 'A4' }
+];
 const ATTACHMENT_SOURCE_OPTIONS = [
   { label: 'Static File', value: 'Static File' },
   { label: 'Source Record Files', value: 'Source Record Files' },
@@ -124,7 +133,7 @@ function emptyTemplate() {
     queries: [], components: [], recipients: [], actions: [],
     deletedQueryIds: [], deletedComponentIds: [], deletedRecipientIds: [], deletedActionIds: [],
     attachments: [], deletedAttachmentIds: [],
-    canvasPageSize: 'Letter', canvasOrientation: 'Portrait'
+    canvasPageSize: 'Letter', canvasOrientation: 'Portrait', templateOutputType: 'Email'
   };
 }
 
@@ -228,6 +237,8 @@ export default class WeaveTemplateBuilder extends LightningElement {
 
   statusOptions = STATUS_OPTIONS;
   fromEmailTypeOptions = FROM_EMAIL_TYPE_OPTIONS;
+  outputTypeOptions = OUTPUT_TYPE_OPTIONS;
+  pageSizeOptions = PAGE_SIZE_OPTIONS;
   componentTypeOptions = COMPONENT_TYPE_OPTIONS;
   regionOptions = REGION_OPTIONS;
   actionTypeOptions = ACTION_TYPE_OPTIONS;
@@ -381,6 +392,10 @@ export default class WeaveTemplateBuilder extends LightningElement {
   }
   get isFromCurrentUser() { return this.fromEmailType === 'CurrentUser'; }
   get isFromOrgWide() { return this.fromEmailType === 'OrgWide'; }
+  get showPageSize() {
+    const t = this.draftTemplate.templateOutputType;
+    return t === 'Document' || t === 'Both';
+  }
 
   // ── Filter tab class getters ────────────────────────────────────────────────
 

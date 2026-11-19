@@ -25,6 +25,9 @@ public with sharing class WeaveBuilderDTOs {
         @AuraEnabled public List<Id> deletedRecipientIds { get; set; }
         @AuraEnabled public List<Id> deletedActionIds { get; set; }
         @AuraEnabled public List<Id> deletedAttachmentIds { get; set; }
+        @AuraEnabled public String templateOutputType { get; set; }
+        @AuraEnabled public String canvasPageSize { get; set; }
+        @AuraEnabled public String canvasOrientation { get; set; }
 
         public WeaveBuilderTemplateDTO() {
             this.status = 'Draft';

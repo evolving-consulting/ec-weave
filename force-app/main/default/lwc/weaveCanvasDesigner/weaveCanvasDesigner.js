@@ -14,6 +14,8 @@ const FONT_OPTIONS = [
     { label: 'Courier New', value: 'Courier New' }
 ];
 
+const COPY_RESET_MS = 2000;
+
 function mkUuid() {
     try { return crypto.randomUUID(); }
     catch { return 'new-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8); }
@@ -39,13 +41,15 @@ export default class WeaveCanvasDesigner extends LightningElement {
     get draftTemplate() { return this._draftTemplate; }
     set draftTemplate(val) {
         this._draftTemplate = val || {};
+        const htmlComp = (val?.components || []).find(c => this._isHtmlModeComponent(c));
+        this.htmlContent = htmlComp?.htmlOutput || '';
         if (!this._boxesLoaded) {
             this._loadBoxes();
             this._boxesLoaded = true;
         }
     }
 
-    @track mode = 'email';
+    @track mode = 'blocks';
     @track activeTool = 'select';
     @track boxes = [];
     @track selectedBoxId = null;
@@ -54,6 +58,9 @@ export default class WeaveCanvasDesigner extends LightningElement {
     @track redoStack = [];
     @track isPreviewingPdf = false;
     @track pageCount = 1;
+    @track htmlContent = '';
+    @track promptDescription = '';
+    @track promptCopied = false;
 
     _dragging = false;
     _dragBoxId = null;
@@ -63,23 +70,24 @@ export default class WeaveCanvasDesigner extends LightningElement {
     _dragBoxStartY = 0;
     _didMove = false;
     _savedBoxesBeforeDrag = null;
+    _copyTimer = null;
 
     fontOptions = FONT_OPTIONS;
 
     // ── Computed ─────────────────────────────────────────────────────────────
 
-    get isEmailMode() { return this.mode === 'email'; }
-    get isDocumentMode() { return this.mode === 'document'; }
+    get isBlocksMode() { return this.mode === 'blocks'; }
+    get isHtmlMode() { return this.mode === 'html'; }
 
-    get emailModeClass() {
-        return 'mode-tab' + (this.mode === 'email' ? ' mode-tab_active' : '');
+    get blocksModeClass() {
+        return 'mode-tab' + (this.mode === 'blocks' ? ' mode-tab_active' : '');
     }
-    get documentModeClass() {
-        return 'mode-tab' + (this.mode === 'document' ? ' mode-tab_active' : '');
+    get htmlModeClass() {
+        return 'mode-tab' + (this.mode === 'html' ? ' mode-tab_active' : '');
     }
 
     get emailRegionGroups() {
-        const comps = (this._draftTemplate.components || []).filter(c => !c.canvasMode);
+        const comps = (this._draftTemplate.components || []).filter(c => !c.canvasMode && !this._isHtmlModeComponent(c));
         return ['Header', 'Body', 'Footer'].map(region => ({
             region,
             hasComponents: comps.some(c => c.region === region),
@@ -90,7 +98,7 @@ export default class WeaveCanvasDesigner extends LightningElement {
     }
 
     get hasEmailComponents() {
-        return (this._draftTemplate.components || []).some(c => !c.canvasMode);
+        return (this._draftTemplate.components || []).some(c => !c.canvasMode && !this._isHtmlModeComponent(c));
     }
 
     get artboardWidth() {
@@ -161,6 +169,42 @@ export default class WeaveCanvasDesigner extends LightningElement {
     get toolClass_image()  { return 'tool-btn' + (this.activeTool === 'image'  ? ' tool-btn_active' : ''); }
     get toolClass_shape()  { return 'tool-btn' + (this.activeTool === 'shape'  ? ' tool-btn_active' : ''); }
 
+    get copyBtnClass() {
+        return this.promptCopied ? 'ai-copy-btn ai-copy-btn_success' : 'ai-copy-btn';
+    }
+
+    get weaveAiPrompt() {
+        const desc = this.promptDescription?.trim() || '[describe your document here]';
+        const objectName = this._draftTemplate.parentObjectApiName || 'the parent object';
+        const fields = (this.parentFields || [])
+            .map(f => `  - ${f.label} → {{Parent.${f.value}}}`)
+            .join('\n');
+        return `You are building an HTML document template for Weave, a Salesforce Dynamic Communication Engine.
+
+DOCUMENT DESCRIPTION:
+${desc}
+
+OUTPUT REQUIREMENTS:
+• Return ONLY the HTML body content — no <html>, <head>, <body>, or <style> tags
+• Inline CSS only
+• Use HTML tables for layout (no flexbox or CSS grid) — required for PDF/email rendering
+• Web-safe fonts only: Arial, Helvetica, Georgia, Times New Roman, Courier New
+• Design for US Letter (8.5 × 11 in) with ~0.5 in margins
+• All colors as hex values (#rrggbb)
+• No JavaScript
+
+WEAVE MERGE TAG SYNTAX:
+• Parent record fields: {{Parent.FieldApiName}}
+  Examples: {{Parent.Name}}, {{Parent.CloseDate__c}}, {{Parent.Account.BillingCity}}
+• Use Salesforce field API names exactly as listed below
+• Keep merge tags verbatim in the HTML output — do not replace them with sample values
+
+AVAILABLE PARENT FIELDS (${objectName}):
+${fields || '  No fields available — parent object not set yet'}
+
+Generate the complete HTML template now.`;
+    }
+
     // ── Initialisation ────────────────────────────────────────────────────────
 
     _loadBoxes() {
@@ -197,12 +241,55 @@ export default class WeaveCanvasDesigner extends LightningElement {
         }
     }
 
-    // ── Mode / tool ───────────────────────────────────────────────────────────
+    // ── Mode ──────────────────────────────────────────────────────────────────
 
     handleModeChange(event) {
         this.mode = event.currentTarget.dataset.mode;
         this.selectedBoxId = null;
     }
+
+    // ── HTML Mode handlers ────────────────────────────────────────────────────
+
+    handleHtmlChange(event) {
+        this.htmlContent = event.detail.value;
+        this._emitHtmlChanged();
+    }
+
+    handlePromptDescriptionChange(event) {
+        this.promptDescription = event.detail.value;
+    }
+
+    handleCopyPrompt() {
+        const prompt = this.weaveAiPrompt;
+        try {
+            navigator.clipboard.writeText(prompt).then(() => {
+                this.promptCopied = true;
+                clearTimeout(this._copyTimer);
+                this._copyTimer = setTimeout(() => { this.promptCopied = false; }, COPY_RESET_MS);
+            }).catch(() => this._fallbackCopy(prompt));
+        } catch {
+            this._fallbackCopy(prompt);
+        }
+    }
+
+    _fallbackCopy(text) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        try {
+            document.execCommand('copy');
+            this.promptCopied = true;
+            clearTimeout(this._copyTimer);
+            this._copyTimer = setTimeout(() => { this.promptCopied = false; }, COPY_RESET_MS);
+        } catch { /* silent */ }
+        document.body.removeChild(ta);
+    }
+
+    // ── Artboard interactions ─────────────────────────────────────────────────
 
     handleToolChange(event) {
         this.activeTool = event.currentTarget.dataset.tool;
@@ -211,8 +298,6 @@ export default class WeaveCanvasDesigner extends LightningElement {
     handleSnapToggle(event) {
         this.gridSnap = event.target.checked;
     }
-
-    // ── Artboard interactions ─────────────────────────────────────────────────
 
     handleArtboardMouseDown(event) {
         if (this.activeTool === 'select') {
@@ -355,7 +440,7 @@ export default class WeaveCanvasDesigner extends LightningElement {
     handlePreviewPdf() {
         if (this.isPreviewingPdf) return;
         this.isPreviewingPdf = true;
-        const html = this._serializeArtboardToHtml();
+        const html = this.isHtmlMode ? this.htmlContent : this._serializeArtboardToHtml();
         const title = this._draftTemplate.name || 'Preview';
         previewPdfFromHtml({ html, title })
             .then(docId => {
@@ -374,6 +459,14 @@ export default class WeaveCanvasDesigner extends LightningElement {
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    _isHtmlModeComponent(c) {
+        if (!c) return false;
+        try {
+            const cfg = c.configJson ? JSON.parse(c.configJson) : {};
+            return cfg.htmlMode === true;
+        } catch { return false; }
+    }
 
     _pushUndo() {
         this.undoStack = [...this.undoStack.slice(-49), JSON.parse(JSON.stringify(this.boxes))];
@@ -404,6 +497,26 @@ export default class WeaveCanvasDesigner extends LightningElement {
         const nonCanvasComponents = (this._draftTemplate.components || []).filter(c => !c.canvasMode);
         this.dispatchEvent(new CustomEvent('componentschanged', {
             detail: { components: [...nonCanvasComponents, ...canvasComponents] },
+            bubbles: false
+        }));
+    }
+
+    _emitHtmlChanged() {
+        const existing = (this._draftTemplate.components || []).find(c => this._isHtmlModeComponent(c));
+        const otherComps = (this._draftTemplate.components || []).filter(c => !this._isHtmlModeComponent(c));
+        const htmlComp = {
+            id: existing?.id || null,
+            localKey: existing?.localKey || 'html-mode-content',
+            name: 'HTML Mode Content',
+            componentType: 'HTML Block',
+            region: 'Body',
+            displayOrder: 0,
+            htmlOutput: this.htmlContent,
+            configJson: '{"htmlMode":true}',
+            canvasMode: false
+        };
+        this.dispatchEvent(new CustomEvent('componentschanged', {
+            detail: { components: [...otherComps, htmlComp] },
             bubbles: false
         }));
     }

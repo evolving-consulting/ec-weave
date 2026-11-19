@@ -286,6 +286,24 @@
                   onchange={handleFieldChange}
                 ></lightning-textarea>
                 <div class="form-row-2">
+                  <lightning-combobox
+                    label="Template Output Type"
+                    value={draftTemplate.templateOutputType}
+                    options={outputTypeOptions}
+                    data-field="templateOutputType"
+                    onchange={handleFieldChange}
+                  ></lightning-combobox>
+                  <template if:true={showPageSize}>
+                    <lightning-combobox
+                      label="Page Size"
+                      value={draftTemplate.canvasPageSize}
+                      options={pageSizeOptions}
+                      data-field="canvasPageSize"
+                      onchange={handleFieldChange}
+                    ></lightning-combobox>
+                  </template>
+                </div>
+                <div class="form-row-2">
                   <lightning-input
                     type="checkbox"
                     label="Allow User Edit Before Send"

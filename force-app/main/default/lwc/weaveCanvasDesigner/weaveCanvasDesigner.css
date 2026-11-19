@@ -424,6 +424,114 @@
     margin: 0;
 }
 
+/* ── HTML Mode ──────────────────────────────────────────────────────────── */
+
+.html-editor-section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.html-editor-block {
+    width: 100%;
+}
+
+/* ── AI Prompt Panel ────────────────────────────────────────────────────── */
+
+.ai-prompt-panel {
+    background: var(--ec-brand-teal-bg);
+    border: 1px solid var(--ec-brand-teal-border);
+    border-radius: 8px;
+    padding: 1.25rem;
+}
+
+.ai-prompt-panel-header {
+    margin-bottom: 16px;
+}
+
+.ai-prompt-eyebrow {
+    display: block;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--ec-brand-teal);
+    letter-spacing: 0.1em;
+    margin-bottom: 4px;
+}
+
+.ai-prompt-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ec-brand-ink);
+    margin: 0 0 4px;
+}
+
+.ai-prompt-sub {
+    font-size: 13px;
+    color: var(--ec-brand-muted);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.ai-prompt-describe {
+    margin-bottom: 16px;
+}
+
+.ai-prompt-preview {
+    background: white;
+    border: 1px solid var(--ec-brand-teal-border);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.ai-prompt-preview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: #f9fafb;
+    border-bottom: 1px solid var(--ec-brand-teal-border);
+}
+
+.ai-prompt-preview-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ec-brand-muted);
+    letter-spacing: 0.06em;
+}
+
+.ai-copy-btn {
+    background: var(--ec-brand-teal);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 5px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.ai-copy-btn:hover {
+    background: var(--ec-brand-teal-mid);
+}
+
+.ai-copy-btn_success {
+    background: #065f46;
+}
+
+.ai-prompt-text {
+    margin: 0;
+    padding: 14px;
+    font-size: 12px;
+    font-family: 'Courier New', Courier, monospace;
+    color: var(--ec-brand-ink);
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 320px;
+    overflow-y: auto;
+    line-height: 1.6;
+}
+
 /* ── Footer ─────────────────────────────────────────────────────────────── */
 
 .canvas-footer {

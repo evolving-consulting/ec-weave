@@ -176,7 +176,7 @@ public with sharing class WeaveTemplateBuilderService {
         List<Weave_Template_Config__c> templates = [
             SELECT Id, Name, API_Name__c, Status__c, Parent_Object_API_Name__c, Subject_Template__c, Subject_Variant_B__c,
                 Default_From_Email__c, Description__c, Allow_User_Edit_Before_Send__c, Store_Email_History__c,
-                Brand__c, Brand__r.Name
+                Brand__c, Brand__r.Name, Template_Output_Type__c, Canvas_Page_Size__c, Canvas_Orientation__c
             FROM Weave_Template_Config__c
             WHERE Id = :templateId
             WITH USER_MODE
@@ -217,7 +217,10 @@ public with sharing class WeaveTemplateBuilderService {
                 Description__c = dto.description,
                 Allow_User_Edit_Before_Send__c = dto.allowUserEditBeforeSend == true,
                 Store_Email_History__c = dto.storeEmailHistory == true,
-                Brand__c = dto.brandId
+                Brand__c = dto.brandId,
+                Template_Output_Type__c = dto.templateOutputType,
+                Canvas_Page_Size__c = dto.canvasPageSize,
+                Canvas_Orientation__c = dto.canvasOrientation
             );
             upsert as user template;
             dto.id = template.Id;
@@ -397,6 +400,9 @@ public with sharing class WeaveTemplateBuilderService {
         dto.subjectVariantB = template.Subject_Variant_B__c;
         dto.brandId = template.Brand__c;
         dto.brandName = template.Brand__c != null ? template.Brand__r.Name : null;
+        dto.templateOutputType = template.Template_Output_Type__c;
+        dto.canvasPageSize = template.Canvas_Page_Size__c;
+        dto.canvasOrientation = template.Canvas_Orientation__c;
         dto.queries = loadQueries(template.Id);
         dto.components = loadComponents(template.Id);
         dto.recipients = loadRecipients(template.Id, template.Parent_Object_API_Name__c);
