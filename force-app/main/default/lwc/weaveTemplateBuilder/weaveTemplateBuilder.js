@@ -485,6 +485,8 @@ export default class WeaveTemplateBuilder extends LightningElement {
   get isScheduleModeRecurring() { return this.scheduleMode === 'recurring'; }
   get isRecurringEndByDate() { return this.recurringEndType === 'endDate'; }
   get isRecurringEndByMaxSends() { return this.recurringEndType === 'maxSends'; }
+  get showRecurringRecordWarning() { return !this.isScheduleTypeBulk && !this.previewRecordId; }
+  get canShowRecurringForm() { return this.isScheduleTypeBulk || !!this.previewRecordId; }
   get minScheduleDate() {
     const d = new Date();
     return d.toISOString().substring(0, 10);
@@ -1375,8 +1377,8 @@ export default class WeaveTemplateBuilder extends LightningElement {
       this.errorMessage = 'Save the template before scheduling.';
       return;
     }
-    if (!this.previewRecordId) {
-      this.errorMessage = 'Select a record on the Preview tab before creating a recurring schedule.';
+    if (!this.isScheduleTypeBulk && !this.previewRecordId) {
+      this.errorMessage = 'Select a record on the Preview tab before creating a recurring Individual schedule.';
       return;
     }
     if (!this.recurringDays || this.recurringDays.length === 0) {
@@ -1393,11 +1395,12 @@ export default class WeaveTemplateBuilder extends LightningElement {
       startDate: this.recurringStartDate,
       endType: this.recurringEndType,
       endDate: this.recurringEndType === 'endDate' ? this.recurringEndDate : null,
-      maxSends: this.recurringEndType === 'maxSends' ? Number(this.recurringMaxSends) : null
+      maxSends: this.recurringEndType === 'maxSends' ? Number(this.recurringMaxSends) : null,
+      filterClause: this.isScheduleTypeBulk ? (this.scheduleBulkFilter || null) : null
     });
     const request = {
       templateId: this.draftTemplate.id,
-      recordId: this.previewRecordId,
+      recordId: this.isScheduleTypeBulk ? null : this.previewRecordId,
       subject: this.draftTemplate.subjectTemplate || this.draftTemplate.name || 'Email',
       htmlBody: null,
       toRecipients: [],

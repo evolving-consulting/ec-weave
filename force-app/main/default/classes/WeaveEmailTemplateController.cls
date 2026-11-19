@@ -105,7 +105,6 @@ public with sharing class WeaveEmailTemplateController {
     public static Id scheduleRecurringEmail(GenericEmailSendRequest request, String recurringConfigJson) {
         try {
             if (request == null) throw new AuraHandledException('Send request is required.');
-            if (request.recordId == null) throw new AuraHandledException('Record Id is required.');
             if (String.isBlank(recurringConfigJson)) throw new AuraHandledException('Recurring configuration is required.');
 
             WeaveRecurringEmailJob.RecurringConfig config = WeaveRecurringEmailJob.parseConfig(recurringConfigJson);
@@ -114,6 +113,8 @@ public with sharing class WeaveEmailTemplateController {
                 throw new AuraHandledException('At least one day of the week is required.');
             }
             if (String.isBlank(config.startDate)) throw new AuraHandledException('Start date is required.');
+
+            Boolean isBulk = (request.recordId == null);
 
             Datetime firstOccurrence = WeaveRecurringEmailJob.getFirstOccurrence(config);
             if (firstOccurrence == null) {
@@ -130,11 +131,12 @@ public with sharing class WeaveEmailTemplateController {
 
             Weave_Scheduled_Send__c scheduledSend = new Weave_Scheduled_Send__c(
                 Template__c          = request.templateId,
-                Record_Id__c         = request.recordId == null ? null : String.valueOf(request.recordId),
+                Record_Id__c         = isBulk ? null : String.valueOf(request.recordId),
+                Filter_Clause__c     = isBulk ? config.filterClause : null,
                 Scheduled_At__c      = firstOccurrence,
                 Status__c            = 'Pending',
                 Send_Type__c         = 'Recurring',
-                Job_Name__c          = 'Recurring: ' + subjectTrunc,
+                Job_Name__c          = (isBulk ? 'Recurring (Bulk): ' : 'Recurring: ') + subjectTrunc,
                 Recurring_Config__c  = recurringConfigJson
             );
             insert as user scheduledSend;

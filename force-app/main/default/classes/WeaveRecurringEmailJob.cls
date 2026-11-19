@@ -14,7 +14,9 @@ public with sharing class WeaveRecurringEmailJob implements Schedulable {
 
     public void execute(SchedulableContext ctx) {
         List<Weave_Scheduled_Send__c> rows = [
-            SELECT Id, Status__c, Template__c, Record_Id__c, Recurring_Config__c, Records_Sent__c
+            SELECT Id, Status__c, Template__c, Record_Id__c, Filter_Clause__c,
+                   Recurring_Config__c, Records_Sent__c, Batch_Size__c,
+                   Template__r.Parent_Object_API_Name__c
             FROM Weave_Scheduled_Send__c
             WHERE Id = :scheduledSendId WITH USER_MODE LIMIT 1
         ];
@@ -28,10 +30,14 @@ public with sharing class WeaveRecurringEmailJob implements Schedulable {
         }
 
         Integer sendCount = record.Records_Sent__c != null ? (Integer)record.Records_Sent__c : 0;
+        Boolean isBulk = String.isBlank(record.Record_Id__c);
 
         try {
-            Id recId = (Id)record.Record_Id__c;
-            WeaveScheduledEmailJob.sendToRecord(record.Template__c, recId);
+            if (isBulk) {
+                sendBulkOccurrence(record);
+            } else {
+                WeaveScheduledEmailJob.sendToRecord(record.Template__c, (Id)record.Record_Id__c);
+            }
             sendCount++;
         } catch (Exception e) {
             setStatus(record.Id, 'Failed', sendCount, e.getMessage());
@@ -57,6 +63,30 @@ public with sharing class WeaveRecurringEmailJob implements Schedulable {
         } catch (Exception e) {
             setStatus(record.Id, 'Failed', sendCount, 'Could not schedule next occurrence: ' + e.getMessage());
         }
+    }
+
+    private void sendBulkOccurrence(Weave_Scheduled_Send__c parent) {
+        String objectApiName = parent.Template__r.Parent_Object_API_Name__c;
+        if (String.isBlank(objectApiName)) {
+            throw new IllegalArgumentException('Template has no parent object configured for bulk send.');
+        }
+        Integer batchSize = parent.Batch_Size__c != null ? parent.Batch_Size__c.intValue() : 20;
+
+        Weave_Scheduled_Send__c run = new Weave_Scheduled_Send__c(
+            Template__c      = parent.Template__c,
+            Scheduled_At__c  = System.now(),
+            Status__c        = 'Running',
+            Send_Type__c     = 'Bulk',
+            Job_Name__c      = (parent.Job_Name__c != null ? parent.Job_Name__c : 'Recurring') + ' (occurrence)',
+            Filter_Clause__c = parent.Filter_Clause__c,
+            Batch_Size__c    = batchSize
+        );
+        insert as user run;
+
+        Database.executeBatch(
+            new WeaveBulkEmailBatch(parent.Template__c, run.Id, objectApiName, parent.Filter_Clause__c),
+            batchSize
+        );
     }
 
     public static Datetime getFirstOccurrence(RecurringConfig config) {
@@ -167,5 +197,6 @@ public with sharing class WeaveRecurringEmailJob implements Schedulable {
         public String endType;
         public String endDate;
         public Integer maxSends;
+        public String filterClause;
     }
 }
