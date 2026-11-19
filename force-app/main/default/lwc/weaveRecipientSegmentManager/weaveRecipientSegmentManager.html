@@ -1,75 +1,143 @@
 <template>
-    <lightning-card title="Recipient Segments" icon-name="utility:groups">
-        <div slot="actions">
-            <lightning-button label="New Segment" variant="brand" icon-name="utility:add" onclick={handleNew}></lightning-button>
+    <div class="seg-wrap">
+
+        <!-- Header -->
+        <div class="seg-header">
+            <span class="seg-title">
+                <svg class="seg-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                    <path d="M10 10 L10 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    <path d="M10 10 L16 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    <path d="M10 10 L4 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+                </svg>
+                Recipient Segments
+            </span>
+            <button class="btn-new-seg" onclick={handleNew}>
+                <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px;">
+                    <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                New Segment
+            </button>
         </div>
 
-        <div class="slds-p-around_medium">
-            <template if:true={isLoading}>
+        <!-- Error banner -->
+        <template if:true={errorMessage}>
+            <div class="error-banner">{errorMessage}</div>
+        </template>
+
+        <!-- Preview pill -->
+        <template if:true={previewResult}>
+            <div class="preview-pill">{previewResult} record(s) match this segment</div>
+        </template>
+
+        <!-- Edit / New form -->
+        <template if:true={isEditing}>
+            <div class="edit-panel">
+                <p class="edit-panel-title">{formTitle}</p>
+
+                <div class="form-row">
+                    <lightning-input label="Segment Name" value={editRecord.Name} data-field="Name"
+                        onchange={handleFieldChange} required>
+                    </lightning-input>
+                </div>
+
+                <div class="form-row">
+                    <lightning-combobox
+                        label="Object"
+                        value={editRecord.Object_API_Name__c}
+                        options={objectOptions}
+                        data-field="Object_API_Name__c"
+                        onchange={handleObjectChange}
+                        placeholder="Select an object…"
+                        required>
+                    </lightning-combobox>
+                </div>
+
+                <template if:true={editRecord.Object_API_Name__c}>
+                    <div class="form-row">
+                        <lightning-combobox
+                            label="Email Field"
+                            value={editRecord.Email_Field_API_Name__c}
+                            options={emailFieldOptions}
+                            data-field="Email_Field_API_Name__c"
+                            onchange={handleFieldChange}
+                            placeholder="Select the email field…"
+                            required>
+                        </lightning-combobox>
+                    </div>
+
+                    <div class="form-row">
+                        <lightning-combobox
+                            label="Name Field"
+                            value={editRecord.Name_Field_API_Name__c}
+                            options={nameFieldOptions}
+                            data-field="Name_Field_API_Name__c"
+                            onchange={handleFieldChange}
+                            placeholder="Select the name/label field…">
+                        </lightning-combobox>
+                    </div>
+
+                    <div class="form-row">
+                        <lightning-textarea
+                            label="SOQL Filter (WHERE clause)"
+                            value={editRecord.SOQL_Filter__c}
+                            data-field="SOQL_Filter__c"
+                            onchange={handleFieldChange}
+                            placeholder="e.g. MailingState = 'ON' AND HasOptedOutOfEmail = false">
+                        </lightning-textarea>
+                        <p class="field-hint">Leave blank to include all records. Do not include the WHERE keyword.</p>
+                    </div>
+                </template>
+
+                <div class="form-row">
+                    <lightning-textarea label="Description" value={editRecord.Description__c}
+                        data-field="Description__c" onchange={handleFieldChange}>
+                    </lightning-textarea>
+                </div>
+
+                <div class="form-row">
+                    <lightning-combobox label="Status" value={editRecord.Status__c}
+                        options={statusOptions} data-field="Status__c" onchange={handleFieldChange}>
+                    </lightning-combobox>
+                </div>
+
+                <div class="form-actions">
+                    <button class="btn-cancel-seg" onclick={handleCancel}>Cancel</button>
+                    <button class="btn-save-seg" onclick={handleSave} disabled={isLoading}>
+                        <template if:true={isLoading}>Saving…</template>
+                        <template if:false={isLoading}>Save Segment</template>
+                    </button>
+                </div>
+            </div>
+        </template>
+
+        <!-- Spinner -->
+        <template if:true={isLoading}>
+            <template if:false={isEditing}>
                 <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
             </template>
+        </template>
 
-            <template if:true={errorMessage}>
-                <div class="slds-notify slds-notify_alert slds-theme_error" role="alert">
-                    <span>{errorMessage}</span>
-                </div>
-            </template>
+        <!-- Segments table -->
+        <template if:true={hasSegments}>
+            <lightning-datatable
+                key-field="Id"
+                data={segments}
+                columns={columns}
+                onrowaction={handleRowAction}>
+            </lightning-datatable>
+        </template>
 
-            <template if:true={isEditing}>
-                <div class="edit-form slds-box slds-m-bottom_medium">
-                    <h2 class="slds-text-heading_small slds-m-bottom_small">{formTitle}</h2>
-
-                    <div class="form-row">
-                        <lightning-input label="Segment Name" value={editRecord.Name} data-field="Name" onchange={handleFieldChange} required></lightning-input>
-                    </div>
-                    <div class="form-row">
-                        <lightning-input label="Object API Name" value={editRecord.Object_API_Name__c} data-field="Object_API_Name__c" onchange={handleFieldChange} required placeholder="e.g. Contact"></lightning-input>
-                    </div>
-                    <div class="form-row">
-                        <lightning-input label="Email Field API Name" value={editRecord.Email_Field_API_Name__c} data-field="Email_Field_API_Name__c" onchange={handleFieldChange} required placeholder="e.g. Email"></lightning-input>
-                    </div>
-                    <div class="form-row">
-                        <lightning-input label="Name Field API Name" value={editRecord.Name_Field_API_Name__c} data-field="Name_Field_API_Name__c" onchange={handleFieldChange} placeholder="e.g. Name"></lightning-input>
-                    </div>
-                    <div class="form-row">
-                        <lightning-textarea label="SOQL Filter" value={editRecord.SOQL_Filter__c} data-field="SOQL_Filter__c" onchange={handleFieldChange} placeholder="e.g. MailingState = 'ON' AND HasOptedOutOfEmail = false"></lightning-textarea>
-                    </div>
-                    <div class="form-row">
-                        <lightning-textarea label="Description" value={editRecord.Description__c} data-field="Description__c" onchange={handleFieldChange}></lightning-textarea>
-                    </div>
-                    <div class="form-row">
-                        <lightning-combobox label="Status" value={editRecord.Status__c} options={statusOptions} data-field="Status__c" onchange={handleFieldChange}></lightning-combobox>
-                    </div>
-
-                    <div class="slds-m-top_small">
-                        <lightning-button label="Cancel" onclick={handleCancel}></lightning-button>
-                        <lightning-button label="Save" variant="brand" onclick={handleSave} class="slds-m-left_x-small" disabled={isLoading}></lightning-button>
-                    </div>
-                </div>
-            </template>
-
-            <template if:true={previewResult}>
-                <div class="preview-result slds-m-bottom_small">
-                    Preview: {previewResult} record(s) match this segment.
-                </div>
-            </template>
-
-            <template if:true={hasSegments}>
-                <lightning-datatable
-                    key-field="Id"
-                    data={segments}
-                    columns={columns}
-                    onrowaction={handleRowAction}>
-                </lightning-datatable>
-            </template>
-
-            <template if:false={hasSegments}>
-                <template if:false={isLoading}>
-                    <div class="slds-align_absolute-center slds-p-around_large">
-                        <p class="slds-text-color_weak">No recipient segments found. Create one to get started.</p>
+        <!-- Empty state -->
+        <template if:false={hasSegments}>
+            <template if:false={isLoading}>
+                <template if:false={isEditing}>
+                    <div class="empty-state">
+                        No recipient segments yet. Click <strong>New Segment</strong> to create one.
                     </div>
                 </template>
             </template>
-        </div>
-    </lightning-card>
+        </template>
+
+    </div>
 </template>
