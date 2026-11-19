@@ -219,7 +219,7 @@ public with sharing class WeaveTemplateBuilderController {
         update rec;
     }
 
-    @AuraEnabled(cacheable=true)
+    @AuraEnabled
     public static List<Weave_Recipient_Segment__c> getActiveSegments(String objectApiName) {
         return WeaveRecipientSegmentController.getActiveSegments(objectApiName);
     }

@@ -20,10 +20,10 @@
 }
 
 .qed-hint_up {
-  background: #ebf4f3;
-  border: 1px solid #c0deda;
+  background: var(--ec-brand-teal-bg, #ebf4f3);
+  border: 1px solid var(--ec-brand-teal-border, #c0deda);
   border-radius: 6px;
-  color: #1f5f5b;
+  color: var(--ec-brand-teal, #1f5f5b);
   font-size: 12px;
   padding: 8px 10px;
 }
@@ -41,8 +41,8 @@
   flex-wrap: wrap;
   gap: 6px;
   padding: 6px 8px;
-  background: #ebf4f3;
-  border: 1px solid #4fb893;
+  background: var(--ec-brand-teal-bg, #ebf4f3);
+  border: 1px solid var(--ec-brand-teal-light, #4f9b93);
   border-radius: 8px;
 }
 
@@ -51,9 +51,9 @@
   align-items: center;
   gap: 4px;
   background: #fff;
-  border: 1px solid #4fb893;
+  border: 1px solid var(--ec-brand-teal-light, #4f9b93);
   border-radius: 20px;
-  color: #1f5f5b;
+  color: var(--ec-brand-teal, #1f5f5b);
   font-size: 12px;
   font-weight: 600;
   padding: 2px 8px;
@@ -80,7 +80,7 @@
   padding: 6px 10px;
   width: 100%;
 }
-.qed-search:focus { border-color: #1f5f5b; outline: none; }
+.qed-search:focus { border-color: var(--ec-brand-teal, #1f5f5b); outline: none; }
 
 /* Field list — native buttons, no LWC component overhead */
 .qed-field-list {
@@ -106,9 +106,9 @@
   width: 100%;
 }
 .qed-field-row:last-child { border-bottom: none; }
-.qed-field-row:hover { background: #ebf4f3; }
+.qed-field-row:hover { background: var(--ec-brand-teal-bg, #ebf4f3); }
 
-.qed-field-label { color: #2b2b29; flex: 1; font-size: 13px; }
+.qed-field-label { color: var(--ec-brand-ink, #2b2b29); flex: 1; font-size: 13px; }
 
 .qed-field-api {
   color: #6b7280;
