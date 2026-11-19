@@ -657,45 +657,130 @@
                 </button>
               </div>
 
-              <!-- Schedule Send -->
-              <div class="preview-action-row">
-                <h4 class="preview-action-title">Schedule Send</h4>
-                <p class="preview-action-hint">Schedule a live send to the template's configured recipients at a future date/time.</p>
-                <lightning-combobox
-                  label="Send Type"
-                  value={scheduleType}
-                  options={scheduleTypeOptions}
-                  onchange={handleScheduleTypeChange}
-                ></lightning-combobox>
-                <template if:true={isScheduleTypeBulk}>
-                  <div class="sched-filter-row">
-                    <label class="qed-label">Filter (WHERE clause)</label>
-                    <input type="text" class="qed-search" placeholder="e.g. Status__c = 'Active' AND Region__c = 'West'" value={scheduleBulkFilter} onchange={handleBulkFilterChange} />
-                    <p class="qed-hint">Leave blank to send to all records of the parent object.</p>
-                  </div>
-                </template>
-                <div class="form-row-2 sched-row-top">
-                  <lightning-input
-                    type="datetime-local"
-                    label="Send At"
-                    value={scheduleDateTime}
-                    onchange={handleScheduleDateTimeChange}
-                  ></lightning-input>
-                  <div class="preview-btn-wrap">
-                    <button class="btn-secondary" onclick={handleCreateScheduledSend} disabled={isScheduling}>
-                      <template if:true={isScheduling}>Scheduling…</template>
-                      <template if:false={isScheduling}>Schedule Send</template>
-                    </button>
-                  </div>
-                </div>
-              </div>
             </div>
           </template>
 
           <!-- Scheduled Sends -->
           <template if:true={isTab_schedules}>
             <div class="tab-panel">
-              <h3 class="tab-section-title">Scheduled Sends</h3>
+
+              <!-- Create New Schedule -->
+              <div class="sched-new-card">
+                <h3 class="tab-section-title">Create New Schedule</h3>
+
+                <div class="sched-filter-row">
+                  <label class="qed-label">Filter (WHERE clause)</label>
+                  <input type="text" class="qed-search" placeholder="e.g. Status__c = 'Active' AND Region__c = 'West'" value={scheduleBulkFilter} onchange={handleBulkFilterChange} />
+                  <p class="qed-hint">Leave blank to send to all records of the parent object.</p>
+                </div>
+
+                <div class="sched-mode-row">
+                  <lightning-radio-group
+                    name="scheduleMode"
+                    label="Schedule Mode"
+                    options={scheduleModeOptions}
+                    value={scheduleMode}
+                    type="button"
+                    onchange={handleScheduleModeChange}
+                  ></lightning-radio-group>
+                </div>
+
+                <!-- Send Once -->
+                <template if:true={isScheduleModeOnce}>
+                  <div class="form-row-2 sched-row-top">
+                    <lightning-input
+                      type="date"
+                      label="Send Date"
+                      value={scheduleDate}
+                      min={minScheduleDate}
+                      required
+                      onchange={handleScheduleDateChange}
+                    ></lightning-input>
+                    <lightning-input
+                      type="time"
+                      label="Send Time"
+                      value={scheduleTime}
+                      required
+                      onchange={handleScheduleTimeChange}
+                    ></lightning-input>
+                  </div>
+                  <div class="preview-btn-wrap">
+                    <button class="btn-secondary" onclick={handleCreateScheduledSend} disabled={isScheduling}>
+                      <template if:true={isScheduling}>Scheduling…</template>
+                      <template if:false={isScheduling}>Schedule Send</template>
+                    </button>
+                  </div>
+                </template>
+
+                <!-- Recurring -->
+                <template if:true={isScheduleModeRecurring}>
+                    <div class="sched-days-row">
+                      <lightning-checkbox-group
+                        label="Days of the Week"
+                        name="recurringDays"
+                        options={dayOfWeekOptions}
+                        value={recurringDays}
+                        required
+                        onchange={handleRecurringDaysChange}
+                      ></lightning-checkbox-group>
+                    </div>
+                    <div class="form-row-2 sched-row-top">
+                      <lightning-input
+                        type="time"
+                        label="Time"
+                        value={recurringTime}
+                        required
+                        onchange={handleRecurringTimeChange}
+                      ></lightning-input>
+                      <lightning-input
+                        type="date"
+                        label="Start Date"
+                        value={recurringStartDate}
+                        min={minScheduleDate}
+                        required
+                        onchange={handleRecurringStartDateChange}
+                      ></lightning-input>
+                    </div>
+                    <lightning-radio-group
+                      label="Ends"
+                      name="recurringEndType"
+                      options={recurringEndTypeOptions}
+                      value={recurringEndType}
+                      onchange={handleRecurringEndTypeChange}
+                    ></lightning-radio-group>
+                    <template if:true={isRecurringEndByDate}>
+                      <lightning-input
+                        type="date"
+                        label="End Date"
+                        value={recurringEndDate}
+                        min={recurringStartDate}
+                        required
+                        onchange={handleRecurringEndDateChange}
+                      ></lightning-input>
+                    </template>
+                    <template if:true={isRecurringEndByMaxSends}>
+                      <lightning-input
+                        type="number"
+                        label="Stop After (number of sends)"
+                        value={recurringMaxSends}
+                        min="1"
+                        max="1000"
+                        step="1"
+                        required
+                        onchange={handleRecurringMaxSendsChange}
+                      ></lightning-input>
+                    </template>
+                    <div class="preview-btn-wrap">
+                      <button class="btn-secondary" onclick={handleCreateRecurringSchedule} disabled={isScheduling}>
+                        <template if:true={isScheduling}>Scheduling…</template>
+                        <template if:false={isScheduling}>Schedule Recurring Send</template>
+                      </button>
+                    </div>
+                </template>
+              </div>
+
+              <!-- Existing Schedules -->
+              <h3 class="tab-section-title sched-list-title">Existing Schedules</h3>
               <template if:true={isLoadingSchedules}>
                 <lightning-spinner alternative-text="Loading..."></lightning-spinner>
               </template>

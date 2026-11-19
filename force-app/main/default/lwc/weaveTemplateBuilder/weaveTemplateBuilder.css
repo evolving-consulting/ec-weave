@@ -1275,3 +1275,31 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
+
+
+/* ── Scheduled Sends tab ─────────────────────────────────────────────────── */
+.sched-new-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 1.25rem;
+}
+.sched-mode-row {
+  margin-top: 0.25rem;
+}
+.sched-days-row lightning-checkbox-group {
+  display: block;
+}
+.sched-hint-warn {
+  background: #fff7e6;
+  border-left: 3px solid #fe9339;
+  border-radius: 4px;
+  color: #7a4a00;
+  padding: 0.5rem 0.75rem;
+}
+.sched-list-title {
+  margin-top: 0.5rem;
+}
