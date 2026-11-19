@@ -659,20 +659,11 @@
               <div class="sched-new-card">
                 <h3 class="tab-section-title">Create New Schedule</h3>
 
-                <lightning-combobox
-                  label="Send Type"
-                  value={scheduleType}
-                  options={scheduleTypeOptions}
-                  onchange={handleScheduleTypeChange}
-                ></lightning-combobox>
-
-                <template if:true={isScheduleTypeBulk}>
-                  <div class="sched-filter-row">
-                    <label class="qed-label">Filter (WHERE clause)</label>
-                    <input type="text" class="qed-search" placeholder="e.g. Status__c = 'Active' AND Region__c = 'West'" value={scheduleBulkFilter} onchange={handleBulkFilterChange} />
-                    <p class="qed-hint">Leave blank to send to all records of the parent object.</p>
-                  </div>
-                </template>
+                <div class="sched-filter-row">
+                  <label class="qed-label">Filter (WHERE clause)</label>
+                  <input type="text" class="qed-search" placeholder="e.g. Status__c = 'Active' AND Region__c = 'West'" value={scheduleBulkFilter} onchange={handleBulkFilterChange} />
+                  <p class="qed-hint">Leave blank to send to all records of the parent object.</p>
+                </div>
 
                 <div class="sched-mode-row">
                   <lightning-radio-group
@@ -714,10 +705,6 @@
 
                 <!-- Recurring -->
                 <template if:true={isScheduleModeRecurring}>
-                  <template if:true={showRecurringRecordWarning}>
-                    <p class="qed-hint sched-hint-warn">Select a record on the Preview tab first to enable recurring sends for an Individual Record.</p>
-                  </template>
-                  <template if:true={canShowRecurringForm}>
                     <div class="sched-days-row">
                       <lightning-checkbox-group
                         label="Days of the Week"
@@ -780,7 +767,6 @@
                         <template if:false={isScheduling}>Schedule Recurring Send</template>
                       </button>
                     </div>
-                  </template>
                 </template>
               </div>
 

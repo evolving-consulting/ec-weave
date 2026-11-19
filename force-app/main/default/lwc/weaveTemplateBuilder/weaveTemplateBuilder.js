@@ -174,7 +174,7 @@ export default class WeaveTemplateBuilder extends LightningElement {
   @track scheduleDateTime = '';
   @track scheduleDate = '';
   @track scheduleTime = '09:00';
-  @track scheduleType = 'Individual';
+  @track scheduleType = 'Bulk';
   @track scheduleMode = 'once';
   @track scheduleBulkFilter = '';
   @track isScheduling = false;
@@ -478,15 +478,11 @@ export default class WeaveTemplateBuilder extends LightningElement {
   get tabClass_files()   { return 'editor-tab' + (this.activeTab === 'files'     ? ' editor-tab_active' : ''); }
   get isTab_schedules()  { return this.activeTab === 'schedules'; }
   get tabClass_schedules() { return 'editor-tab' + (this.activeTab === 'schedules' ? ' editor-tab_active' : ''); }
-  get isScheduleTypeBulk() { return this.scheduleType === 'Bulk'; }
-  get scheduleTypeOptions() { return [{ label: 'Individual Record', value: 'Individual' }, { label: 'Bulk (by filter)', value: 'Bulk' }]; }
   get scheduleModeOptions() { return [{ label: 'Send Once', value: 'once' }, { label: 'Recurring', value: 'recurring' }]; }
   get isScheduleModeOnce() { return this.scheduleMode === 'once'; }
   get isScheduleModeRecurring() { return this.scheduleMode === 'recurring'; }
   get isRecurringEndByDate() { return this.recurringEndType === 'endDate'; }
   get isRecurringEndByMaxSends() { return this.recurringEndType === 'maxSends'; }
-  get showRecurringRecordWarning() { return !this.isScheduleTypeBulk && !this.previewRecordId; }
-  get canShowRecurringForm() { return this.isScheduleTypeBulk || !!this.previewRecordId; }
   get minScheduleDate() {
     const d = new Date();
     return d.toISOString().substring(0, 10);
@@ -1306,10 +1302,6 @@ export default class WeaveTemplateBuilder extends LightningElement {
     this.scheduleMode = event.detail.value;
   }
 
-  handleScheduleTypeChange(event) {
-    this.scheduleType = event.detail.value;
-  }
-
   handleBulkFilterChange(event) {
     this.scheduleBulkFilter = event.target.value;
   }
@@ -1347,20 +1339,15 @@ export default class WeaveTemplateBuilder extends LightningElement {
       this.errorMessage = 'Select a date and time before scheduling.';
       return;
     }
-    if (this.scheduleType === 'Individual' && !this.previewRecordId) {
-      this.errorMessage = 'Select a record on the Preview tab for Individual sends.';
-      return;
-    }
     const scheduledDateTimeStr = this.scheduleDate + 'T' + this.scheduleTime;
-    const scheduledMs = new Date(scheduledDateTimeStr).getTime();
     this.isScheduling = true;
     this.errorMessage = '';
     createScheduledSend({
       templateId: this.draftTemplate.id,
       scheduledDateTime: scheduledDateTimeStr,
-      sendType: this.scheduleType,
-      recordId: this.scheduleType === 'Individual' ? this.previewRecordId : null,
-      filterClause: this.scheduleType === 'Bulk' ? this.scheduleBulkFilter : null
+      sendType: 'Bulk',
+      recordId: null,
+      filterClause: this.scheduleBulkFilter || null
     })
       .then(() => {
         this.dispatchEvent(new ShowToastEvent({ title: 'Send scheduled', message: 'Scheduled for ' + scheduledDateTimeStr, variant: 'success' }));
@@ -1375,10 +1362,6 @@ export default class WeaveTemplateBuilder extends LightningElement {
   handleCreateRecurringSchedule() {
     if (!this.draftTemplate.id) {
       this.errorMessage = 'Save the template before scheduling.';
-      return;
-    }
-    if (!this.isScheduleTypeBulk && !this.previewRecordId) {
-      this.errorMessage = 'Select a record on the Preview tab before creating a recurring Individual schedule.';
       return;
     }
     if (!this.recurringDays || this.recurringDays.length === 0) {
@@ -1396,11 +1379,11 @@ export default class WeaveTemplateBuilder extends LightningElement {
       endType: this.recurringEndType,
       endDate: this.recurringEndType === 'endDate' ? this.recurringEndDate : null,
       maxSends: this.recurringEndType === 'maxSends' ? Number(this.recurringMaxSends) : null,
-      filterClause: this.isScheduleTypeBulk ? (this.scheduleBulkFilter || null) : null
+      filterClause: this.scheduleBulkFilter || null
     });
     const request = {
       templateId: this.draftTemplate.id,
-      recordId: this.isScheduleTypeBulk ? null : this.previewRecordId,
+      recordId: null,
       subject: this.draftTemplate.subjectTemplate || this.draftTemplate.name || 'Email',
       htmlBody: null,
       toRecipients: [],
