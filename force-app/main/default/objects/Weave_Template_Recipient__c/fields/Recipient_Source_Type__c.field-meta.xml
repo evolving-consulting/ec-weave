@@ -11,6 +11,7 @@
             <value><fullName>Parent Field</fullName><default>true</default><label>Parent Field</label></value>
             <value><fullName>Related Records</fullName><default>false</default><label>Related Records</label></value>
             <value><fullName>Manual</fullName><default>false</default><label>Manual</label></value>
+            <value><fullName>Dynamic Segment</fullName><default>false</default><label>Dynamic Segment</label></value>
         </valueSetDefinition>
     </valueSet>
 </CustomField>

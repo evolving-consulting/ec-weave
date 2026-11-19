@@ -144,6 +144,8 @@ public with sharing class WeaveBuilderDTOs {
         @AuraEnabled public Boolean defaultSelected { get; set; }
         @AuraEnabled public Boolean allowMultiple { get; set; }
         @AuraEnabled public Boolean required { get; set; }
+        @AuraEnabled public String segmentId { get; set; }
+        @AuraEnabled public String segmentName { get; set; }
     }
 
     public class WeaveBuilderActionDTO {

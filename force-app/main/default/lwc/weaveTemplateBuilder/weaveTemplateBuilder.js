@@ -26,6 +26,7 @@ import deleteBrand from '@salesforce/apex/WeaveTemplateBuilderController.deleteB
 import getBrandFiles from '@salesforce/apex/WeaveTemplateBuilderController.getBrandFiles';
 import createBrandPublicImageLink from '@salesforce/apex/WeaveTemplateBuilderController.createBrandPublicImageLink';
 import deleteBrandFile from '@salesforce/apex/WeaveTemplateBuilderController.deleteBrandFile';
+import getActiveSegments from '@salesforce/apex/WeaveTemplateBuilderController.getActiveSegments';
 
 const STATUS_OPTIONS = [
   { label: 'Draft', value: 'Draft' },
@@ -58,7 +59,8 @@ const RECIPIENT_TYPE_OPTIONS = [
 const RECIPIENT_SOURCE_OPTIONS = [
   { label: 'Parent Field', value: 'Parent Field' },
   { label: 'Related Records (from query)', value: 'Related Records' },
-  { label: 'Manual (static email)', value: 'Manual' }
+  { label: 'Manual (static email)', value: 'Manual' },
+  { label: 'Dynamic Segment', value: 'Dynamic Segment' }
 ];
 const VALUE_TYPE_OPTIONS = [
   { label: 'Static Text', value: 'Static' },
@@ -219,6 +221,7 @@ export default class WeaveTemplateBuilder extends LightningElement {
   @track insertedTag = null;
   @track headerRteKey = 1;
   @track footerRteKey = 1;
+  @track availableSegments = [];
 
   statusOptions = STATUS_OPTIONS;
   fromEmailTypeOptions = FROM_EMAIL_TYPE_OPTIONS;
@@ -337,6 +340,9 @@ export default class WeaveTemplateBuilder extends LightningElement {
     const s = (this.draftBrand.status || '').toLowerCase();
     return 'status-pill' + (s === 'active' ? ' status-pill_active' : ' status-pill_draft');
   }
+
+  get isSegmentsView()   { return this.sidebarView === 'segments'; }
+  get sidebarNavClassSegments() { return 'sidebar-nav-btn' + (this.sidebarView === 'segments' ? ' sidebar-nav-btn_active' : ''); }
 
   get isLibraryView() { return !this.isEditing && this.isTemplatesView; }
   get isEditorView() { return this.isEditing; }
@@ -523,6 +529,15 @@ export default class WeaveTemplateBuilder extends LightningElement {
   get editingRecipientIsParentField()      { return (this.editingRecipient.recipientSourceType || '') === 'Parent Field'; }
   get editingRecipientIsRelatedRecords()   { return (this.editingRecipient.recipientSourceType || '') === 'Related Records'; }
   get editingRecipientIsManual()           { return (this.editingRecipient.recipientSourceType || '') === 'Manual'; }
+  get editingRecipientIsDynamicSegment()   { return (this.editingRecipient.recipientSourceType || '') === 'Dynamic Segment'; }
+  get segmentComboboxOptions() {
+    const opts = [{ label: '-- Select a Segment --', value: '' }];
+    (this.availableSegments || []).forEach(s => {
+      opts.push({ label: s.Name + ' (' + s.Object_API_Name__c + ')', value: s.Id });
+    });
+    return opts;
+  }
+  get hasAvailableSegments() { return (this.availableSegments || []).length > 0; }
   get templateQueryOptions() {
     return (this.draftTemplate.queries || []).map(q => ({ label: q.name, value: q.localKey }));
   }
@@ -625,10 +640,19 @@ export default class WeaveTemplateBuilder extends LightningElement {
         this.isDirty = false;
         this._fromEmailType = null;
         this.isEditing = true;
-        if (dto.parentObjectApiName) this.loadRelatedObjects(dto.parentObjectApiName);
+        if (dto.parentObjectApiName) {
+          this.loadRelatedObjects(dto.parentObjectApiName);
+          this.loadSegmentsForObject(dto.parentObjectApiName);
+        }
       })
       .catch(err => { this.errorMessage = this.extractError(err); })
       .finally(() => { this.isLoading = false; });
+  }
+
+  loadSegmentsForObject(objectApiName) {
+    getActiveSegments({ objectApiName })
+      .then(segments => { this.availableSegments = segments || []; })
+      .catch(() => { this.availableSegments = []; });
   }
 
   handleBack() { this.backToLibrary(); }
@@ -1078,6 +1102,16 @@ export default class WeaveTemplateBuilder extends LightningElement {
       _linkedQueryLocalKey: localKey,
       sourceObjectApiName: q?.soqlObject || '',
       parentLookupFieldApiName: q?.parentLookupField || ''
+    };
+  }
+
+  handleRecipientSegmentChange(event) {
+    const segmentId = event.detail.value;
+    const seg = (this.availableSegments || []).find(s => s.Id === segmentId);
+    this.editingRecipient = {
+      ...this.editingRecipient,
+      segmentId: segmentId || null,
+      segmentName: seg ? seg.Name : null
     };
   }
 

@@ -34,6 +34,15 @@
           </svg>
           Templates
         </button>
+        <button class={sidebarNavClassSegments} data-view="segments" onclick={handleSidebarNav}>
+          <svg class="nav-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/>
+            <path d="M10 10 L10 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M10 10 L16 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M10 10 L4 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+          </svg>
+          Segments
+        </button>
         <button class={sidebarNavClassBrands} data-view="brands" onclick={handleSidebarNav}>
           <svg class="nav-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
             <circle cx="10" cy="7" r="3" fill="currentColor"/>
@@ -822,6 +831,19 @@
         </div>
       </template>
 
+      <!-- ── SEGMENTS VIEW ────────────────────────────────────────────── -->
+      <template if:true={isSegmentsView}>
+        <div class="library">
+          <div class="page-header">
+            <div class="page-header-left">
+              <p class="page-eyebrow">WEAVE</p>
+              <h1 class="page-title">Recipient Segments</h1>
+            </div>
+          </div>
+          <c-weave-recipient-segment-manager></c-weave-recipient-segment-manager>
+        </div>
+      </template>
+
       <!-- ── BRAND LIBRARY VIEW ────────────────────────────────────────── -->
       <template if:true={isBrandsView}>
         <div class="library">
@@ -1495,6 +1517,24 @@
                 onchange={handleRecipientFieldChange}
                 placeholder="user@example.com"
               ></lightning-input>
+            </template>
+
+            <!-- Dynamic Segment: pick a saved segment -->
+            <template if:true={editingRecipientIsDynamicSegment}>
+              <lightning-combobox
+                label="Recipient Segment"
+                value={editingRecipient.segmentId}
+                options={segmentComboboxOptions}
+                onchange={handleRecipientSegmentChange}
+                placeholder="Select a segment…"
+                required
+              ></lightning-combobox>
+              <template if:true={editingRecipient.segmentName}>
+                <p class="modal-hint">Recipients will be resolved from segment <strong>{editingRecipient.segmentName}</strong> at send time.</p>
+              </template>
+              <template if:false={hasAvailableSegments}>
+                <p class="modal-hint">No active segments found for this template's object. Create segments in the Segments section of the builder.</p>
+              </template>
             </template>
 
             <lightning-input
