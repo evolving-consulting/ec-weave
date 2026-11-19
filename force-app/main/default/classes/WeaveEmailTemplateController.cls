@@ -135,6 +135,31 @@ public with sharing class WeaveEmailTemplateController {
         }
     }
 
+    @AuraEnabled(cacheable=true)
+    public static List<Weave_Recipient_Segment__c> getActiveSegments(String objectApiName) {
+        return WeaveRecipientSegmentController.getActiveSegments(objectApiName);
+    }
+
+    @AuraEnabled
+    public static Integer previewSegmentCount(Id segmentId) {
+        return WeaveRecipientSegmentController.previewSegmentCount(segmentId);
+    }
+
+    @AuraEnabled
+    public static List<RecipientOptionDTO> resolveSegmentRecipients(Id segmentId) {
+        return WeaveRecipientSegmentController.resolveSegmentRecipients(segmentId);
+    }
+
+    @AuraEnabled
+    public static String generatePdf(Id templateId, Id recordId) {
+        return WeavePdfController.generatePdf(templateId, recordId);
+    }
+
+    @AuraEnabled
+    public static String generateCombinedPdf(List<Id> templateIds, List<Id> recordIds, String title) {
+        return WeavePdfController.generateCombinedPdf(templateIds, recordIds, title);
+    }
+
     private static GenericEmailTemplateDTO toTemplateDTO(Weave_Template_Config__c template) {
         GenericEmailTemplateDTO dto = new GenericEmailTemplateDTO();
         dto.id = template.Id;

@@ -1,0 +1,15 @@
+.form-row {
+    margin-bottom: 0.75rem;
+}
+
+.preview-result {
+    margin-top: 0.5rem;
+    font-weight: bold;
+    color: #2e844a;
+}
+
+.edit-form {
+    background: #f9f9f9;
+    padding: 1rem;
+    border-radius: 4px;
+}

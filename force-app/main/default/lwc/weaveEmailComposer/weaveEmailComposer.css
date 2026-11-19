@@ -485,3 +485,14 @@
         grid-template-columns: 1fr;
     }
 }
+
+.segment-load-row {
+    align-items: center;
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.segment-load-row lightning-combobox {
+    flex: 1;
+}

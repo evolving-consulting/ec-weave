@@ -243,6 +243,22 @@
                                         </div>
                                     </div>
                                 </template>
+
+                                <template if:true={hasSegments}>
+                                    <div class="segment-load-row">
+                                        <lightning-combobox
+                                            label="Load from Segment"
+                                            variant="label-inline"
+                                            value={selectedSegmentId}
+                                            options={segmentOptions}
+                                            disabled={isLoadingSegment}
+                                            onchange={handleSegmentChange}>
+                                        </lightning-combobox>
+                                        <template if:true={isLoadingSegment}>
+                                            <lightning-spinner size="x-small" alternative-text="Loading segment"></lightning-spinner>
+                                        </template>
+                                    </div>
+                                </template>
                             </template>
                         </section>
 
@@ -375,6 +391,21 @@
             <footer class="footer">
                 <lightning-button label="Cancel" onclick={handleCancel}></lightning-button>
                 <div class="footer-send-actions">
+                    <lightning-button
+                        label="Save PDF to Record"
+                        icon-name="utility:pdf"
+                        disabled={isGeneratingPdf}
+                        onclick={handleSavePdf}>
+                    </lightning-button>
+                    <lightning-button
+                        label="Download PDF"
+                        icon-name="utility:download"
+                        disabled={isGeneratingPdf}
+                        onclick={handleDownloadPdf}>
+                    </lightning-button>
+                    <template if:true={isGeneratingPdf}>
+                        <lightning-spinner size="x-small" alternative-text="Generating PDF"></lightning-spinner>
+                    </template>
                     <lightning-button
                         label={sendLaterButtonLabel}
                         icon-name={sendLaterButtonIcon}

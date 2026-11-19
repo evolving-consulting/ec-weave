@@ -5,6 +5,7 @@ public with sharing class WeaveBulkEmailBatch
     private final Id scheduledSendId;
     private final String objectApiName;
     private final String filterClause;
+    private final String outputType;
 
     private Integer targeted = 0;
     private Integer sent     = 0;
@@ -13,10 +14,16 @@ public with sharing class WeaveBulkEmailBatch
 
     public WeaveBulkEmailBatch(Id templateId, Id scheduledSendId,
                                String objectApiName, String filterClause) {
+        this(templateId, scheduledSendId, objectApiName, filterClause, 'Email');
+    }
+
+    public WeaveBulkEmailBatch(Id templateId, Id scheduledSendId,
+                               String objectApiName, String filterClause, String outputType) {
         this.templateId       = templateId;
         this.scheduledSendId  = scheduledSendId;
         this.objectApiName    = objectApiName;
         this.filterClause     = filterClause;
+        this.outputType       = String.isBlank(outputType) ? 'Email' : outputType;
     }
 
     @SuppressWarnings('PMD.ApexSOQLInjection')
@@ -35,19 +42,26 @@ public with sharing class WeaveBulkEmailBatch
     public void execute(Database.BatchableContext ctx, List<SObject> scope) {
         targeted += scope.size();
 
-        OrgLimit emailLimit = OrgLimits.getMap().get('SingleEmail');
-        if (emailLimit != null) {
-            Integer remaining = emailLimit.getLimit() - emailLimit.getValue();
-            if (remaining < scope.size()) {
-                failed += scope.size();
-                errorDetail = 'Stopped: org daily email limit nearly reached (' + remaining + ' remaining).';
-                return;
+        if (outputType == 'Email' || outputType == 'Both') {
+            OrgLimit emailLimit = OrgLimits.getMap().get('SingleEmail');
+            if (emailLimit != null) {
+                Integer remaining = emailLimit.getLimit() - emailLimit.getValue();
+                if (remaining < scope.size()) {
+                    failed += scope.size();
+                    errorDetail = 'Stopped: org daily email limit nearly reached (' + remaining + ' remaining).';
+                    return;
+                }
             }
         }
 
         for (SObject record : scope) {
             try {
-                WeaveScheduledEmailJob.sendToRecord(templateId, record.Id);
+                if (outputType == 'Email' || outputType == 'Both') {
+                    WeaveScheduledEmailJob.sendToRecord(templateId, record.Id);
+                }
+                if (outputType == 'PDF' || outputType == 'Both') {
+                    WeavePdfService.generatePdf(templateId, record.Id);
+                }
                 sent++;
             } catch (Exception e) {
                 failed++;

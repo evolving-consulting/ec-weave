@@ -7,6 +7,9 @@ import sendEmail from '@salesforce/apex/WeaveEmailTemplateController.sendEmail';
 import scheduleEmail from '@salesforce/apex/WeaveEmailTemplateController.scheduleEmail';
 import getObjectApiNameFromRecordId from '@salesforce/apex/WeaveEmailTemplateController.getObjectApiNameFromRecordId';
 import getRecordSummary from '@salesforce/apex/WeaveEmailTemplateController.getRecordSummary';
+import getActiveSegments from '@salesforce/apex/WeaveEmailTemplateController.getActiveSegments';
+import resolveSegmentRecipients from '@salesforce/apex/WeaveEmailTemplateController.resolveSegmentRecipients';
+import generatePdf from '@salesforce/apex/WeaveEmailTemplateController.generatePdf';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import { CloseActionScreenEvent } from 'lightning/actions';
 import { RefreshEvent } from 'lightning/refresh';
@@ -90,6 +93,11 @@ export default class WeaveEmailComposer extends LightningElement {
     @track recordSummary = {};
     @track currentView = VIEW_COMPOSE;
     @track sectionCollapsed = { recipients: true, attachments: true, subject: true, message: false };
+    @track segments = [];
+    @track selectedSegmentId = '';
+    @track isLoadingSegment = false;
+    @track isGeneratingPdf = false;
+    @track pdfContentDocumentId = '';
 
     manualRecipientCounter = 0;
 
@@ -354,6 +362,19 @@ export default class WeaveEmailComposer extends LightningElement {
         return this.manualRecipients.length > 0;
     }
 
+    get segmentOptions() {
+        const opts = [{ label: '-- Load from Segment --', value: '' }];
+        this.segments.forEach(s => opts.push({ label: s.Name, value: s.Id }));
+        return opts;
+    }
+
+    get hasSegments() { return this.segments.length > 0; }
+
+    get pdfDownloadUrl() {
+        if (!this.pdfContentDocumentId) return '#';
+        return '/sfc/servlet.shepherd/document/download/' + this.pdfContentDocumentId;
+    }
+
     get hasBlankRenderedContent() {
         return !this.isLoading && (!this.renderedSubject || !this.renderedBody);
     }
@@ -424,6 +445,7 @@ export default class WeaveEmailComposer extends LightningElement {
         try {
             const templates = await getAvailableTemplates({ parentObjectApiName: this.objectApiName });
             this.templates = templates || [];
+            this.loadSegments();
 
             const flowTemplate = this.templateId ? this.templates.find((t) => t.id === this.templateId) : null;
             const currentTemplate = currentTemplateId ? this.templates.find((t) => t.id === currentTemplateId) : null;
@@ -676,6 +698,81 @@ export default class WeaveEmailComposer extends LightningElement {
             r.localKey === recipientId ? { ...r, selected: true } : r
         );
         this.clearError();
+    }
+
+    loadSegments() {
+        const objApiName = this.objectApiName || (this.selectedTemplate && this.selectedTemplate.parentObjectApiName) || '';
+        getActiveSegments({ objectApiName: objApiName })
+            .then(result => { this.segments = result || []; })
+            .catch(() => { this.segments = []; });
+    }
+
+    handleSegmentChange(event) {
+        const segId = event.detail.value;
+        this.selectedSegmentId = segId;
+        if (!segId) return;
+        this.isLoadingSegment = true;
+        resolveSegmentRecipients({ segmentId: segId })
+            .then(resolved => {
+                if (resolved && resolved.length > 0) {
+                    const existing = new Set(this.allSelectedRecipients.map(r => (r.email || '').toLowerCase()));
+                    const toAdd = resolved.filter(r => r.email && !existing.has(r.email.toLowerCase()));
+                    this.manualRecipients = [...this.manualRecipients, ...toAdd.map(r => ({
+                        ...r,
+                        id: 'seg-' + (++this.manualRecipientCounter) + '-' + (r.id || r.email)
+                    }))];
+                    this.dispatchEvent(new ShowToastEvent({ title: 'Segment Loaded', message: toAdd.length + ' recipient(s) added.', variant: 'success' }));
+                } else {
+                    this.dispatchEvent(new ShowToastEvent({ title: 'No Recipients', message: 'No matching recipients found in this segment.', variant: 'warning' }));
+                }
+                this.selectedSegmentId = '';
+            })
+            .catch(err => {
+                this.dispatchEvent(new ShowToastEvent({ title: 'Error', message: (err && err.body && err.body.message) || 'Unable to load segment.', variant: 'error' }));
+                this.selectedSegmentId = '';
+            })
+            .finally(() => { this.isLoadingSegment = false; });
+    }
+
+    handleSavePdf() {
+        if (!this.effectiveTemplateId || !this.effectiveRecordId) {
+            this.dispatchEvent(new ShowToastEvent({ title: 'Error', message: 'Template and record are required.', variant: 'error' }));
+            return;
+        }
+        this.isGeneratingPdf = true;
+        this.pdfContentDocumentId = '';
+        generatePdf({ templateId: this.effectiveTemplateId, recordId: this.effectiveRecordId })
+            .then(docId => {
+                this.pdfContentDocumentId = docId;
+                this.dispatchEvent(new ShowToastEvent({ title: 'PDF Saved', message: 'PDF has been saved to this record.', variant: 'success' }));
+            })
+            .catch(err => {
+                this.dispatchEvent(new ShowToastEvent({ title: 'Error', message: (err && err.body && err.body.message) || 'Unable to generate PDF.', variant: 'error' }));
+            })
+            .finally(() => { this.isGeneratingPdf = false; });
+    }
+
+    handleDownloadPdf() {
+        if (!this.effectiveTemplateId || !this.effectiveRecordId) {
+            this.dispatchEvent(new ShowToastEvent({ title: 'Error', message: 'Template and record are required.', variant: 'error' }));
+            return;
+        }
+        this.isGeneratingPdf = true;
+        this.pdfContentDocumentId = '';
+        generatePdf({ templateId: this.effectiveTemplateId, recordId: this.effectiveRecordId })
+            .then(docId => {
+                this.pdfContentDocumentId = docId;
+                const link = document.createElement('a');
+                link.href = '/sfc/servlet.shepherd/document/download/' + docId;
+                link.target = '_blank';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            })
+            .catch(err => {
+                this.dispatchEvent(new ShowToastEvent({ title: 'Error', message: (err && err.body && err.body.message) || 'Unable to generate PDF.', variant: 'error' }));
+            })
+            .finally(() => { this.isGeneratingPdf = false; });
     }
 
     handleAttachmentSelectedChange(event) {
