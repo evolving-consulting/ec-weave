@@ -30,6 +30,16 @@ function stripHtml(html) {
     return (html || '').replace(/<[^>]+>/g, '').trim();
 }
 
+function extractSoqlFields(soql) {
+    if (!soql) return [];
+    const match = soql.match(/SELECT\s+([\s\S]+?)\s+FROM/i);
+    if (!match) return [];
+    return match[1].split(',')
+        .map(f => f.trim().split(/\s+/).pop())
+        .filter(f => f && !/[()]/g.test(f))
+        .slice(0, 25);
+}
+
 export default class WeaveCanvasDesigner extends LightningElement {
     @api parentFields;
     @api previewRecordId;
@@ -176,9 +186,26 @@ export default class WeaveCanvasDesigner extends LightningElement {
     get weaveAiPrompt() {
         const desc = this.promptDescription?.trim() || '[describe your document here]';
         const objectName = this._draftTemplate.parentObjectApiName || 'the parent object';
-        const fields = (this.parentFields || [])
+
+        const parentFieldLines = (this.parentFields || [])
             .map(f => `  - ${f.label} → {{Parent.${f.value}}}`)
-            .join('\n');
+            .join('\n') || '  No fields available — parent object not set yet';
+
+        const queries = (this._draftTemplate.queries || []);
+        let querySection = '';
+        if (queries.length > 0) {
+            querySection = '\n\nAVAILABLE QUERY SECTIONS (Related Lists):\nEach section loops over related records. Use merge tags inside a section\'s HTML to reference its fields.\n';
+            for (const q of queries) {
+                const apiName = q.queryApiName || q.name;
+                const sectionFields = extractSoqlFields(q.soqlQuery || '');
+                querySection += `\n• Section "${q.name}" — reference as {{Section.${apiName}}}\n`;
+                if (sectionFields.length > 0) {
+                    querySection += `  Fields available inside this section (no prefix needed):\n`;
+                    querySection += sectionFields.map(f => `    - {{${f}}}`).join('\n') + '\n';
+                }
+            }
+        }
+
         return `You are building an HTML document template for Weave, a Salesforce Dynamic Communication Engine.
 
 DOCUMENT DESCRIPTION:
@@ -196,11 +223,13 @@ OUTPUT REQUIREMENTS:
 WEAVE MERGE TAG SYNTAX:
 • Parent record fields: {{Parent.FieldApiName}}
   Examples: {{Parent.Name}}, {{Parent.CloseDate__c}}, {{Parent.Account.BillingCity}}
+• Section reference (insert a related-list section block): {{Section.QueryApiName}}
+• Inside a section, child record fields use no prefix: {{FieldApiName}}
 • Use Salesforce field API names exactly as listed below
-• Keep merge tags verbatim in the HTML output — do not replace them with sample values
+• Keep merge tags verbatim in the HTML — do not replace them with sample values
 
 AVAILABLE PARENT FIELDS (${objectName}):
-${fields || '  No fields available — parent object not set yet'}
+${parentFieldLines}${querySection}
 
 Generate the complete HTML template now.`;
     }
