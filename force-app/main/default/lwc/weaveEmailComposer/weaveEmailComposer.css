@@ -400,39 +400,89 @@
     margin: 1rem;
 }
 
-.schedule-panel {
-    background: #f0f7ff;
-    border-top: 1px solid #c9dff9;
-    padding: 0.85rem 1rem;
-}
-
-.schedule-panel-inner {
-    align-items: flex-start;
+.composer-tabs {
+    background: #ffffff;
+    border-bottom: 1px solid var(--lwc-colorBorder, #dddbda);
     display: flex;
-    gap: 0.75rem;
+    padding: 0 1rem;
 }
 
-.schedule-panel-icon-wrap {
+.composer-tab-btn {
     align-items: center;
-    background: #0176d3;
-    border-radius: 0.375rem;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--lwc-colorTextWeak, #706e6b);
+    cursor: pointer;
     display: inline-flex;
-    flex-shrink: 0;
-    height: 2rem;
-    justify-content: center;
-    margin-top: 0.1rem;
-    width: 2rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    gap: 0.4rem;
+    margin-bottom: -1px;
+    padding: 0.75rem 1rem;
+    transition: color 0.15s, border-color 0.15s;
 }
 
-.schedule-panel-content {
-    flex: 1;
-    min-width: 0;
+.composer-tab-btn:hover {
+    color: var(--lwc-colorTextDefault, #181818);
+}
+
+.composer-tab-btn--active {
+    border-bottom-color: #1f5f5b;
+    color: #1f5f5b;
+}
+
+.schedule-tab-content {
+    box-sizing: border-box;
+    display: grid;
+    gap: 1rem;
+    padding: 1rem;
+}
+
+.schedule-type-row {
+    background: #ffffff;
+    border: 1px solid var(--lwc-colorBorder, #dddbda);
+    border-radius: 0.375rem;
+    padding: 1rem;
+}
+
+.schedule-form-section {
+    background: #ffffff;
+    border: 1px solid var(--lwc-colorBorder, #dddbda);
+    border-radius: 0.375rem;
+    box-sizing: border-box;
+    display: grid;
+    gap: 0.85rem;
+    padding: 1rem;
+    width: 100%;
+}
+
+.schedule-form-heading {
+    border-bottom: 1px solid var(--lwc-colorBorder, #dddbda);
+    font-size: 0.875rem;
+    font-weight: 700;
+    margin: 0;
+    padding-bottom: 0.65rem;
+}
+
+.schedule-form-row {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.schedule-form-row--single {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
 
 .schedule-hint {
     color: var(--lwc-colorTextWeak, #706e6b);
     font-size: 0.75rem;
-    margin: 0.35rem 0 0;
+    margin: 0;
+}
+
+.schedule-days-row lightning-checkbox-group {
+    display: block;
 }
 
 .footer {
