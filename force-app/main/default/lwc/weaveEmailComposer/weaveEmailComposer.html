@@ -351,6 +351,25 @@
 
             </template>
 
+            <template if:true={showEmailLimitBar}>
+                <div class="email-limit-banner">
+                    <div class="email-limit-label">
+                        <span>Daily Email Quota</span>
+                        <span class="email-limit-counts">{emailLimitUsed} / {emailLimitTotal} used &mdash; {emailLimitRemaining} remaining</span>
+                    </div>
+                    <div class="email-limit-bar-track">
+                        <div class={emailLimitBarClass} style={emailLimitBarStyle}></div>
+                    </div>
+                </div>
+            </template>
+
+            <template if:true={emailQuotaWouldBeExceeded}>
+                <div class="error error--quota" role="alert">
+                    <lightning-icon icon-name="utility:error" size="x-small" variant="error"></lightning-icon>
+                    <span>{emailQuotaWarningMessage}</span>
+                </div>
+            </template>
+
             <template if:true={showSchedulePanel}>
                 <div class="schedule-panel">
                     <div class="schedule-panel-inner">

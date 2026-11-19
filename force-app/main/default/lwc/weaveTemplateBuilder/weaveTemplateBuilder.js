@@ -18,6 +18,7 @@ import createScheduledSend from '@salesforce/apex/WeaveTemplateBuilderController
 import getScheduledSends from '@salesforce/apex/WeaveTemplateBuilderController.getScheduledSends';
 import cancelScheduledSend from '@salesforce/apex/WeaveTemplateBuilderController.cancelScheduledSend';
 import sendScheduledSendNow from '@salesforce/apex/WeaveTemplateBuilderController.sendScheduledSendNow';
+import resendFailed from '@salesforce/apex/WeaveTemplateBuilderController.resendFailed';
 import getBrands from '@salesforce/apex/WeaveTemplateBuilderController.getBrands';
 import loadBrand from '@salesforce/apex/WeaveTemplateBuilderController.loadBrand';
 import saveBrand from '@salesforce/apex/WeaveTemplateBuilderController.saveBrand';
@@ -1305,6 +1306,7 @@ export default class WeaveTemplateBuilder extends LightningElement {
         this.scheduledSends = (rows || []).map(r => ({
           ...r,
           isPending: r.status === 'Pending',
+          hasFailedRecords: r.recordsFailed > 0 && (r.status === 'Sent' || r.status === 'Failed' || r.status === 'Partial'),
           statusClass: 'sched-status sched-status_' + (r.status || 'pending').toLowerCase()
         }));
       })
@@ -1330,6 +1332,17 @@ export default class WeaveTemplateBuilder extends LightningElement {
         this.loadScheduledSends();
       })
       .catch(err => { this.errorMessage = err.body?.message || 'Send failed.'; });
+  }
+
+  handleResendFailed(event) {
+    const sendId = event.currentTarget.dataset.id;
+    if (!confirm('Resend to all failed recipients from this batch?')) return;
+    resendFailed({ scheduledSendId: sendId })
+      .then(() => {
+        this.dispatchEvent(new ShowToastEvent({ title: 'Resend Queued', message: 'A new batch has been created for failed recipients.', variant: 'success' }));
+        this.loadScheduledSends();
+      })
+      .catch(err => { this.errorMessage = err.body?.message || 'Resend failed.'; });
   }
 
   // ── Files / Attachments ──────────────────────────────────────────────────────

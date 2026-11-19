@@ -88,6 +88,15 @@ public with sharing class WeaveEmailTemplateController {
         return WeaveEmailSendService.sendEmail(request);
     }
 
+    @AuraEnabled(cacheable=true)
+    public static Map<String, Integer> getEmailLimits() {
+        try {
+            return WeaveEmailSendService.getEmailLimits();
+        } catch (Exception e) {
+            throw new AuraHandledException('Unable to load email limits.');
+        }
+    }
+
     @AuraEnabled
     public static Id scheduleEmail(GenericEmailSendRequest request, Long scheduledAtMs) {
         try {

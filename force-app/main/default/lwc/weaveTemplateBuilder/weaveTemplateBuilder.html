@@ -724,6 +724,9 @@
                               <button class="btn-secondary btn-xs" data-id={ss.id} onclick={handleSendScheduledSendNow}>Send Now</button>
                               <button class="btn-danger btn-xs" data-id={ss.id} onclick={handleCancelScheduledSend}>Cancel</button>
                             </template>
+                            <template if:true={ss.hasFailedRecords}>
+                              <button class="btn-warning btn-xs" data-id={ss.id} onclick={handleResendFailed}>Resend Failed</button>
+                            </template>
                           </td>
                         </tr>
                       </template>

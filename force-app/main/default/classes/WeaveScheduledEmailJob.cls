@@ -36,7 +36,7 @@ public with sharing class WeaveScheduledEmailJob implements Schedulable {
 
     private void executeIndividual(Weave_Scheduled_Send__c record) {
         Id recId = record.Record_Id__c;
-        sendToRecord(record.Template__c, recId);
+        sendToRecord(record.Template__c, recId, record.Id);
         updateStatus(record.Id, 'Sent', 1, 1, 0, null);
     }
 
@@ -55,6 +55,14 @@ public with sharing class WeaveScheduledEmailJob implements Schedulable {
     }
 
     public static void sendToRecord(Id templateId, Id recId) {
+        sendToRecord(templateId, recId, null, null);
+    }
+
+    public static void sendToRecord(Id templateId, Id recId, Id scheduledSendId) {
+        sendToRecord(templateId, recId, scheduledSendId, null);
+    }
+
+    public static void sendToRecord(Id templateId, Id recId, Id scheduledSendId, Id retryOfLogId) {
         WeaveEmailTemplateRenderer.RenderedEmailDTO rendered =
             WeaveEmailTemplateRenderer.renderEmail(templateId, recId);
 
@@ -76,13 +84,15 @@ public with sharing class WeaveScheduledEmailJob implements Schedulable {
         }
 
         GenericEmailSendRequest sendReq = new GenericEmailSendRequest();
-        sendReq.templateId    = templateId;
-        sendReq.recordId      = recId;
-        sendReq.subject       = rendered.subject;
-        sendReq.htmlBody      = rendered.htmlBody;
-        sendReq.toRecipients  = toList;
-        sendReq.ccRecipients  = ccList;
-        sendReq.bccRecipients = bccList;
+        sendReq.templateId       = templateId;
+        sendReq.recordId         = recId;
+        sendReq.subject          = rendered.subject;
+        sendReq.htmlBody         = rendered.htmlBody;
+        sendReq.toRecipients     = toList;
+        sendReq.ccRecipients     = ccList;
+        sendReq.bccRecipients    = bccList;
+        sendReq.scheduledSendId  = scheduledSendId;
+        sendReq.retryOfLogId     = retryOfLogId;
         WeaveEmailSendService.sendEmail(sendReq);
     }
 

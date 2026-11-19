@@ -52,7 +52,7 @@ public with sharing class WeaveEmailSendService {
                 throw new AuraHandledException('Email failed to send: ' + getSendEmailErrorMessage(results));
             }
 
-            logSend(template, totalRecipients, request.recordId);
+            logSend(template, totalRecipients, request.recordId, request.scheduledSendId, request.retryOfLogId);
 
             if (shouldStoreHistory(request, template)) {
                 String historyWarning = logTaskHistory(request, toAddresses, ccAddresses, bccAddresses, plainTextBody);
@@ -250,9 +250,38 @@ public with sharing class WeaveEmailSendService {
         if (todayCount >= MAX_SENDS_PER_USER_PER_DAY) {
             throw new AuraHandledException('You have reached your daily email send limit of ' + MAX_SENDS_PER_USER_PER_DAY + '.');
         }
+        Map<String, OrgLimit> orgLimitsMap = OrgLimits.getMap();
+        OrgLimit singleEmailOrgLimit = orgLimitsMap.get('SingleEmail');
+        if (singleEmailOrgLimit != null) {
+            Integer remaining = singleEmailOrgLimit.getLimit() - singleEmailOrgLimit.getValue();
+            if (remaining < recipientCount) {
+                throw new AuraHandledException(
+                    'Insufficient org email quota. ' + remaining + ' of ' + singleEmailOrgLimit.getLimit() +
+                    ' daily emails remaining, but this send needs ' + recipientCount + '.'
+                );
+            }
+        }
     }
 
-    private static void logSend(Weave_Template_Config__c template, Integer recipientCount, Id sourceRecordId) {
+    public static Map<String, Integer> getEmailLimits() {
+        Map<String, Integer> result = new Map<String, Integer>();
+        Map<String, OrgLimit> orgLimitsMap = OrgLimits.getMap();
+        OrgLimit single = orgLimitsMap.get('SingleEmail');
+        OrgLimit mass   = orgLimitsMap.get('MassEmail');
+        if (single != null) {
+            result.put('singleEmailLimit',     single.getLimit());
+            result.put('singleEmailUsed',      single.getValue());
+            result.put('singleEmailRemaining', single.getLimit() - single.getValue());
+        }
+        if (mass != null) {
+            result.put('massEmailLimit',     mass.getLimit());
+            result.put('massEmailUsed',      mass.getValue());
+            result.put('massEmailRemaining', mass.getLimit() - mass.getValue());
+        }
+        return result;
+    }
+
+    private static void logSend(Weave_Template_Config__c template, Integer recipientCount, Id sourceRecordId, Id scheduledSendId, Id retryOfLogId) {
         if (!Weave_Send_Log__c.SObjectType.getDescribe(SObjectDescribeOptions.DEFERRED).isCreateable()) return;
         try {
             Weave_Send_Log__c log = new Weave_Send_Log__c();
@@ -261,6 +290,25 @@ public with sharing class WeaveEmailSendService {
             log.Sent_At__c = System.now();
             log.Source_Record_Id__c = sourceRecordId == null ? null : String.valueOf(sourceRecordId);
             log.Running_User__c = UserInfo.getUserId();
+            log.Status__c = 'Sent';
+            log.Scheduled_Send__c = scheduledSendId;
+            log.Retry_Of__c = retryOfLogId;
+            insert as user log;
+        } catch (Exception ignored) {}
+    }
+
+    public static void logFailedSend(Id templateId, Id sourceRecordId, Id scheduledSendId, Id retryOfLogId) {
+        if (!Weave_Send_Log__c.SObjectType.getDescribe(SObjectDescribeOptions.DEFERRED).isCreateable()) return;
+        try {
+            Weave_Send_Log__c log = new Weave_Send_Log__c();
+            log.Template__c = templateId;
+            log.Recipient_Count__c = 0;
+            log.Sent_At__c = System.now();
+            log.Source_Record_Id__c = sourceRecordId == null ? null : String.valueOf(sourceRecordId);
+            log.Running_User__c = UserInfo.getUserId();
+            log.Status__c = 'Failed';
+            log.Scheduled_Send__c = scheduledSendId;
+            log.Retry_Of__c = retryOfLogId;
             insert as user log;
         } catch (Exception ignored) {}
     }

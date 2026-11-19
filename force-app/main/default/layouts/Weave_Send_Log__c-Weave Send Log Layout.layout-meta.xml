@@ -14,6 +14,9 @@
             <layoutItems><behavior>Edit</behavior><field>Sent_At__c</field></layoutItems>
             <layoutItems><behavior>Edit</behavior><field>Recipient_Count__c</field></layoutItems>
             <layoutItems><behavior>Edit</behavior><field>Source_Record_Id__c</field></layoutItems>
+            <layoutItems><behavior>Edit</behavior><field>Status__c</field></layoutItems>
+            <layoutItems><behavior>Edit</behavior><field>Scheduled_Send__c</field></layoutItems>
+            <layoutItems><behavior>Edit</behavior><field>Retry_Of__c</field></layoutItems>
         </layoutColumns>
         <style>TwoColumnsTopToBottom</style>
     </layoutSections>

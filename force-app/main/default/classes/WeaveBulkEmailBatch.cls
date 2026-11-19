@@ -5,6 +5,7 @@ public with sharing class WeaveBulkEmailBatch
     private final Id scheduledSendId;
     private final String objectApiName;
     private final String filterClause;
+    private final Map<String, Id> recordIdToRetryOfLogId;
 
     private Integer targeted = 0;
     private Integer sent     = 0;
@@ -13,10 +14,17 @@ public with sharing class WeaveBulkEmailBatch
 
     public WeaveBulkEmailBatch(Id templateId, Id scheduledSendId,
                                String objectApiName, String filterClause) {
-        this.templateId       = templateId;
-        this.scheduledSendId  = scheduledSendId;
-        this.objectApiName    = objectApiName;
-        this.filterClause     = filterClause;
+        this(templateId, scheduledSendId, objectApiName, filterClause, null);
+    }
+
+    public WeaveBulkEmailBatch(Id templateId, Id scheduledSendId,
+                               String objectApiName, String filterClause,
+                               Map<String, Id> recordIdToRetryOfLogId) {
+        this.templateId              = templateId;
+        this.scheduledSendId         = scheduledSendId;
+        this.objectApiName           = objectApiName;
+        this.filterClause            = filterClause;
+        this.recordIdToRetryOfLogId  = recordIdToRetryOfLogId;
     }
 
     @SuppressWarnings('PMD.ApexSOQLInjection')
@@ -41,16 +49,22 @@ public with sharing class WeaveBulkEmailBatch
             if (remaining < scope.size()) {
                 failed += scope.size();
                 errorDetail = 'Stopped: org daily email limit nearly reached (' + remaining + ' remaining).';
+                for (SObject record : scope) {
+                    Id retryOfId = getRetryOfLogId(record.Id);
+                    WeaveEmailSendService.logFailedSend(templateId, record.Id, scheduledSendId, retryOfId);
+                }
                 return;
             }
         }
 
         for (SObject record : scope) {
+            Id retryOfId = getRetryOfLogId(record.Id);
             try {
-                WeaveScheduledEmailJob.sendToRecord(templateId, record.Id);
+                WeaveScheduledEmailJob.sendToRecord(templateId, record.Id, scheduledSendId, retryOfId);
                 sent++;
             } catch (Exception e) {
                 failed++;
+                WeaveEmailSendService.logFailedSend(templateId, record.Id, scheduledSendId, retryOfId);
             }
         }
     }
@@ -66,5 +80,10 @@ public with sharing class WeaveBulkEmailBatch
         );
         if (errorDetail != null) upd.Error_Detail__c = errorDetail;
         try { update upd; } catch (Exception ignored) {}
+    }
+
+    private Id getRetryOfLogId(Id recordId) {
+        if (recordIdToRetryOfLogId == null || recordId == null) return null;
+        return recordIdToRetryOfLogId.get(String.valueOf(recordId));
     }
 }

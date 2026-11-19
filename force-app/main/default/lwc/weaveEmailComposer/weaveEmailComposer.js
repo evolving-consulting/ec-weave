@@ -5,6 +5,7 @@ import getRelatedAttachments from '@salesforce/apex/WeaveEmailTemplateController
 import renderEmail from '@salesforce/apex/WeaveEmailTemplateController.renderEmail';
 import sendEmail from '@salesforce/apex/WeaveEmailTemplateController.sendEmail';
 import scheduleEmail from '@salesforce/apex/WeaveEmailTemplateController.scheduleEmail';
+import getEmailLimits from '@salesforce/apex/WeaveEmailTemplateController.getEmailLimits';
 import getObjectApiNameFromRecordId from '@salesforce/apex/WeaveEmailTemplateController.getObjectApiNameFromRecordId';
 import getRecordSummary from '@salesforce/apex/WeaveEmailTemplateController.getRecordSummary';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
@@ -83,6 +84,7 @@ export default class WeaveEmailComposer extends LightningElement {
     @track attachments = [];
     @track isSending = false;
     @track isScheduling = false;
+    @track emailLimits = null;
     @track sendComplete = false;
     @track showManualRecipientForm = false;
     @track showSchedulePanel = false;
@@ -295,6 +297,54 @@ export default class WeaveEmailComposer extends LightningElement {
         return this.toRecipientEmails.length ? this.toRecipientEmails.join(', ') : 'None';
     }
 
+    get totalSelectedRecipientCount() {
+        return this.allSelectedRecipients.length;
+    }
+
+    get emailLimitRemaining() {
+        return this.emailLimits?.singleEmailRemaining ?? null;
+    }
+
+    get emailLimitTotal() {
+        return this.emailLimits?.singleEmailLimit ?? null;
+    }
+
+    get emailLimitUsed() {
+        return this.emailLimits?.singleEmailUsed ?? 0;
+    }
+
+    get showEmailLimitBar() {
+        return this.emailLimitTotal != null && this.emailLimitTotal > 0;
+    }
+
+    get emailLimitBarPercent() {
+        if (!this.showEmailLimitBar) return 0;
+        return Math.min(100, Math.round((this.emailLimitUsed / this.emailLimitTotal) * 100));
+    }
+
+    get emailLimitBarStyle() {
+        const pct = this.emailLimitBarPercent;
+        const color = pct >= 90 ? '#c23934' : pct >= 70 ? '#e49000' : '#1e7e34';
+        return `width:${pct}%;background-color:${color};`;
+    }
+
+    get emailLimitBarClass() {
+        return 'email-limit-bar-fill';
+    }
+
+    get emailQuotaWouldBeExceeded() {
+        if (this.emailLimitRemaining == null) return false;
+        return this.totalSelectedRecipientCount > this.emailLimitRemaining;
+    }
+
+    get emailQuotaWarningMessage() {
+        if (!this.emailQuotaWouldBeExceeded) return null;
+        const rem = this.emailLimitRemaining;
+        const tot = this.emailLimitTotal;
+        const need = this.totalSelectedRecipientCount;
+        return `Quota exceeded: ${rem.toLocaleString()} of ${tot.toLocaleString()} daily emails remaining, but this send needs ${need.toLocaleString()}.`;
+    }
+
     get disableSendButton() {
         return (
             this.isLoading ||
@@ -302,6 +352,7 @@ export default class WeaveEmailComposer extends LightningElement {
             this.isScheduling ||
             !this.effectiveTemplateId ||
             !this.hasSelectedToRecipient ||
+            this.emailQuotaWouldBeExceeded ||
             String(this.renderedSubject || '').trim().length === 0 ||
             String(this.renderedBody || '').trim().length === 0
         );
@@ -476,9 +527,20 @@ export default class WeaveEmailComposer extends LightningElement {
     }
 
     async loadCompositionData() {
-        await this.loadRecipients();
-        await this.loadRelatedAttachments();
+        await Promise.all([
+            this.loadRecipients(),
+            this.loadRelatedAttachments(),
+            this.loadEmailLimits()
+        ]);
         await this.loadPreview(true);
+    }
+
+    async loadEmailLimits() {
+        try {
+            this.emailLimits = await getEmailLimits();
+        } catch (e) {
+            this.emailLimits = null;
+        }
     }
 
     async loadPreview(forceRefresh) {

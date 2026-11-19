@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Scheduled_Send__c</fullName>
+    <description>The bulk scheduled send job that produced this log entry. Null for direct single sends.</description>
+    <label>Scheduled Send</label>
+    <referenceTo>Weave_Scheduled_Send__c</referenceTo>
+    <relationshipLabel>Send Log Entries</relationshipLabel>
+    <relationshipName>Send_Log_Entries</relationshipName>
+    <required>false</required>
+    <type>Lookup</type>
+</CustomField>

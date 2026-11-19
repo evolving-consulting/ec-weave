@@ -220,6 +220,58 @@ public with sharing class WeaveTemplateBuilderController {
     }
 
     @AuraEnabled
+    public static Id resendFailed(Id scheduledSendId) {
+        if (scheduledSendId == null) throw new AuraHandledException('Scheduled send ID is required.');
+        List<Weave_Scheduled_Send__c> rows = [
+            SELECT Id, Template__c, Template__r.Parent_Object_API_Name__c, Status__c, Send_Type__c
+            FROM Weave_Scheduled_Send__c
+            WHERE Id = :scheduledSendId WITH USER_MODE LIMIT 1
+        ];
+        if (rows.isEmpty()) throw new AuraHandledException('Scheduled send not found.');
+        Weave_Scheduled_Send__c original = rows[0];
+        if (original.Send_Type__c != 'Bulk') throw new AuraHandledException('Resend Failed is only available for Bulk sends.');
+
+        List<Weave_Send_Log__c> failedLogs = [
+            SELECT Id, Source_Record_Id__c FROM Weave_Send_Log__c
+            WHERE Scheduled_Send__c = :scheduledSendId AND Status__c = 'Failed'
+            WITH USER_MODE
+        ];
+        if (failedLogs.isEmpty()) throw new AuraHandledException('No failed records found for this send job.');
+
+        Map<String, Id> recordIdToFailedLogId = new Map<String, Id>();
+        List<String> recordIds = new List<String>();
+        for (Weave_Send_Log__c log : failedLogs) {
+            if (String.isNotBlank(log.Source_Record_Id__c)) {
+                recordIdToFailedLogId.put(log.Source_Record_Id__c, log.Id);
+                recordIds.add('\'' + String.escapeSingleQuotes(log.Source_Record_Id__c) + '\'');
+            }
+        }
+        if (recordIds.isEmpty()) throw new AuraHandledException('No valid record IDs found in failed logs.');
+
+        String filterClause = 'Id IN (' + String.join(recordIds, ', ') + ')';
+        String objectApiName = original.Template__r.Parent_Object_API_Name__c;
+        if (String.isBlank(objectApiName)) throw new AuraHandledException('Template has no parent object configured.');
+
+        Weave_Scheduled_Send__c retry = new Weave_Scheduled_Send__c(
+            Template__c      = original.Template__c,
+            Status__c        = 'Pending',
+            Send_Type__c     = 'Bulk',
+            Scheduled_At__c  = System.now().addMinutes(1),
+            Filter_Clause__c = filterClause
+        );
+        insert retry;
+
+        Integer batchSize = 20;
+        Database.executeBatch(
+            new WeaveBulkEmailBatch(original.Template__c, retry.Id, objectApiName, filterClause, recordIdToFailedLogId),
+            batchSize
+        );
+        retry.Status__c = 'Running';
+        update retry;
+        return retry.Id;
+    }
+
+    @AuraEnabled
     public static void sendScheduledSendNow(Id scheduledSendId) {
         if (scheduledSendId == null) throw new AuraHandledException('Scheduled send ID is required.');
         List<Weave_Scheduled_Send__c> rows = [

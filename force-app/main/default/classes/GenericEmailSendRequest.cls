@@ -12,6 +12,8 @@ public with sharing class GenericEmailSendRequest {
     @AuraEnabled public List<RecipientInputDTO> bccRecipients { get; set; }
     @AuraEnabled public List<Id> attachmentContentDocumentIds { get; set; }
     @AuraEnabled public Boolean storeHistory { get; set; }
+    @AuraEnabled public Id scheduledSendId { get; set; }
+    @AuraEnabled public Id retryOfLogId { get; set; }
 
     public GenericEmailSendRequest() {
     }
