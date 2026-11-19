@@ -1,33 +1,22 @@
 import { LightningElement, track } from 'lwc';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
-import getActiveSegments from '@salesforce/apex/WeaveRecipientSegmentController.getActiveSegments';
+import getSegments from '@salesforce/apex/WeaveRecipientSegmentController.getSegments';
 import saveSegment from '@salesforce/apex/WeaveRecipientSegmentController.saveSegment';
 import deleteSegment from '@salesforce/apex/WeaveRecipientSegmentController.deleteSegment';
 import previewSegmentCount from '@salesforce/apex/WeaveRecipientSegmentController.previewSegmentCount';
 import getAvailableObjects from '@salesforce/apex/WeaveTemplateBuilderController.getAvailableObjects';
 import getFieldsForObject from '@salesforce/apex/WeaveTemplateBuilderController.getFieldsForObject';
 
-const COLUMNS = [
-    { label: 'Name', fieldName: 'Name', type: 'text' },
-    { label: 'Object', fieldName: 'Object_API_Name__c', type: 'text' },
-    { label: 'Email Field', fieldName: 'Email_Field_API_Name__c', type: 'text' },
-    { label: 'SOQL Filter', fieldName: 'SOQL_Filter__c', type: 'text', wrapText: true },
-    {
-        type: 'action',
-        typeAttributes: {
-            rowActions: [
-                { label: 'Edit', name: 'edit' },
-                { label: 'Preview Count', name: 'preview' },
-                { label: 'Delete', name: 'delete' }
-            ]
-        }
-    }
-];
-
 const STATUS_OPTIONS = [
     { label: 'Active', value: 'Active' },
     { label: 'Inactive', value: 'Inactive' }
 ];
+
+function computeStatusClass(status) {
+    if (status === 'Active') return 'status-pill status-pill_active';
+    if (status === 'Inactive') return 'status-pill status-pill_inactive';
+    return 'status-pill status-pill_draft';
+}
 
 export default class WeaveRecipientSegmentManager extends LightningElement {
     @track segments = [];
@@ -38,16 +27,40 @@ export default class WeaveRecipientSegmentManager extends LightningElement {
     @track errorMessage = '';
     @track availableObjects = [];
     @track availableFields = [];
+    @track filterStatus = 'All';
+    @track searchTerm = '';
 
-    columns = COLUMNS;
     statusOptions = STATUS_OPTIONS;
 
-    get hasSegments() {
-        return this.segments.length > 0;
+    get filteredSegments() {
+        return this.segments.filter(s => {
+            const matchesStatus = this.filterStatus === 'All' || s.Status__c === this.filterStatus;
+            const term = this.searchTerm ? this.searchTerm.toLowerCase() : '';
+            const matchesSearch = !term ||
+                (s.Name && s.Name.toLowerCase().includes(term)) ||
+                (s.Object_API_Name__c && s.Object_API_Name__c.toLowerCase().includes(term));
+            return matchesStatus && matchesSearch;
+        });
+    }
+
+    get hasFilteredSegments() {
+        return this.filteredSegments.length > 0;
     }
 
     get formTitle() {
         return this.editRecord.Id ? 'Edit Segment' : 'New Segment';
+    }
+
+    get filterTabAll() {
+        return 'filter-tab' + (this.filterStatus === 'All' ? ' filter-tab_active' : '');
+    }
+
+    get filterTabActive() {
+        return 'filter-tab' + (this.filterStatus === 'Active' ? ' filter-tab_active' : '');
+    }
+
+    get filterTabInactive() {
+        return 'filter-tab' + (this.filterStatus === 'Inactive' ? ' filter-tab_active' : '');
     }
 
     get objectOptions() {
@@ -86,8 +99,13 @@ export default class WeaveRecipientSegmentManager extends LightningElement {
     loadSegments() {
         this.isLoading = true;
         this.errorMessage = '';
-        getActiveSegments({ objectApiName: null })
-            .then(result => { this.segments = result || []; })
+        getSegments()
+            .then(result => {
+                this.segments = (result || []).map(s => ({
+                    ...s,
+                    statusClass: computeStatusClass(s.Status__c)
+                }));
+            })
             .catch(err => {
                 this.errorMessage = (err && err.body && err.body.message) || 'Unable to load recipient segments.';
             })
@@ -114,6 +132,28 @@ export default class WeaveRecipientSegmentManager extends LightningElement {
         this.isEditing = true;
     }
 
+    handleEdit(event) {
+        const segId = event.currentTarget.dataset.segid;
+        const seg = this.segments.find(s => s.Id === segId);
+        if (!seg) return;
+        this.editRecord = { ...seg };
+        this.previewResult = null;
+        this.isEditing = true;
+        if (seg.Object_API_Name__c) {
+            this.loadFieldsForObject(seg.Object_API_Name__c);
+        }
+    }
+
+    handleDeleteRow(event) {
+        const segId = event.currentTarget.dataset.segid;
+        this.handleDelete(segId);
+    }
+
+    handlePreviewRow(event) {
+        const segId = event.currentTarget.dataset.segid;
+        this.handlePreview(segId);
+    }
+
     handleObjectChange(event) {
         const objectApiName = event.detail.value;
         this.editRecord = {
@@ -130,21 +170,16 @@ export default class WeaveRecipientSegmentManager extends LightningElement {
         this.editRecord = { ...this.editRecord, [field]: event.detail.value };
     }
 
-    handleRowAction(event) {
-        const action = event.detail.action.name;
-        const row = event.detail.row;
-        if (action === 'edit') {
-            this.editRecord = { ...row };
-            this.previewResult = null;
-            this.isEditing = true;
-            if (row.Object_API_Name__c) {
-                this.loadFieldsForObject(row.Object_API_Name__c);
-            }
-        } else if (action === 'delete') {
-            this.handleDelete(row.Id);
-        } else if (action === 'preview') {
-            this.handlePreview(row.Id);
-        }
+    handleStatusFilter(event) {
+        this.filterStatus = event.currentTarget.dataset.status;
+    }
+
+    handleSearch(event) {
+        this.searchTerm = event.detail.value;
+    }
+
+    handleDismissError() {
+        this.errorMessage = '';
     }
 
     handleDelete(segmentId) {

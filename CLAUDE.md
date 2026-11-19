@@ -201,6 +201,104 @@ saveRecord({ ... })
   })
 ```
 
+### Tables
+
+**Always use a custom `slds-table`, never `<lightning-datatable>`.** The `lightning-datatable` component renders its own UI chrome (checkboxes, sort arrows, header rows) that cannot be styled to match the Weave brand.
+
+Pattern:
+```html
+<table class="slds-table slds-table_cell-buffer slds-table_bordered">
+  <thead>
+    <tr class="slds-line-height_reset">
+      <th scope="col"><span class="slds-truncate">NAME</span></th>
+      <th scope="col"><span class="slds-truncate">STATUS</span></th>
+      <th scope="col"><span class="slds-truncate">ACTIONS</span></th>
+    </tr>
+  </thead>
+  <tbody>
+    <template for:each={items} for:item="row">
+      <tr key={row.Id} class="slds-hint-parent">
+        <td><button class="row-name-link" data-id={row.Id} onclick={handleEdit}>{row.Name}</button></td>
+        <td><span class={row.statusClass}>{row.Status__c}</span></td>
+        <td>
+          <span class="action-links">
+            <button class="action-link edit-link" data-id={row.Id} onclick={handleEdit}>Edit</button>
+            <button class="action-link delete-link" data-id={row.Id} onclick={handleDelete}>Delete</button>
+          </span>
+        </td>
+      </tr>
+    </template>
+  </tbody>
+</table>
+```
+
+CSS rules:
+- `th`: `background: #f3f4f6`, `color: var(--ec-brand-muted)`, `font-size: 11px`, `font-weight: 700`, `letter-spacing: 0.06em`, uppercase
+- `td`: `color: var(--ec-brand-ink)`, `font-size: 13px`
+- Row hover: `background: #f9fafb`
+- `.row-name-link`: `color: var(--ec-brand-teal)`, no border/bg, underline on hover
+- `.edit-link`: teal, underline on hover
+- `.delete-link`: `#dc2626`, underline on hover
+- `.preview-link` / `.action-link`: muted, `color: var(--ec-brand-ink)` on hover
+
+**Filter row** (always above the table):
+```html
+<div class="filter-row">
+  <div class="filter-tabs">
+    <button class={filterTabAll} data-status="All" onclick={handleStatusFilter}>All</button>
+    <button class={filterTabActive} data-status="Active" onclick={handleStatusFilter}>Active</button>
+    <button class={filterTabInactive} data-status="Inactive" onclick={handleStatusFilter}>Inactive</button>
+  </div>
+  <lightning-input type="search" placeholder="Search…" value={searchTerm} onchange={handleSearch} variant="label-hidden"></lightning-input>
+</div>
+```
+
+**Status pills** — add `statusClass` to each row object when loading results (never compute in the template):
+```js
+this.items = result.map(r => ({
+  ...r,
+  statusClass: r.Status__c === 'Active' ? 'status-pill status-pill_active'
+             : r.Status__c === 'Inactive' ? 'status-pill status-pill_inactive'
+             : 'status-pill status-pill_draft'
+}));
+```
+
+| Pill variant | Background | Text color |
+|---|---|---|
+| `status-pill_active` | `#d1fae5` | `#065f46` |
+| `status-pill_inactive` | `#f3f4f6` | `var(--ec-brand-muted)` |
+| `status-pill_draft` | `#fef3c7` | `#92400e` |
+
+**Empty state** — centered container with SVG icon (40–48px teal), title (15px 600-weight ink), body text (13px muted), and a CTA primary button. `padding: 3rem 1rem`.
+
+### Forms (edit panels)
+
+Inline edit forms (without a full view switch) use the `.edit-panel` card:
+
+```html
+<div class="edit-panel">
+  <div class="edit-panel-header">
+    <p class="edit-panel-title">Edit Record</p>
+    <button class="edit-panel-close" onclick={handleCancel}>&#x2715;</button>
+  </div>
+  <!-- form fields here -->
+  <div class="form-actions">
+    <button class="btn-cancel" onclick={handleCancel}>Cancel</button>
+    <button class="btn-primary" onclick={handleSave} disabled={isLoading}>Save</button>
+  </div>
+</div>
+```
+
+- `.edit-panel`: `background: var(--ec-brand-teal-bg)`, `border: 1px solid var(--ec-brand-teal-border)`, `border-radius: 8px`, `padding: 1.25rem`, `margin-bottom: 1rem`
+- `.edit-panel-header`: flex row, space-between, with title on left and `✕` close button on right
+- `.edit-panel-title`: 13px, 600-weight, teal, uppercase, letter-spacing 0.04em
+- `.edit-panel-close`: no bg/border, muted color, hover → ink
+- `.form-row`: `margin-bottom: 0.75rem`
+- `.field-hint`: 11px muted text below an input
+- `.form-actions`: flex row, `gap: 8px`, `margin-top: 1rem`; Cancel on left, primary Save on right
+
+Always use `<lightning-input>`, `<lightning-combobox>`, `<lightning-textarea>` — no custom inputs.
+
 ### Typography
 
 - Font stack: `-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`

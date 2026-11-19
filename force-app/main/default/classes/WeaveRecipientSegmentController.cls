@@ -1,6 +1,23 @@
 public with sharing class WeaveRecipientSegmentController {
 
     @AuraEnabled
+    public static List<Weave_Recipient_Segment__c> getSegments() {
+        try {
+            return [
+                SELECT Id, Name, Object_API_Name__c, Email_Field_API_Name__c,
+                    Name_Field_API_Name__c, SOQL_Filter__c, Description__c, Status__c
+                FROM Weave_Recipient_Segment__c
+                WITH USER_MODE
+                ORDER BY Name ASC
+            ];
+        } catch (AuraHandledException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AuraHandledException('Unable to load recipient segments.');
+        }
+    }
+
+    @AuraEnabled
     public static List<Weave_Recipient_Segment__c> getActiveSegments(String objectApiName) {
         try {
             List<Weave_Recipient_Segment__c> segments = [
