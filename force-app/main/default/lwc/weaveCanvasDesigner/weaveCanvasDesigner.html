@@ -1,56 +1,133 @@
 <template>
   <div class="canvas-designer">
 
-    <!-- Mode toggle -->
+    <!-- Mode toggle + PDF button -->
     <div class="canvas-toolbar">
       <div class="mode-tabs">
-        <button class={blocksModeClass} data-mode="blocks" onclick={handleModeChange}>
-          &#x2709;&nbsp; Builder Blocks
+        <button class={richTextModeClass} data-mode="richtext" onclick={handleModeChange}>
+          Rich Text
         </button>
         <button class={htmlModeClass} data-mode="html" onclick={handleModeChange}>
-          &#x1F4C4;&nbsp; HTML Mode
+          &lt;/&gt;&nbsp;HTML
+        </button>
+      </div>
+      <div class="toolbar-actions">
+        <template if:true={isPreviewingPdf}>
+          <lightning-spinner alternative-text="Generating PDF" size="small"></lightning-spinner>
+        </template>
+        <button class="btn-preview-pdf" onclick={handlePreviewPdf} disabled={isPreviewingPdf}>
+          Preview PDF
         </button>
       </div>
     </div>
 
-    <!-- BUILDER BLOCKS MODE -->
-    <template if:true={isBlocksMode}>
-      <div class="email-mode-content">
-        <template for:each={emailRegionGroups} for:item="group">
-          <div key={group.region} class="region-group">
-            <h4 class="region-group__label">{group.region}</h4>
-            <template if:true={group.hasComponents}>
-              <template for:each={group.components} for:item="comp">
-                <c-weave-builder-component-card
-                  key={comp.localKey}
-                  component={comp}
-                ></c-weave-builder-component-card>
-              </template>
-            </template>
-            <template if:false={group.hasComponents}>
-              <p class="region-group__empty">No components in {group.region}</p>
-            </template>
-          </div>
-        </template>
-        <template if:false={hasEmailComponents}>
-          <div class="empty-state">
-            <p class="empty-state__title">No email components yet</p>
-            <p class="empty-state__sub">Use the controls above to add Header, Body, or Footer components.</p>
-          </div>
-        </template>
+    <!-- RICH TEXT MODE -->
+    <template if:true={isRichTextMode}>
+
+      <!-- Insert toolbar -->
+      <div class="insert-toolbar">
+        <span class="insert-toolbar-label">INSERT</span>
+        <button class={insertBtnClassImage} onclick={handleInsertImageToggle}>
+          &#x1F5BC;&nbsp;Image
+        </button>
+        <button class={insertBtnClassQuery} onclick={handleInsertQueryToggle} disabled={hasNoQueries}>
+          &#x1F4CB;&nbsp;Query Table
+        </button>
+        <button class={insertBtnClassMerge} onclick={handleInsertMergeToggle} disabled={hasNoParentFields}>
+          &#x1F3F7;&nbsp;Merge Tag
+        </button>
+        <button class="insert-btn" onclick={handleInsertCta}>
+          &#x1F517;&nbsp;CTA Button
+        </button>
       </div>
+
+      <!-- Insert: Image URL -->
+      <template if:true={showInsertImage}>
+        <div class="insert-panel">
+          <div class="insert-panel-header">
+            <span class="insert-panel-title">Insert Image</span>
+            <button class="edit-panel-close" onclick={handleInsertImageClose}>&#x2715;</button>
+          </div>
+          <div class="form-row">
+            <lightning-input
+              label="Image URL"
+              value={insertImageUrl}
+              placeholder="https://example.com/image.png"
+              onchange={handleInsertImageUrlChange}
+            ></lightning-input>
+          </div>
+          <div class="insert-panel-actions">
+            <button class="btn-cancel" onclick={handleInsertImageClose}>Cancel</button>
+            <button class="btn-primary" onclick={handleInsertImageConfirm} disabled={noInsertImageUrl}>Insert</button>
+          </div>
+        </div>
+      </template>
+
+      <!-- Insert: Query Table picker -->
+      <template if:true={showInsertQuery}>
+        <div class="insert-panel">
+          <div class="insert-panel-header">
+            <span class="insert-panel-title">Insert Query Table</span>
+            <button class="edit-panel-close" onclick={handleInsertQueryClose}>&#x2715;</button>
+          </div>
+          <div class="form-row">
+            <lightning-combobox
+              label="Select Query"
+              value={selectedInsertQueryId}
+              options={queryOptions}
+              placeholder="Choose a query..."
+              onchange={handleInsertQueryChange}
+            ></lightning-combobox>
+          </div>
+          <div class="insert-panel-actions">
+            <button class="btn-cancel" onclick={handleInsertQueryClose}>Cancel</button>
+            <button class="btn-primary" onclick={handleInsertQueryConfirm} disabled={noInsertQuerySelected}>Insert</button>
+          </div>
+        </div>
+      </template>
+
+      <!-- Insert: Merge Tag picker -->
+      <template if:true={showInsertMerge}>
+        <div class="insert-panel">
+          <div class="insert-panel-header">
+            <span class="insert-panel-title">Insert Merge Tag</span>
+            <button class="edit-panel-close" onclick={handleInsertMergeClose}>&#x2715;</button>
+          </div>
+          <div class="form-row">
+            <lightning-combobox
+              label="Select Field"
+              value={selectedInsertMergeField}
+              options={mergeTagOptions}
+              placeholder="Choose a field..."
+              onchange={handleInsertMergeChange}
+            ></lightning-combobox>
+          </div>
+          <div class="insert-panel-actions">
+            <button class="btn-cancel" onclick={handleInsertMergeClose}>Cancel</button>
+            <button class="btn-primary" onclick={handleInsertMergeConfirm} disabled={noInsertMergeSelected}>Insert</button>
+          </div>
+        </div>
+      </template>
+
+      <!-- Rich text editor -->
+      <lightning-input-rich-text
+        value={htmlContent}
+        variant="label-hidden"
+        placeholder="Start building your template here…"
+        onchange={handleRichTextChange}
+      ></lightning-input-rich-text>
+
     </template>
 
     <!-- HTML MODE -->
     <template if:true={isHtmlMode}>
       <div class="html-editor-section">
 
-        <!-- Raw HTML textarea -->
         <div class="html-editor-block">
           <lightning-textarea
-            label="Raw HTML Template"
+            label="HTML Template"
             value={htmlContent}
-            placeholder="Paste or type your HTML here. Use {{Parent.FieldName}} for merge tags."
+            placeholder="Paste or type your HTML here. Use {{Parent.FieldName}} for parent fields and {{Section.ApiName}} for query sections."
             onchange={handleHtmlChange}
           ></lightning-textarea>
         </div>
@@ -67,7 +144,7 @@
             <lightning-textarea
               label="Describe your document"
               value={promptDescription}
-              placeholder="Example: A professional invoice showing account name, opportunity amount, close date, and a branded header with our company logo area."
+              placeholder="Example: A professional invoice showing account name, opportunity amount, close date, and a branded header with our company logo."
               onchange={handlePromptDescriptionChange}
             ></lightning-textarea>
           </div>
@@ -88,16 +165,6 @@
           </div>
         </div>
 
-      </div>
-
-      <!-- Footer: Preview PDF -->
-      <div class="canvas-footer">
-        <template if:true={isPreviewingPdf}>
-          <lightning-spinner alternative-text="Generating PDF" size="small"></lightning-spinner>
-        </template>
-        <button class="btn-preview-pdf" onclick={handlePreviewPdf} disabled={isPreviewingPdf}>
-          Preview PDF
-        </button>
       </div>
     </template>
 

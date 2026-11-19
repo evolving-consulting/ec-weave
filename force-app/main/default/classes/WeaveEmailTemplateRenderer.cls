@@ -437,7 +437,14 @@ public with sharing class WeaveEmailTemplateRenderer {
             pageDivs.add(pageHtml);
         }
 
-        String fullHtml = String.join(pageDivs, '\n');
+        String canvasHtml = String.join(pageDivs, '\n');
+
+        // Apply brand header/footer (same as renderEmail)
+        Weave_Brand__c brand = template.Brand__c != null ? loadBrand(template.Brand__c, enforceActive) : null;
+        String brandHeader = brand != null ? resolveBrandMergeTags(brand.Header_HTML__c, brand) : '';
+        String brandFooter = brand != null ? resolveBrandMergeTags(brand.Footer_HTML__c, brand) : '';
+        String fullHtml = brandHeader + canvasHtml + brandFooter;
+
         String subject  = String.isNotBlank(template.Subject_Template__c)
             ? GenericMergeFieldResolver.resolveTemplate(template.Subject_Template__c, buildContext(parentRecord, template.Parent_Object_API_Name__c))
             : template.Name;

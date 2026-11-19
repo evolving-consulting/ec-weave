@@ -58,6 +58,15 @@ public with sharing class WeaveTemplateBuilderController {
     }
 
     @AuraEnabled
+    public static Id cloneTemplate(Id templateId, String newName, String newApiName, String newOutputType) {
+        try {
+            return WeaveTemplateBuilderService.cloneTemplate(templateId, newName, newApiName, newOutputType);
+        } catch (Exception e) {
+            throw new AuraHandledException(e.getMessage());
+        }
+    }
+
+    @AuraEnabled
     public static WeaveEmailTemplateRenderer.RenderedEmailDTO previewTemplate(Id templateId, Id recordId) {
         return WeaveEmailTemplateRenderer.renderEmail(templateId, recordId, false);
     }

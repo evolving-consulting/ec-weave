@@ -424,6 +424,128 @@
     margin: 0;
 }
 
+/* ── Insert toolbar ─────────────────────────────────────────────────────── */
+
+.insert-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0 12px;
+    flex-wrap: wrap;
+}
+
+.insert-toolbar-label {
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--ec-brand-muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-right: 4px;
+}
+
+.insert-btn {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 12px;
+    color: var(--ec-brand-ink);
+    cursor: pointer;
+    transition: background 0.1s, border-color 0.1s, color 0.1s;
+    white-space: nowrap;
+}
+
+.insert-btn:hover:not(:disabled) {
+    background: var(--ec-brand-teal-bg);
+    border-color: var(--ec-brand-teal-border);
+    color: var(--ec-brand-teal);
+}
+
+.insert-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.insert-btn_active {
+    background: var(--ec-brand-teal);
+    border-color: var(--ec-brand-teal);
+    color: white;
+    font-weight: 600;
+}
+
+.insert-btn_active:hover:not(:disabled) {
+    background: var(--ec-brand-teal-mid);
+    border-color: var(--ec-brand-teal-mid);
+    color: white;
+}
+
+/* ── Insert panel (inline picker) ───────────────────────────────────────── */
+
+.insert-panel {
+    background: var(--ec-brand-teal-bg);
+    border: 1px solid var(--ec-brand-teal-border);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 12px;
+}
+
+.insert-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.insert-panel-title {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--ec-brand-teal);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.insert-panel-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.btn-primary {
+    background: var(--ec-brand-teal);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 7px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: var(--ec-brand-teal-mid);
+}
+
+.btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-cancel {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 7px 16px;
+    font-size: 13px;
+    color: var(--ec-brand-ink);
+    cursor: pointer;
+    transition: background 0.1s;
+}
+
+.btn-cancel:hover {
+    background: #f9fafb;
+}
+
 /* ── HTML Mode ──────────────────────────────────────────────────────────── */
 
 .html-editor-section {

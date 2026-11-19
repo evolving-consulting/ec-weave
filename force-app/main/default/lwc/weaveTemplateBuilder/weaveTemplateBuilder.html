@@ -138,6 +138,7 @@
                     <td>
                       <span class="action-links">
                         <button class="action-link edit-link" data-id={tmpl.id} onclick={openTemplate}>Edit</button>
+                        <button class="action-link" data-id={tmpl.id} onclick={handleCloneOpen}>Clone</button>
                         <button class="action-link delete-link" data-id={tmpl.id} onclick={deleteTemplateFromLibrary}>Delete</button>
                       </span>
                     </td>
@@ -227,44 +228,46 @@
                     onchange={handleFieldChange}
                   ></lightning-combobox>
                 </div>
-                <lightning-input
-                  label="Subject Template (Variant A)"
-                  value={draftTemplate.subjectTemplate}
-                  data-field="subjectTemplate"
-                  onchange={handleFieldChange}
-                  placeholder="Hello {{Parent.Name}}"
-                ></lightning-input>
-                <lightning-input
-                  label="Subject Variant B (optional A/B test)"
-                  value={draftTemplate.subjectVariantB}
-                  data-field="subjectVariantB"
-                  onchange={handleFieldChange}
-                  placeholder="Leave blank to disable A/B testing"
-                ></lightning-input>
-                <div class="form-row-2">
-                  <lightning-combobox
-                    label="From Email Type"
-                    value={fromEmailType}
-                    options={fromEmailTypeOptions}
-                    onchange={handleFromEmailTypeChange}
-                  ></lightning-combobox>
-                  <template if:true={isFromOrgWide}>
+                <template if:true={isEmailTemplate}>
+                  <lightning-input
+                    label="Subject Template (Variant A)"
+                    value={draftTemplate.subjectTemplate}
+                    data-field="subjectTemplate"
+                    onchange={handleFieldChange}
+                    placeholder="Hello {{Parent.Name}}"
+                  ></lightning-input>
+                  <lightning-input
+                    label="Subject Variant B (optional A/B test)"
+                    value={draftTemplate.subjectVariantB}
+                    data-field="subjectVariantB"
+                    onchange={handleFieldChange}
+                    placeholder="Leave blank to disable A/B testing"
+                  ></lightning-input>
+                  <div class="form-row-2">
                     <lightning-combobox
-                      label="Org Wide Email Address"
-                      value={draftTemplate.defaultFromEmail}
-                      options={orgWideEmailOptions}
-                      data-field="defaultFromEmail"
-                      onchange={handleFieldChange}
-                      placeholder="Select an org-wide email…"
+                      label="From Email Type"
+                      value={fromEmailType}
+                      options={fromEmailTypeOptions}
+                      onchange={handleFromEmailTypeChange}
                     ></lightning-combobox>
-                  </template>
-                  <template if:true={isFromCurrentUser}>
-                    <div class="from-email-hint">
-                      <lightning-icon icon-name="utility:user" size="x-small"></lightning-icon>
-                      <span>Email will be sent from the running user's address.</span>
-                    </div>
-                  </template>
-                </div>
+                    <template if:true={isFromOrgWide}>
+                      <lightning-combobox
+                        label="Org Wide Email Address"
+                        value={draftTemplate.defaultFromEmail}
+                        options={orgWideEmailOptions}
+                        data-field="defaultFromEmail"
+                        onchange={handleFieldChange}
+                        placeholder="Select an org-wide email…"
+                      ></lightning-combobox>
+                    </template>
+                    <template if:true={isFromCurrentUser}>
+                      <div class="from-email-hint">
+                        <lightning-icon icon-name="utility:user" size="x-small"></lightning-icon>
+                        <span>Email will be sent from the running user's address.</span>
+                      </div>
+                    </template>
+                  </div>
+                </template>
                 <lightning-combobox
                   label="Brand"
                   value={draftTemplate.brandId}
@@ -276,7 +279,12 @@
                 <template if:true={templateHasBrand}>
                   <div class="brand-info-banner">
                     <lightning-icon icon-name="utility:info" size="x-small"></lightning-icon>
-                    <span>Brand <strong>{selectedBrandName}</strong> will wrap this email with its header and footer. Its org-wide email address is used as a fallback when no From Email is set above.</span>
+                    <template if:true={isEmailTemplate}>
+                      <span>Brand <strong>{selectedBrandName}</strong> will wrap this email with its header and footer. Its org-wide email address is used as a fallback when no From Email is set above.</span>
+                    </template>
+                    <template if:false={isEmailTemplate}>
+                      <span>Brand <strong>{selectedBrandName}</strong> will wrap this PDF document with its header and footer HTML.</span>
+                    </template>
                   </div>
                 </template>
                 <lightning-textarea
@@ -303,22 +311,24 @@
                     ></lightning-combobox>
                   </template>
                 </div>
-                <div class="form-row-2">
-                  <lightning-input
-                    type="checkbox"
-                    label="Allow User Edit Before Send"
-                    checked={draftTemplate.allowUserEditBeforeSend}
-                    data-field="allowUserEditBeforeSend"
-                    onchange={handleCheckboxChange}
-                  ></lightning-input>
-                  <lightning-input
-                    type="checkbox"
-                    label="Store Email History"
-                    checked={draftTemplate.storeEmailHistory}
-                    data-field="storeEmailHistory"
-                    onchange={handleCheckboxChange}
-                  ></lightning-input>
-                </div>
+                <template if:true={isEmailTemplate}>
+                  <div class="form-row-2">
+                    <lightning-input
+                      type="checkbox"
+                      label="Allow User Edit Before Send"
+                      checked={draftTemplate.allowUserEditBeforeSend}
+                      data-field="allowUserEditBeforeSend"
+                      onchange={handleCheckboxChange}
+                    ></lightning-input>
+                    <lightning-input
+                      type="checkbox"
+                      label="Store Email History"
+                      checked={draftTemplate.storeEmailHistory}
+                      data-field="storeEmailHistory"
+                      onchange={handleCheckboxChange}
+                    ></lightning-input>
+                  </div>
+                </template>
               </div>
             </div>
           </template>
@@ -640,7 +650,9 @@
                   onchange={handlePreviewRecordChange}
                 ></lightning-record-picker>
                 <div class="preview-btn-wrap">
-                  <button class="btn-activate-template" onclick={handlePreview}>Preview Email</button>
+                  <template if:true={isEmailTemplate}>
+                    <button class="btn-activate-template" onclick={handlePreview}>Preview Email</button>
+                  </template>
                   <button class="btn-preview-pdf" onclick={handlePreviewPdf} disabled={isPreviewingPdf}>
                     <template if:true={isPreviewingPdf}>Generating…</template>
                     <template if:false={isPreviewingPdf}>Preview as PDF</template>
@@ -659,15 +671,17 @@
                 </div>
               </template>
 
-              <!-- Send Test Email -->
-              <div class="preview-action-row">
-                <h4 class="preview-action-title">Send Test Email</h4>
-                <p class="preview-action-hint">Sends the rendered email to your user address. Select a record first.</p>
-                <button class="btn-secondary" onclick={handleSendTestEmail} disabled={isSendingTest}>
-                  <template if:true={isSendingTest}>Sending…</template>
-                  <template if:false={isSendingTest}>Send Test to Me</template>
-                </button>
-              </div>
+              <!-- Send Test Email (Email templates only) -->
+              <template if:true={isEmailTemplate}>
+                <div class="preview-action-row">
+                  <h4 class="preview-action-title">Send Test Email</h4>
+                  <p class="preview-action-hint">Sends the rendered email to your user address. Select a record first.</p>
+                  <button class="btn-secondary" onclick={handleSendTestEmail} disabled={isSendingTest}>
+                    <template if:true={isSendingTest}>Sending…</template>
+                    <template if:false={isSendingTest}>Send Test to Me</template>
+                  </button>
+                </div>
+              </template>
 
             </div>
           </template>
@@ -1793,6 +1807,57 @@
           </footer>
         </div>
       </section>
+    </template>
+
+    <!-- Clone template modal -->
+    <template if:true={showCloneModal}>
+      <section class="slds-modal slds-fade-in-open" aria-modal="true">
+        <div class="slds-modal__container modal-container">
+          <header class="slds-modal__header modal-header">
+            <h2 class="modal-title">Clone Template</h2>
+            <button class="modal-close" onclick={handleCloneModalClose}>✕</button>
+          </header>
+          <div class="slds-modal__content modal-body">
+            <p style="font-size:13px;color:var(--ec-brand-muted);margin-bottom:16px">Copies all queries, HTML, recipients, actions, attachments and settings. Enter a unique name and API Name for the clone.</p>
+            <div class="form-row">
+              <lightning-input
+                label="Template Name"
+                value={cloneName}
+                data-field="cloneName"
+                onchange={handleCloneFieldChange}
+                required
+              ></lightning-input>
+            </div>
+            <div class="form-row">
+              <lightning-input
+                label="API Name"
+                value={cloneApiName}
+                data-field="cloneApiName"
+                onchange={handleCloneFieldChange}
+                required
+                placeholder="e.g. My_Template_Copy"
+              ></lightning-input>
+            </div>
+            <div class="form-row">
+              <lightning-combobox
+                label="Template Output Type"
+                value={cloneOutputType}
+                options={outputTypeOptions}
+                data-field="cloneOutputType"
+                onchange={handleCloneFieldChange}
+              ></lightning-combobox>
+            </div>
+          </div>
+          <footer class="modal-footer">
+            <button class="btn-cancel" onclick={handleCloneModalClose}>Cancel</button>
+            <button class="btn-activate-template" onclick={handleCloneConfirm} disabled={isCloning}>
+              <template if:true={isCloning}>Cloning…</template>
+              <template if:false={isCloning}>Clone Template</template>
+            </button>
+          </footer>
+        </div>
+      </section>
+      <div class="slds-backdrop slds-backdrop_open"></div>
     </template>
   </div>
 </template>

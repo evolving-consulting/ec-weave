@@ -28,6 +28,7 @@ import getBrandFiles from '@salesforce/apex/WeaveTemplateBuilderController.getBr
 import createBrandPublicImageLink from '@salesforce/apex/WeaveTemplateBuilderController.createBrandPublicImageLink';
 import deleteBrandFile from '@salesforce/apex/WeaveTemplateBuilderController.deleteBrandFile';
 import getActiveSegments from '@salesforce/apex/WeaveTemplateBuilderController.getActiveSegments';
+import cloneTemplate from '@salesforce/apex/WeaveTemplateBuilderController.cloneTemplate';
 
 const STATUS_OPTIONS = [
   { label: 'Draft', value: 'Draft' },
@@ -101,8 +102,7 @@ const FROM_EMAIL_TYPE_OPTIONS = [
 ];
 const OUTPUT_TYPE_OPTIONS = [
   { label: 'Email', value: 'Email' },
-  { label: 'Document (PDF)', value: 'Document' },
-  { label: 'Both (Email + PDF)', value: 'Both' }
+  { label: 'Document (PDF)', value: 'Document' }
 ];
 const PAGE_SIZE_OPTIONS = [
   { label: 'Letter (8.5 × 11 in)', value: 'Letter' },
@@ -234,6 +234,12 @@ export default class WeaveTemplateBuilder extends LightningElement {
   @track headerRteKey = 1;
   @track footerRteKey = 1;
   @track availableSegments = [];
+  @track showCloneModal = false;
+  @track cloneSourceId = null;
+  @track cloneName = '';
+  @track cloneApiName = '';
+  @track cloneOutputType = 'Email';
+  @track isCloning = false;
 
   statusOptions = STATUS_OPTIONS;
   fromEmailTypeOptions = FROM_EMAIL_TYPE_OPTIONS;
@@ -392,10 +398,9 @@ export default class WeaveTemplateBuilder extends LightningElement {
   }
   get isFromCurrentUser() { return this.fromEmailType === 'CurrentUser'; }
   get isFromOrgWide() { return this.fromEmailType === 'OrgWide'; }
-  get showPageSize() {
-    const t = this.draftTemplate.templateOutputType;
-    return t === 'Document' || t === 'Both';
-  }
+  get showPageSize() { return this.draftTemplate.templateOutputType === 'Document'; }
+  get isDocumentTemplate() { return this.draftTemplate.templateOutputType === 'Document'; }
+  get isEmailTemplate() { return this.draftTemplate.templateOutputType !== 'Document'; }
 
   // ── Filter tab class getters ────────────────────────────────────────────────
 
@@ -744,7 +749,12 @@ export default class WeaveTemplateBuilder extends LightningElement {
       return;
     }
     this.isLoading = true;
-    const payload = JSON.stringify(this.draftTemplate);
+    // Reset email-only fields for Document templates
+    let draft = this.draftTemplate;
+    if (draft.templateOutputType === 'Document') {
+      draft = { ...draft, allowUserEditBeforeSend: false, storeEmailHistory: false, defaultFromEmail: '' };
+    }
+    const payload = JSON.stringify(draft);
     saveTemplate({ templateJson: payload })
       .then(dto => {
         this.draftTemplate = {
@@ -796,6 +806,47 @@ export default class WeaveTemplateBuilder extends LightningElement {
   }
 
   handleDeleteTemplate(event) { this.deleteTemplateFromLibrary(event); }
+
+  handleCloneOpen(event) {
+    event.stopPropagation();
+    const templateId = event.currentTarget.dataset.id;
+    const tmpl = this.templates.find(t => t.id === templateId);
+    this.cloneSourceId = templateId;
+    this.cloneName = (tmpl ? tmpl.name : '') + ' (Copy)';
+    this.cloneApiName = '';
+    this.cloneOutputType = tmpl?.outputType || 'Email';
+    this.showCloneModal = true;
+  }
+
+  handleCloneFieldChange(event) {
+    const field = event.target.dataset.field;
+    this[field] = event.detail.value;
+  }
+
+  handleCloneModalClose() { this.showCloneModal = false; }
+
+  handleCloneConfirm() {
+    if (!this.cloneName || !this.cloneApiName) {
+      this.errorMessage = 'Name and API Name are required to clone.';
+      return;
+    }
+    this.isCloning = true;
+    this.errorMessage = null;
+    cloneTemplate({
+      templateId: this.cloneSourceId,
+      newName: this.cloneName,
+      newApiName: this.cloneApiName,
+      newOutputType: this.cloneOutputType
+    })
+      .then(newTemplateId => {
+        this.showCloneModal = false;
+        this.dispatchEvent(new ShowToastEvent({ title: 'Cloned', message: 'Template cloned successfully.', variant: 'success' }));
+        this.loadData();
+        this.loadTemplateById(newTemplateId);
+      })
+      .catch(err => { this.errorMessage = this.extractError(err); })
+      .finally(() => { this.isCloning = false; });
+  }
 
   // ── Queries ─────────────────────────────────────────────────────────────────
 
