@@ -244,6 +244,7 @@ export default class WeaveTemplateBuilder extends LightningElement {
 
   loadData() {
     this.isLoading = true;
+    this.errorMessage = null;
     Promise.all([
       getTemplates(),
       getAvailableObjects(),
