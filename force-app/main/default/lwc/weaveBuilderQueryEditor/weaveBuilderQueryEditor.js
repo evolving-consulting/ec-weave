@@ -1,24 +1,34 @@
 import { LightningElement, api, track } from 'lwc';
 import getFieldsForObject from '@salesforce/apex/WeaveTemplateBuilderController.getFieldsForObject';
 import getLookupFieldsForChildObject from '@salesforce/apex/WeaveTemplateBuilderController.getLookupFieldsForChildObject';
+import getRelationshipFields from '@salesforce/apex/WeaveTemplateBuilderController.getRelationshipFields';
 
 const SORT_DIRECTION_OPTIONS = [
   { label: 'Ascending', value: 'ASC' },
   { label: 'Descending', value: 'DESC' }
 ];
 
+// Lookup relationships to skip — they're redundant or noise in the field picker
+const SYSTEM_RELATIONSHIP_NAMES = new Set([
+  'Owner', 'CreatedBy', 'LastModifiedBy', 'RecordType', 'Master',
+  'UserRole', 'Profile', 'Currency'
+]);
+
+let _sortRowSeq = 0;
+
 export default class WeaveBuilderQueryEditor extends LightningElement {
   @api relatedObjectOptions = [];
   @api relatedObjectMeta = {};
   @api parentObjectApiName;
+  @api parentQueryOptions = [];
 
   @track _query = {};
   @track _loadedObjectApiName = null;
   @track availableFields = [];
+  @track relatedFieldGroups = [];
   @track parentLookupFieldOptions = [];
   @track fieldSearchTerm = '';
-  @track sortField = '';
-  @track sortDirection = 'ASC';
+  @track sortRows = [];
   @track queryLimit = 50;
   @track filterClause = '';
   @track isLoadingFields = false;
@@ -29,9 +39,7 @@ export default class WeaveBuilderQueryEditor extends LightningElement {
   get query() { return this._query; }
   set query(value) {
     const newQuery = value ? { ...value } : {};
-    const prevObject = this._query ? this._query.soqlObject : null;
     this._query = newQuery;
-    // Only reload fields when the object actually changes — avoids infinite loop
     if (newQuery.soqlObject && newQuery.soqlObject !== this._loadedObjectApiName) {
       this._loadedObjectApiName = newQuery.soqlObject;
       this.loadFields(newQuery.soqlObject, this.getSelectedFieldsFromSoql());
@@ -41,13 +49,20 @@ export default class WeaveBuilderQueryEditor extends LightningElement {
 
   get hasObject() { return !!this._query.soqlObject; }
 
+  get hasParentQueryOptions() {
+    return Array.isArray(this.parentQueryOptions) && this.parentQueryOptions.length > 1;
+  }
+
   get sortFieldOptions() {
     const none = [{ label: '-- None --', value: '' }];
     return none.concat(this.availableFields.filter(f => f.isSortable).map(f => ({ label: f.label, value: f.apiName })));
   }
 
+  // All selected fields — direct + relationship
   get selectedFields() {
-    return this.availableFields.filter(f => f.isSelected);
+    const direct = this.availableFields.filter(f => f.isSelected);
+    const rel = this.relatedFieldGroups.flatMap(g => g.fields.filter(f => f.isSelected));
+    return [...direct, ...rel];
   }
 
   get unselectedFilteredFields() {
@@ -59,15 +74,32 @@ export default class WeaveBuilderQueryEditor extends LightningElement {
     });
   }
 
+  // Relationship groups filtered by search term, only showing unselected fields
+  get filteredRelatedFieldGroups() {
+    const term = (this.fieldSearchTerm || '').toLowerCase();
+    return this.relatedFieldGroups.map(g => ({
+      ...g,
+      visibleFields: g.fields.filter(f => {
+        if (f.isSelected) return false;
+        if (!term) return true;
+        return f.label.toLowerCase().includes(term) || f.apiName.toLowerCase().includes(term);
+      })
+    })).filter(g => g.visibleFields.length > 0);
+  }
+
   get hasSelectedFields() { return this.selectedFields.length > 0; }
   get hasUnselectedFields() { return this.unselectedFilteredFields.length > 0; }
+  get hasRelatedFieldGroups() { return this.filteredRelatedFieldGroups.length > 0; }
 
   get generatedSoql() {
-    const selectedFields = this.availableFields.filter(f => f.isSelected).map(f => f.apiName);
+    const selectedFields = this.selectedFields.map(f => f.apiName);
     if (!this._query.soqlObject || selectedFields.length === 0) return '';
     let soql = `SELECT ${selectedFields.join(', ')} FROM ${this._query.soqlObject}`;
     if (this.filterClause && this.filterClause.trim()) soql += ` WHERE ${this.filterClause.trim()}`;
-    if (this.sortField) soql += ` ORDER BY ${this.sortField} ${this.sortDirection}`;
+    const activeSortRows = (this.sortRows || []).filter(r => r.field);
+    if (activeSortRows.length > 0) {
+      soql += ' ORDER BY ' + activeSortRows.map(r => `${r.field} ${r.dir}`).join(', ');
+    }
     if (this.queryLimit) soql += ` LIMIT ${this.queryLimit}`;
     return soql;
   }
@@ -75,7 +107,6 @@ export default class WeaveBuilderQueryEditor extends LightningElement {
   loadFields(objectApiName, initialSelectedFields) {
     this.isLoadingFields = true;
     const selectedSet = new Set(initialSelectedFields || []);
-    // If no prior selection, default to Id only
     const defaultIdOnly = selectedSet.size === 0;
 
     getFieldsForObject({ objectApiName })
@@ -85,10 +116,45 @@ export default class WeaveBuilderQueryEditor extends LightningElement {
           isSelected: defaultIdOnly ? f.apiName === 'Id' : selectedSet.has(f.apiName)
         }));
         this.loadParentLookupFields(objectApiName);
+        this.loadRelationshipFieldGroups(objectApiName, selectedSet);
         this.emitChange();
       })
       .catch(() => { this.availableFields = []; })
       .finally(() => { this.isLoadingFields = false; });
+  }
+
+  loadRelationshipFieldGroups(objectApiName, selectedSet) {
+    this.relatedFieldGroups = [];
+    getRelationshipFields({ objectApiName })
+      .then(lookupFields => {
+        const toLoad = (lookupFields || []).filter(f =>
+          f.referenceTo && f.referenceTo.length === 1 &&
+          f.relationshipName &&
+          !SYSTEM_RELATIONSHIP_NAMES.has(f.relationshipName)
+        );
+        const promises = toLoad.map(f =>
+          getFieldsForObject({ objectApiName: f.referenceTo[0] })
+            .then(relFields => ({
+              groupLabel: f.label.replace(/ ID$/i, '').replace(/ Id$/i, ''),
+              relationshipName: f.relationshipName,
+              expanded: false,
+              fields: relFields
+                .filter(rf => rf.apiName !== 'Id')
+                .map(rf => ({
+                  apiName: f.relationshipName + '.' + rf.apiName,
+                  label: rf.label,
+                  isSelected: selectedSet ? selectedSet.has(f.relationshipName + '.' + rf.apiName) : false,
+                  isId: false
+                }))
+            }))
+            .catch(() => null)
+        );
+        return Promise.all(promises);
+      })
+      .then(groups => {
+        this.relatedFieldGroups = (groups || []).filter(g => g && g.fields.length > 0);
+      })
+      .catch(() => { this.relatedFieldGroups = []; });
   }
 
   get _relType() {
@@ -103,7 +169,6 @@ export default class WeaveBuilderQueryEditor extends LightningElement {
   loadParentLookupFields(childObjectApiName) {
     if (!this.parentObjectApiName || !childObjectApiName) return;
 
-    // 1-level-up: connector field lives on the PARENT — auto-set, no call needed
     const meta = this.relatedObjectMeta || {};
     const objMeta = meta[childObjectApiName];
     if (objMeta && objMeta.type === 'up') {
@@ -115,7 +180,6 @@ export default class WeaveBuilderQueryEditor extends LightningElement {
       return;
     }
 
-    // Self (parent queried directly)
     if (childObjectApiName === this.parentObjectApiName) {
       this.parentLookupFieldOptions = [{ label: 'Id (implicit parent context)', value: 'Id' }];
       if (!this._query.parentLookupField) {
@@ -124,7 +188,6 @@ export default class WeaveBuilderQueryEditor extends LightningElement {
       return;
     }
 
-    // 1-level-down: lookup field on the child object
     getLookupFieldsForChildObject({ childObjectApiName, parentObjectApiName: this.parentObjectApiName })
       .then(fields => {
         this.parentLookupFieldOptions = fields.map(f => ({ label: f.label + ' (' + f.apiName + ')', value: f.apiName }));
@@ -145,8 +208,15 @@ export default class WeaveBuilderQueryEditor extends LightningElement {
 
   parseSoqlForSelections() {
     const soql = this._query.soqlQuery || '';
-    const sortMatch = soql.match(/ORDER BY\s+(\w+)\s+(ASC|DESC)/i);
-    if (sortMatch) { this.sortField = sortMatch[1]; this.sortDirection = sortMatch[2].toUpperCase(); }
+    // Parse multi-column ORDER BY
+    this.sortRows = [];
+    const orderByMatch = soql.match(/ORDER BY\s+(.+?)(?:\s+LIMIT|$)/i);
+    if (orderByMatch) {
+      this.sortRows = orderByMatch[1].trim().split(',').map(clause => {
+        const parts = clause.trim().split(/\s+/);
+        return { id: ++_sortRowSeq, field: parts[0] || '', dir: (parts[1] || 'ASC').toUpperCase() };
+      }).filter(r => r.field);
+    }
     const limitMatch = soql.match(/LIMIT\s+(\d+)/i);
     if (limitMatch) this.queryLimit = parseInt(limitMatch[1], 10);
     const whereMatch = soql.match(/WHERE\s+(.+?)(?:\s+ORDER BY|\s+LIMIT|$)/i);
@@ -165,8 +235,9 @@ export default class WeaveBuilderQueryEditor extends LightningElement {
       relationshipType: objMeta.type || 'down'
     };
     this.availableFields = [];
+    this.relatedFieldGroups = [];
     this.fieldSearchTerm = '';
-    this.sortField = '';
+    this.sortRows = [];
     this.loadFields(objectApiName, []);
   }
 
@@ -180,11 +251,39 @@ export default class WeaveBuilderQueryEditor extends LightningElement {
 
   handleFieldDeselect(event) {
     const fieldApiName = event.currentTarget.dataset.field;
-    if (fieldApiName === 'Id') return; // Id cannot be deselected
-    this.availableFields = this.availableFields.map(f =>
-      f.apiName === fieldApiName ? { ...f, isSelected: false } : f
+    if (fieldApiName === 'Id') return;
+    // Check direct fields first
+    const inDirect = this.availableFields.some(f => f.apiName === fieldApiName);
+    if (inDirect) {
+      this.availableFields = this.availableFields.map(f =>
+        f.apiName === fieldApiName ? { ...f, isSelected: false } : f
+      );
+    } else {
+      // Relationship field deselect
+      this.relatedFieldGroups = this.relatedFieldGroups.map(g => ({
+        ...g,
+        fields: g.fields.map(f => f.apiName === fieldApiName ? { ...f, isSelected: false } : f)
+      }));
+    }
+    this.emitChange();
+  }
+
+  handleRelFieldSelect(event) {
+    const fieldApiName = event.currentTarget.dataset.field;
+    const relName = event.currentTarget.dataset.rel;
+    this.relatedFieldGroups = this.relatedFieldGroups.map(g =>
+      g.relationshipName === relName
+        ? { ...g, fields: g.fields.map(f => f.apiName === fieldApiName ? { ...f, isSelected: true } : f) }
+        : g
     );
     this.emitChange();
+  }
+
+  handleToggleRelGroup(event) {
+    const relName = event.currentTarget.dataset.rel;
+    this.relatedFieldGroups = this.relatedFieldGroups.map(g =>
+      g.relationshipName === relName ? { ...g, expanded: !g.expanded } : g
+    );
   }
 
   handleSearchChange(event) {
@@ -196,14 +295,26 @@ export default class WeaveBuilderQueryEditor extends LightningElement {
     this.emitChange();
   }
 
-  handleSortFieldChange(event) {
-    this.sortField = event.detail.value;
+  handleSortRowFieldChange(event) {
+    const idx = parseInt(event.currentTarget.dataset.idx, 10);
+    this.sortRows = this.sortRows.map(r => r.id === idx ? { ...r, field: event.detail.value } : r);
     this.emitChange();
   }
 
-  handleSortDirectionChange(event) {
-    this.sortDirection = event.detail.value;
+  handleSortRowDirChange(event) {
+    const idx = parseInt(event.currentTarget.dataset.idx, 10);
+    this.sortRows = this.sortRows.map(r => r.id === idx ? { ...r, dir: event.detail.value } : r);
     this.emitChange();
+  }
+
+  handleSortRowRemove(event) {
+    const idx = parseInt(event.currentTarget.dataset.idx, 10);
+    this.sortRows = this.sortRows.filter(r => r.id !== idx);
+    this.emitChange();
+  }
+
+  handleSortRowAdd() {
+    this.sortRows = [...this.sortRows, { id: ++_sortRowSeq, field: '', dir: 'ASC' }];
   }
 
   handleLimitChange(event) {
@@ -213,6 +324,11 @@ export default class WeaveBuilderQueryEditor extends LightningElement {
 
   handleParentLookupChange(event) {
     this._query = { ...this._query, parentLookupField: event.detail.value };
+    this.emitChange();
+  }
+
+  handleParentQuerySelectorChange(event) {
+    this._query = { ...this._query, parentQueryLocalKey: event.detail.value || null };
     this.emitChange();
   }
 

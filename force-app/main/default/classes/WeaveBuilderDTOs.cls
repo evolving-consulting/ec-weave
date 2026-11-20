@@ -25,6 +25,9 @@ public with sharing class WeaveBuilderDTOs {
         @AuraEnabled public List<Id> deletedRecipientIds { get; set; }
         @AuraEnabled public List<Id> deletedActionIds { get; set; }
         @AuraEnabled public List<Id> deletedAttachmentIds { get; set; }
+        @AuraEnabled public String templateOutputType { get; set; }
+        @AuraEnabled public String canvasPageSize { get; set; }
+        @AuraEnabled public String canvasOrientation { get; set; }
 
         public WeaveBuilderTemplateDTO() {
             this.status = 'Draft';
@@ -109,6 +112,8 @@ public with sharing class WeaveBuilderDTOs {
         @AuraEnabled public String parentLookupField { get; set; }
         @AuraEnabled public String relationshipType { get; set; } // 'down' (child) or 'up' (parent lookup)
         @AuraEnabled public String soqlObject { get; set; }      // derived from SOQL, cached for UI
+        @AuraEnabled public Id parentQueryId { get; set; }
+        @AuraEnabled public String parentQueryLocalKey { get; set; }
     }
 
     public class WeaveBuilderComponentDTO {
@@ -122,6 +127,12 @@ public with sharing class WeaveBuilderDTOs {
         @AuraEnabled public String linkedQueryName { get; set; }
         @AuraEnabled public String configJson { get; set; }
         @AuraEnabled public String htmlOutput { get; set; }
+        @AuraEnabled public Boolean canvasMode { get; set; }
+        @AuraEnabled public Decimal canvasX { get; set; }
+        @AuraEnabled public Decimal canvasY { get; set; }
+        @AuraEnabled public Decimal canvasW { get; set; }
+        @AuraEnabled public Decimal canvasH { get; set; }
+        @AuraEnabled public Integer canvasPage { get; set; }
     }
 
     public class WeaveBuilderRecipientDTO {
@@ -144,6 +155,8 @@ public with sharing class WeaveBuilderDTOs {
         @AuraEnabled public Boolean defaultSelected { get; set; }
         @AuraEnabled public Boolean allowMultiple { get; set; }
         @AuraEnabled public Boolean required { get; set; }
+        @AuraEnabled public String segmentId { get; set; }
+        @AuraEnabled public String segmentName { get; set; }
     }
 
     public class WeaveBuilderActionDTO {

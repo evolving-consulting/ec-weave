@@ -10,7 +10,7 @@ public with sharing class WeaveTemplateBuilderController {
         return WeaveTemplateBuilderService.getOrgWideEmailAddresses();
     }
 
-    @AuraEnabled(cacheable=true)
+    @AuraEnabled
     public static List<WeaveBuilderDTOs.WeaveBuilderTemplateSummaryDTO> getTemplates() {
         return WeaveTemplateBuilderService.getTemplates();
     }
@@ -58,8 +58,44 @@ public with sharing class WeaveTemplateBuilderController {
     }
 
     @AuraEnabled
+    public static Id cloneTemplate(Id templateId, String newName, String newApiName, String newOutputType) {
+        try {
+            return WeaveTemplateBuilderService.cloneTemplate(templateId, newName, newApiName, newOutputType);
+        } catch (Exception e) {
+            throw new AuraHandledException(e.getMessage());
+        }
+    }
+
+    @AuraEnabled
     public static WeaveEmailTemplateRenderer.RenderedEmailDTO previewTemplate(Id templateId, Id recordId) {
         return WeaveEmailTemplateRenderer.renderEmail(templateId, recordId, false);
+    }
+
+    @AuraEnabled
+    public static String previewTemplatePdf(Id templateId, Id recordId) {
+        try {
+            Boolean isDocument = isDocumentOutputType(templateId);
+            WeaveEmailTemplateRenderer.RenderedEmailDTO rendered = isDocument
+                ? WeaveEmailTemplateRenderer.renderCanvas(templateId, recordId, false)
+                : WeaveEmailTemplateRenderer.renderEmail(templateId, recordId, false);
+            String title = String.isNotBlank(rendered.subject) ? rendered.subject : 'Preview';
+            ContentVersion cv = WeavePdfService.previewPdf(rendered.htmlBody, title);
+            return cv.ContentDocumentId;
+        } catch (AuraHandledException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AuraHandledException('Unable to generate PDF preview. Please contact your administrator.');
+        }
+    }
+
+    private static Boolean isDocumentOutputType(Id templateId) {
+        try {
+            List<Weave_Template_Config__c> t = [
+                SELECT Template_Output_Type__c FROM Weave_Template_Config__c
+                WHERE Id = :templateId WITH USER_MODE LIMIT 1
+            ];
+            return !t.isEmpty() && t[0].get('Template_Output_Type__c') == 'Document';
+        } catch (Exception e) { return false; }
     }
 
     @AuraEnabled
@@ -79,7 +115,7 @@ public with sharing class WeaveTemplateBuilderController {
 
     // ── Brand methods ─────────────────────────────────────────────────────────
 
-    @AuraEnabled(cacheable=true)
+    @AuraEnabled
     public static List<WeaveBuilderDTOs.WeaveBrandSummaryDTO> getBrands() {
         return WeaveBrandService.getBrands();
     }
@@ -217,6 +253,11 @@ public with sharing class WeaveTemplateBuilderController {
         }
         rec.Status__c = 'Cancelled';
         update rec;
+    }
+
+    @AuraEnabled
+    public static List<Weave_Recipient_Segment__c> getActiveSegments(String objectApiName) {
+        return WeaveRecipientSegmentController.getActiveSegments(objectApiName);
     }
 
     @AuraEnabled

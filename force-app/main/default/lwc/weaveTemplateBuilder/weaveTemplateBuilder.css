@@ -334,7 +334,6 @@
 .editor-header {
   align-items: center;
   background: #fff;
-  border-bottom: 1px solid #e5e7eb;
   display: flex;
   flex-shrink: 0;
   gap: 16px;
@@ -373,11 +372,16 @@
 }
 
 .editor-tabs {
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
   display: flex;
-  flex: 1;
+  flex-shrink: 0;
   gap: 2px;
   overflow-x: auto;
+  padding: 0 20px;
+  scrollbar-width: none;
 }
+.editor-tabs::-webkit-scrollbar { display: none; }
 
 .editor-tab {
   background: none;
@@ -429,6 +433,20 @@
   padding: 7px 14px;
 }
 .btn-activate-template:hover { background: var(--ec-brand-teal-mid); }
+
+.btn-preview-pdf {
+  background: transparent;
+  border: 1px solid var(--ec-brand-teal);
+  border-radius: 6px;
+  color: var(--ec-brand-teal);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  margin-left: 8px;
+  padding: 7px 14px;
+}
+.btn-preview-pdf:hover { background: var(--ec-brand-teal-bg); }
+.btn-preview-pdf:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* ── Tab panels ──────────────────────────────────────────────────────────── */
 .tab-panel {
@@ -519,6 +537,15 @@
   padding: 2px 10px;
 }
 .item-card__actions { align-items: center; display: flex; flex-shrink: 0; gap: 10px; }
+
+/* Child query indent + badge */
+.item-card--child { border-left: 3px solid var(--ec-brand-teal-light, #4f9b93); margin-left: 20px; }
+.query-parent-badge {
+  color: var(--ec-brand-teal, #1f5f5b);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
 
 /* Region groups */
 .region-group { margin-bottom: 20px; }
@@ -1274,4 +1301,32 @@
   color: var(--ec-brand-ink);
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+
+
+/* ── Scheduled Sends tab ─────────────────────────────────────────────────── */
+.sched-new-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 1.25rem;
+}
+.sched-mode-row {
+  margin-top: 0.25rem;
+}
+.sched-days-row lightning-checkbox-group {
+  display: block;
+}
+.sched-hint-warn {
+  background: #fff7e6;
+  border-left: 3px solid #fe9339;
+  border-radius: 4px;
+  color: #7a4a00;
+  padding: 0.5rem 0.75rem;
+}
+.sched-list-title {
+  margin-top: 0.5rem;
 }

@@ -1,0 +1,185 @@
+<template>
+    <div class="library">
+
+        <!-- Page header -->
+        <div class="page-header">
+            <div class="page-header-left">
+                <p class="page-eyebrow">WEAVE</p>
+                <h1 class="page-title">Recipient Segments</h1>
+            </div>
+            <div class="page-header-right">
+                <button class="btn-primary" onclick={handleNew}>+ New Segment</button>
+            </div>
+        </div>
+
+        <!-- Error banner -->
+        <template if:true={errorMessage}>
+            <div class="error-banner">
+                <span>{errorMessage}</span>
+                <button class="error-dismiss" onclick={handleDismissError}>&#x2715;</button>
+            </div>
+        </template>
+
+        <!-- Preview pill -->
+        <template if:true={previewResult}>
+            <div class="preview-pill">{previewResult} record(s) match this segment</div>
+        </template>
+
+        <!-- Edit / New form -->
+        <template if:true={isEditing}>
+            <div class="edit-panel">
+                <div class="edit-panel-header">
+                    <p class="edit-panel-title">{formTitle}</p>
+                    <button class="edit-panel-close" onclick={handleCancel}>&#x2715;</button>
+                </div>
+
+                <div class="form-row">
+                    <lightning-input label="Segment Name" value={editRecord.Name} data-field="Name"
+                        onchange={handleFieldChange} required>
+                    </lightning-input>
+                </div>
+
+                <div class="form-row">
+                    <lightning-combobox
+                        label="Object"
+                        value={editRecord.Object_API_Name__c}
+                        options={objectOptions}
+                        data-field="Object_API_Name__c"
+                        onchange={handleObjectChange}
+                        placeholder="Select an object…"
+                        required>
+                    </lightning-combobox>
+                </div>
+
+                <template if:true={editRecord.Object_API_Name__c}>
+                    <div class="form-row">
+                        <lightning-combobox
+                            label="Email Field"
+                            value={editRecord.Email_Field_API_Name__c}
+                            options={emailFieldOptions}
+                            data-field="Email_Field_API_Name__c"
+                            onchange={handleFieldChange}
+                            placeholder="Select the email field…"
+                            required>
+                        </lightning-combobox>
+                    </div>
+
+                    <div class="form-row">
+                        <lightning-combobox
+                            label="Name Field"
+                            value={editRecord.Name_Field_API_Name__c}
+                            options={nameFieldOptions}
+                            data-field="Name_Field_API_Name__c"
+                            onchange={handleFieldChange}
+                            placeholder="Select the name/label field…">
+                        </lightning-combobox>
+                    </div>
+
+                    <div class="form-row">
+                        <lightning-textarea
+                            label="SOQL Filter (WHERE clause)"
+                            value={editRecord.SOQL_Filter__c}
+                            data-field="SOQL_Filter__c"
+                            onchange={handleFieldChange}
+                            placeholder="e.g. MailingState = 'ON' AND HasOptedOutOfEmail = false">
+                        </lightning-textarea>
+                        <p class="field-hint">Leave blank to include all records. Do not include the WHERE keyword.</p>
+                    </div>
+                </template>
+
+                <div class="form-row">
+                    <lightning-textarea label="Description" value={editRecord.Description__c}
+                        data-field="Description__c" onchange={handleFieldChange}>
+                    </lightning-textarea>
+                </div>
+
+                <div class="form-row">
+                    <lightning-combobox label="Status" value={editRecord.Status__c}
+                        options={statusOptions} data-field="Status__c" onchange={handleFieldChange}>
+                    </lightning-combobox>
+                </div>
+
+                <div class="form-actions">
+                    <button class="btn-cancel" onclick={handleCancel}>Cancel</button>
+                    <button class="btn-primary" onclick={handleSave} disabled={isLoading}>
+                        <template if:true={isLoading}>Saving…</template>
+                        <template if:false={isLoading}>Save Segment</template>
+                    </button>
+                </div>
+            </div>
+        </template>
+
+        <!-- Filter row -->
+        <div class="filter-row">
+            <div class="filter-tabs">
+                <button class={filterTabAll} data-status="All" onclick={handleStatusFilter}>All</button>
+                <button class={filterTabActive} data-status="Active" onclick={handleStatusFilter}>Active</button>
+                <button class={filterTabInactive} data-status="Inactive" onclick={handleStatusFilter}>Inactive</button>
+            </div>
+            <lightning-input
+                type="search"
+                placeholder="Search segments…"
+                value={searchTerm}
+                onchange={handleSearch}
+                variant="label-hidden">
+            </lightning-input>
+        </div>
+
+        <!-- Spinner -->
+        <template if:true={isLoading}>
+            <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+        </template>
+
+        <!-- Segments table -->
+        <template if:true={hasFilteredSegments}>
+            <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                <thead>
+                    <tr class="slds-line-height_reset">
+                        <th scope="col"><span class="slds-truncate">NAME</span></th>
+                        <th scope="col"><span class="slds-truncate">OBJECT</span></th>
+                        <th scope="col"><span class="slds-truncate">EMAIL FIELD</span></th>
+                        <th scope="col"><span class="slds-truncate">STATUS</span></th>
+                        <th scope="col"><span class="slds-truncate">ACTIONS</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template for:each={filteredSegments} for:item="seg">
+                        <tr key={seg.Id} class="slds-hint-parent">
+                            <td>
+                                <button class="row-name-link" data-segid={seg.Id} onclick={handleEdit}>{seg.Name}</button>
+                            </td>
+                            <td>{seg.Object_API_Name__c}</td>
+                            <td>{seg.Email_Field_API_Name__c}</td>
+                            <td><span class={seg.statusClass}>{seg.Status__c}</span></td>
+                            <td>
+                                <span class="action-links">
+                                    <button class="action-link edit-link" data-segid={seg.Id} onclick={handleEdit}>Edit</button>
+                                    <button class="action-link preview-link" data-segid={seg.Id} onclick={handlePreviewRow}>Preview</button>
+                                    <button class="action-link delete-link" data-segid={seg.Id} onclick={handleDeleteRow}>Delete</button>
+                                </span>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </template>
+
+        <!-- Empty state -->
+        <template if:false={hasFilteredSegments}>
+            <template if:false={isLoading}>
+                <div class="empty-state">
+                    <svg class="empty-state-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="24" cy="24" r="17" stroke="currentColor" stroke-width="2" fill="none" opacity="0.4"/>
+                        <path d="M24 24 L24 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M24 24 L35 30" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M24 24 L13 30" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+                    </svg>
+                    <p class="empty-state-title">No segments found</p>
+                    <p class="empty-state-body">Create your first recipient segment to define who receives your emails.</p>
+                    <button class="btn-primary" onclick={handleNew}>+ New Segment</button>
+                </div>
+            </template>
+        </template>
+
+    </div>
+</template>

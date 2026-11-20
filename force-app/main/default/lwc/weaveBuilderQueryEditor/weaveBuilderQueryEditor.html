@@ -12,6 +12,20 @@
 
     <template if:true={hasObject}>
 
+      <!-- Parent query selector (multi-level) -->
+      <template if:true={hasParentQueryOptions}>
+        <div class="qed-section">
+          <lightning-combobox
+            label="Parent Query (optional)"
+            value={_query.parentQueryLocalKey}
+            options={parentQueryOptions}
+            placeholder="-- None (root query) --"
+            onchange={handleParentQuerySelectorChange}
+          ></lightning-combobox>
+          <p class="qed-hint">Leave blank to query against the main template record. Select a parent to query within each parent-query row.</p>
+        </div>
+      </template>
+
       <!-- Fields -->
       <div class="qed-section">
         <p class="qed-label">Fields</p>
@@ -65,6 +79,40 @@
             </template>
           </div>
         </template>
+
+        <!-- Relationship traversal groups -->
+        <template if:true={hasRelatedFieldGroups}>
+          <div class="qed-rel-groups">
+            <template for:each={filteredRelatedFieldGroups} for:item="group">
+              <div key={group.relationshipName} class="qed-rel-group">
+                <button
+                  class="qed-rel-group-header"
+                  data-rel={group.relationshipName}
+                  onclick={handleToggleRelGroup}
+                >
+                  <span class="qed-rel-group-label">{group.groupLabel} &rarr;</span>
+                  <span class="qed-rel-toggle">{group.expanded ? '▾' : '▸'}</span>
+                </button>
+                <template if:true={group.expanded}>
+                  <div class="qed-field-list qed-rel-field-list">
+                    <template for:each={group.visibleFields} for:item="relField">
+                      <button
+                        key={relField.apiName}
+                        class="qed-field-row"
+                        data-field={relField.apiName}
+                        data-rel={group.relationshipName}
+                        onclick={handleRelFieldSelect}
+                      >
+                        <span class="qed-field-label">{relField.label}</span>
+                        <span class="qed-field-api">{relField.apiName}</span>
+                      </button>
+                    </template>
+                  </div>
+                </template>
+              </div>
+            </template>
+          </div>
+        </template>
       </div>
 
       <!-- Filter (WHERE clause) -->
@@ -83,28 +131,34 @@
       <!-- Sort + Limit -->
       <div class="qed-section">
         <p class="qed-label">Sort &amp; Limit</p>
-        <div class="qed-row-inline">
-          <lightning-combobox
-            label="Sort Field"
-            value={sortField}
-            options={sortFieldOptions}
-            onchange={handleSortFieldChange}
-          ></lightning-combobox>
-          <lightning-combobox
-            label="Direction"
-            value={sortDirection}
-            options={sortDirectionOptions}
-            onchange={handleSortDirectionChange}
-          ></lightning-combobox>
-          <lightning-input
-            label="Limit"
-            type="number"
-            min="1"
-            max="200"
-            value={queryLimit}
-            onchange={handleLimitChange}
-          ></lightning-input>
-        </div>
+        <template for:each={sortRows} for:item="srow">
+          <div key={srow.id} class="qed-sort-row">
+            <lightning-combobox
+              label=""
+              value={srow.field}
+              options={sortFieldOptions}
+              data-idx={srow.id}
+              onchange={handleSortRowFieldChange}
+            ></lightning-combobox>
+            <lightning-combobox
+              label=""
+              value={srow.dir}
+              options={sortDirectionOptions}
+              data-idx={srow.id}
+              onchange={handleSortRowDirChange}
+            ></lightning-combobox>
+            <button class="qed-sort-remove" data-idx={srow.id} onclick={handleSortRowRemove}>×</button>
+          </div>
+        </template>
+        <button class="qed-sort-add" onclick={handleSortRowAdd}>+ Sort column</button>
+        <lightning-input
+          label="Limit"
+          type="number"
+          min="1"
+          max="200"
+          value={queryLimit}
+          onchange={handleLimitChange}
+        ></lightning-input>
       </div>
 
       <!-- Generated SOQL -->
