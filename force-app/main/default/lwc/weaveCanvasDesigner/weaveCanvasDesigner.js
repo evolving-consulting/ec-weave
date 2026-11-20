@@ -34,7 +34,7 @@ let _ctaSeq = 0;
 export default class WeaveCanvasDesigner extends LightningElement {
     @api parentFields;
     @api previewRecordId;
-    @api brandDetails; // {displayName, logoUrl, primaryColor, secondaryColor}
+    @api brandDetails; // {displayName, logoUrl, primaryColor, secondaryColor, headerHtml, footerHtml}
 
     _draftTemplate = {};
 
@@ -55,15 +55,18 @@ export default class WeaveCanvasDesigner extends LightningElement {
     @track isLoadingImages = false;
     @track showManualImageUrl = false;
     @track insertImageUrl = '';
+    @track imgWidth = '';
+    @track imgHeight = '';
 
     // CTA panel
     @track showInsertCta = false;
     @track ctaLabel = 'Click Here';
     @track ctaHref = '#';
+    @track showCtaTagPicker = false;
+    @track ctaTagSearch = '';
 
     // Enhanced Merge Tag
     @track showInsertMerge = false;
-    @track mergeSource = 'parent';
     @track selectedInsertMergeField = '';
     @track selectedMergeQueryId = '';
     @track mergeAsTable = false;
@@ -71,11 +74,14 @@ export default class WeaveCanvasDesigner extends LightningElement {
 
     // AI Modal
     @track showAiModal = false;
+    @track aiStep = 1;
     @track aiDescription = '';
     @track aiParentFieldOptions = [];
     @track aiQueryConfigs = [];
     @track aiCtas = [];
     @track promptCopied = false;
+    @track aiBrandConfig = { primaryColor: '', secondaryColor: '', headerDescription: '', footerDescription: '', logoUrl: '' };
+    @track showAiBrandLogoPicker = false;
 
     _copyTimer = null;
 
@@ -118,6 +124,25 @@ export default class WeaveCanvasDesigner extends LightningElement {
     get hasTemplateImages() { return this.templateImages.length > 0; }
     get hasMergeColumns() { return this.mergeColumns.length > 0; }
     get hasAiCtas() { return this.aiCtas.length > 0; }
+    get hasBrandConfig() {
+        const b = this.aiBrandConfig;
+        return !!(b.primaryColor || b.secondaryColor || b.headerDescription || b.footerDescription || b.logoUrl);
+    }
+
+    get hasBrandLinked() {
+        const bd = this.brandDetails;
+        return !!(bd && (bd.logoUrl || bd.headerHtml || bd.footerHtml || bd.primaryColor || bd.secondaryColor));
+    }
+
+    get brandPrimarySwatchStyle() {
+        const c = this.brandDetails?.primaryColor;
+        return c ? `background-color:${c}` : '';
+    }
+
+    get brandSecondarySwatchStyle() {
+        const c = this.brandDetails?.secondaryColor;
+        return c ? `background-color:${c}` : '';
+    }
 
     get draftTemplateId() { return this._draftTemplate.id || ''; }
     get hasDraftTemplateId() { return !!this._draftTemplate.id; }
@@ -127,17 +152,69 @@ export default class WeaveCanvasDesigner extends LightningElement {
     get insertBtnClassMerge() { return 'insert-btn' + (this.showInsertMerge ? ' insert-btn_active' : ''); }
     get insertBtnClassCta()   { return 'insert-btn' + (this.showInsertCta ? ' insert-btn_active' : ''); }
 
-    // ── Merge tag source computed ─────────────────────────────────────────────
+    // ── Merge tag computed ────────────────────────────────────────────────────
 
-    get isMergeSourceParent() { return this.mergeSource === 'parent'; }
-    get isMergeSourceQuery()  { return this.mergeSource === 'query'; }
+    get selectedMergeQuery() {
+        if (!this.selectedMergeQueryId) return null;
+        return (this._draftTemplate.queries || []).find(
+            q => (q.queryApiName || q.name) === this.selectedMergeQueryId
+        ) || null;
+    }
 
-    get mergeSourceTabParent() {
-        return 'merge-source-tab' + (this.mergeSource === 'parent' ? ' merge-source-tab_active' : '');
+    get selectedMergeQueryIsSelf() {
+        const q = this.selectedMergeQuery;
+        if (!q) return false;
+        // 'self' = parent record, 'up' = parent lookup — neither is a child list
+        // Also catch legacy data where soqlObject matches the parent (should be 'self' but stored as 'down')
+        const parentObj = this._draftTemplate?.parentObjectApiName;
+        return q.relationshipType === 'self'
+            || q.relationshipType === 'up'
+            || q.queryApiName === 'ParentRecord'
+            || (parentObj && q.soqlObject === parentObj);
     }
-    get mergeSourceTabQuery() {
-        return 'merge-source-tab' + (this.mergeSource === 'query' ? ' merge-source-tab_active' : '');
+
+    get mergeQueryFieldOptions() {
+        const q = this.selectedMergeQuery;
+        if (!q) return [];
+        const fields = extractSoqlFields(q.soqlQuery || '');
+        return fields.map(f => ({ label: f, value: f }));
     }
+
+    get noMergeFieldSelected() { return !this.selectedInsertMergeField; }
+
+    // ── CTA tag picker computed ───────────────────────────────────────────────
+
+    get availableFieldTags() {
+        return (this._draftTemplate.queries || []).flatMap(q => {
+            const fields = extractSoqlFields(q.soqlQuery || '');
+            const isSelf = q.relationshipType === 'self' || q.queryApiName === 'ParentRecord';
+            const prefix = isSelf ? 'Parent' : (q.queryApiName || q.name);
+            return fields.map(f => ({
+                label: `${prefix}.${f}`,
+                value: `{{${prefix}.${f}}}`
+            }));
+        });
+    }
+
+    get filteredCtaFieldTags() {
+        const term = (this.ctaTagSearch || '').toLowerCase();
+        if (!term) return this.availableFieldTags;
+        return this.availableFieldTags.filter(t => t.label.toLowerCase().includes(term));
+    }
+
+    get hasFilteredCtaTags() { return this.filteredCtaFieldTags.length > 0; }
+
+    // ── AI step computed ──────────────────────────────────────────────────────
+
+    get isAiStep1() { return this.aiStep === 1; }
+    get isAiStep2() { return this.aiStep === 2; }
+    get isAiStep3() { return this.aiStep === 3; }
+    get isAiStep4() { return this.aiStep === 4; }
+
+    get aiStepClass1() { return 'ai-step-dot' + (this.aiStep === 1 ? ' ai-step-dot_active' : (this.aiStep > 1 ? ' ai-step-dot_done' : '')); }
+    get aiStepClass2() { return 'ai-step-dot' + (this.aiStep === 2 ? ' ai-step-dot_active' : (this.aiStep > 2 ? ' ai-step-dot_done' : '')); }
+    get aiStepClass3() { return 'ai-step-dot' + (this.aiStep === 3 ? ' ai-step-dot_active' : (this.aiStep > 3 ? ' ai-step-dot_done' : '')); }
+    get aiStepClass4() { return 'ai-step-dot' + (this.aiStep === 4 ? ' ai-step-dot_active' : ''); }
 
     // ── AI prompt computed ────────────────────────────────────────────────────
 
@@ -148,6 +225,7 @@ export default class WeaveCanvasDesigner extends LightningElement {
     get weaveAiPrompt() {
         const desc = this.aiDescription?.trim() || '[describe your document here]';
         const objectName = this._draftTemplate.parentObjectApiName || 'the parent object';
+        const subject = this._draftTemplate.subjectTemplate || this._draftTemplate.name || '';
 
         // Selected parent fields
         const selectedParentFields = (this.aiParentFieldOptions || []).filter(f => f.checked);
@@ -200,19 +278,32 @@ export default class WeaveCanvasDesigner extends LightningElement {
 
         // Brand details
         let brandSection = '';
+        const bc = this.aiBrandConfig;
         const bd = this.brandDetails;
         const brandName = this._draftTemplate.brandName;
-        if (bd || brandName) {
-            brandSection = '\n\nBRAND DETAILS:';
-            if (brandName) brandSection += `\n  Brand: ${brandName}`;
-            if (bd?.displayName) brandSection += `\n  Display Name: ${bd.displayName}`;
+        if (this.hasBrandLinked) {
+            brandSection = '\n\nBRAND DETAILS (system-managed):';
+            if (brandName || bd?.displayName) brandSection += `\n  Brand: ${brandName || bd?.displayName}`;
             if (bd?.primaryColor) brandSection += `\n  Primary Color: ${bd.primaryColor}`;
             if (bd?.secondaryColor) brandSection += `\n  Secondary Color: ${bd.secondaryColor}`;
             if (bd?.logoUrl) brandSection += `\n  Logo URL: ${bd.logoUrl}`;
+            brandSection += '\n  IMPORTANT: Do NOT generate a custom header or footer — the brand header and footer HTML are managed by the system and will be injected automatically around the body content.';
+        } else {
+            const hasAnyBrand = bc.primaryColor || bc.secondaryColor || bc.headerDescription || bc.footerDescription || bc.logoUrl;
+            if (hasAnyBrand) {
+                brandSection = '\n\nBRAND STYLE GUIDANCE:';
+                if (bc.primaryColor) brandSection += `\n  Primary Color: ${bc.primaryColor}`;
+                if (bc.secondaryColor) brandSection += `\n  Secondary Color: ${bc.secondaryColor}`;
+                if (bc.logoUrl) brandSection += `\n  Logo URL (use in header/logo area): ${bc.logoUrl}`;
+                if (bc.headerDescription) brandSection += `\n  Header design: ${bc.headerDescription}`;
+                if (bc.footerDescription) brandSection += `\n  Footer design: ${bc.footerDescription}`;
+            }
         }
 
-        return `You are building an HTML template for Weave, a Salesforce Dynamic Communication Engine.
+        const subjectLine = subject ? `\nDOCUMENT TITLE: ${subject}\n` : '';
 
+        return `You are building an HTML template for Weave, a Salesforce Dynamic Communication Engine.
+${subjectLine}
 DOCUMENT DESCRIPTION:
 ${desc}
 
@@ -224,6 +315,7 @@ OUTPUT REQUIREMENTS:
 • Design for US Letter (8.5 × 11 in) with ~0.5 in margins
 • All colors as hex values (#rrggbb)
 • No JavaScript
+• The document title above becomes the PDF title — use it as the main heading of the document
 
 WEAVE MERGE TAG SYNTAX:
 • Parent record fields: {{Parent.FieldApiName}}
@@ -276,6 +368,8 @@ Generate the complete HTML template now.`;
         this.showInsertImage = false;
         this.insertImageUrl = '';
         this.showManualImageUrl = false;
+        this.imgWidth = '';
+        this.imgHeight = '';
     }
 
     handleToggleManualImageUrl() {
@@ -289,9 +383,11 @@ Generate the complete HTML template now.`;
     handleInsertImageConfirm() {
         const url = this.insertImageUrl?.trim();
         if (!url) return;
-        this._appendHtml(`<img src="${url}" alt="" style="max-width:100%;display:block;" />`);
-        this.handleInsertImageClose();
+        this._insertImageUrl(url);
     }
+
+    handleImgWidthChange(event) { this.imgWidth = event.detail.value; }
+    handleImgHeightChange(event) { this.imgHeight = event.detail.value; }
 
     handleSelectTemplateImage(event) {
         const cvId = event.currentTarget.dataset.cvid;
@@ -323,7 +419,22 @@ Generate the complete HTML template now.`;
     }
 
     _insertImageUrl(url) {
-        this._appendHtml(`<img src="${url}" alt="" style="max-width:100%;display:block;" />`);
+        const w = parseInt(this.imgWidth, 10);
+        const h = parseInt(this.imgHeight, 10);
+        const hasDimensions = w > 0 || h > 0;
+        let style = 'max-width:100%;display:block;';
+        if (w > 0) style += `width:${w}px;`;
+        if (h > 0) style += `height:${h}px;`;
+        const widthAttr = w > 0 ? ` width="${w}"` : '';
+        const heightAttr = h > 0 ? ` height="${h}"` : '';
+        const snippet = `<img src="${url}" alt=""${widthAttr}${heightAttr} style="${style}" />`;
+        // Always switch to HTML mode — the rich text editor sanitizes img attributes on any interaction
+        if (this.mode === 'richtext') {
+            const lirt = this.template.querySelector('lightning-input-rich-text');
+            if (lirt) this.htmlContent = lirt.value || this.htmlContent;
+            this.mode = 'html';
+        }
+        this._appendHtml(snippet);
         this.handleInsertImageClose();
     }
 
@@ -343,10 +454,26 @@ Generate the complete HTML template now.`;
         this.showInsertCta = false;
         this.ctaLabel = 'Click Here';
         this.ctaHref = '#';
+        this.showCtaTagPicker = false;
+        this.ctaTagSearch = '';
     }
 
     handleCtaLabelChange(event) { this.ctaLabel = event.detail.value; }
     handleCtaHrefChange(event)  { this.ctaHref  = event.detail.value; }
+
+    handleToggleCtaTagPicker() {
+        this.showCtaTagPicker = !this.showCtaTagPicker;
+        this.ctaTagSearch = '';
+    }
+
+    handleCtaTagSearch(event) { this.ctaTagSearch = event.target.value; }
+
+    handleInsertCtaFieldTag(event) {
+        const tag = event.currentTarget.dataset.tag;
+        this.ctaHref = (this.ctaHref || '') + tag;
+        this.showCtaTagPicker = false;
+        this.ctaTagSearch = '';
+    }
 
     handleInsertCtaConfirm() {
         const label = (this.ctaLabel || '').trim() || 'Click Here';
@@ -367,7 +494,6 @@ Generate the complete HTML template now.`;
         this._closeAllInsertPanels();
         this.showInsertMerge = opening;
         if (opening) {
-            this.mergeSource = 'parent';
             this.selectedInsertMergeField = '';
             this.selectedMergeQueryId = '';
             this.mergeAsTable = false;
@@ -383,29 +509,11 @@ Generate the complete HTML template now.`;
         this.mergeColumns = [];
     }
 
-    handleMergeSourceChange(event) {
-        this.mergeSource = event.currentTarget.dataset.source;
-        this.selectedInsertMergeField = '';
-        this.selectedMergeQueryId = '';
-        this.mergeAsTable = false;
-        this.mergeColumns = [];
-    }
-
-    handleInsertMergeChange(event) {
-        this.selectedInsertMergeField = event.detail.value;
-    }
-
-    handleInsertMergeParentConfirm() {
-        if (!this.selectedInsertMergeField) return;
-        this._appendHtml(`{{Parent.${this.selectedInsertMergeField}}}`);
-        this.handleInsertMergeClose();
-    }
-
     handleMergeQueryChange(event) {
         this.selectedMergeQueryId = event.detail.value;
         this.mergeAsTable = false;
         this.mergeColumns = [];
-        // Build column list from the selected query's SOQL
+        this.selectedInsertMergeField = '';
         const query = (this._draftTemplate.queries || []).find(
             q => (q.queryApiName || q.name) === this.selectedMergeQueryId
         );
@@ -413,6 +521,10 @@ Generate the complete HTML template now.`;
             const fields = extractSoqlFields(query.soqlQuery || '');
             this.mergeColumns = buildMergeColumns(fields);
         }
+    }
+
+    handleMergeFieldChange(event) {
+        this.selectedInsertMergeField = event.detail.value;
     }
 
     handleMergeAsTableChange(event) {
@@ -446,8 +558,14 @@ Generate the complete HTML template now.`;
 
     handleInsertQueryConfirm() {
         if (!this.selectedMergeQueryId) return;
+        // Single-field insert for self queries (ParentRecord)
+        if (!this.mergeAsTable && this.selectedMergeQueryIsSelf && this.selectedInsertMergeField) {
+            this._appendHtml(`{{Parent.${this.selectedInsertMergeField}}}`);
+            this.handleInsertMergeClose();
+            return;
+        }
+        // Section / table insert
         this._appendHtml(`{{Section.${this.selectedMergeQueryId}}}`);
-        // Emit column config upward for future renderer use
         const selectedCols = this.mergeColumns.filter(c => c.selected);
         if (this.mergeAsTable && selectedCols.length > 0) {
             this.dispatchEvent(new CustomEvent('querycolumnconfig', {
@@ -465,11 +583,20 @@ Generate the complete HTML template now.`;
     handleOpenAiModal() {
         this._initAiModal();
         this.showAiModal = true;
+        this.aiStep = 1;
         this._loadImages();
     }
 
     handleCloseAiModal() {
         this.showAiModal = false;
+    }
+
+    handleAiNext() {
+        if (this.aiStep < 4) this.aiStep += 1;
+    }
+
+    handleAiBack() {
+        if (this.aiStep > 1) this.aiStep -= 1;
     }
 
     handleAiModalBackdropClick() {
@@ -481,28 +608,68 @@ Generate the complete HTML template now.`;
     }
 
     _initAiModal() {
-        // Build parent field options (all selected by default)
-        this.aiParentFieldOptions = (this.parentFields || []).map(f => ({
-            value: f.value,
-            label: f.label,
-            checked: true
-        }));
+        // Build parent field options from the parent-record query's selected fields (not ALL object fields)
+        const parentObj = this._draftTemplate.parentObjectApiName;
+        const parentQuery = (this._draftTemplate.queries || []).find(q =>
+            q.relationshipType === 'self' ||
+            (parentObj && q.soqlObject === parentObj)
+        );
+        const parentFieldApiNames = parentQuery
+            ? extractSoqlFields(parentQuery.soqlQuery || '')
+            : [];
+        // Build a lookup map from parentFields for label resolution
+        const fieldLabelMap = {};
+        (this.parentFields || []).forEach(f => { fieldLabelMap[f.value] = f.label; });
+        if (parentFieldApiNames.length > 0) {
+            this.aiParentFieldOptions = parentFieldApiNames
+                .filter(f => f !== 'Id')
+                .map(f => ({
+                    value: f,
+                    label: fieldLabelMap[f] || f,
+                    checked: true
+                }));
+        } else {
+            // Fallback: all parent fields except Id
+            this.aiParentFieldOptions = (this.parentFields || [])
+                .filter(f => f.value !== 'Id')
+                .map(f => ({ value: f.value, label: f.label, checked: true }));
+        }
 
-        // Build query configs
-        this.aiQueryConfigs = (this._draftTemplate.queries || []).map(q => {
-            const apiName = q.queryApiName || q.name;
-            const fields = extractSoqlFields(q.soqlQuery || '');
-            return {
-                queryId: apiName,
-                queryName: q.name,
-                include: false,
-                asTable: false,
-                columns: buildMergeColumns(fields)
-            };
-        });
+        // Build query configs — exclude parent-record queries (those live in Merge Fields)
+        this.aiQueryConfigs = (this._draftTemplate.queries || [])
+            .filter(q => {
+                if (q.relationshipType === 'self') return false;
+                const apiName = (q.queryApiName || '').toLowerCase();
+                if (apiName === 'parentrecord' || apiName === 'parent_record') return false;
+                if (parentObj && q.soqlObject === parentObj) return false;
+                return true;
+            })
+            .map(q => {
+                const apiName = q.queryApiName || q.name;
+                const fields = extractSoqlFields(q.soqlQuery || '');
+                return {
+                    queryId: apiName,
+                    queryName: q.name,
+                    include: false,
+                    asTable: false,
+                    canBeTable: q.relationshipType === 'down',
+                    columns: buildMergeColumns(fields)
+                };
+            });
 
         this.aiCtas = [];
         this.aiDescription = '';
+
+        // Initialize brand config — colors/logo pre-filled from brandDetails if linked
+        const bd = this.brandDetails;
+        this.aiBrandConfig = {
+            primaryColor: bd?.primaryColor || '',
+            secondaryColor: bd?.secondaryColor || '',
+            headerDescription: '',
+            footerDescription: '',
+            logoUrl: bd?.logoUrl || ''
+        };
+        this.showAiBrandLogoPicker = false;
     }
 
     handleAiDescriptionChange(event) {
@@ -583,6 +750,41 @@ Generate the complete HTML template now.`;
         this.aiCtas = this.aiCtas.filter((_, i) => i !== idx);
     }
 
+    handleAiBrandChange(event) {
+        const field = event.target.dataset.field;
+        const value = event.detail.value;
+        this.aiBrandConfig = { ...this.aiBrandConfig, [field]: value };
+    }
+
+    handleAiBrandColorChange(event) {
+        const field = event.target.dataset.field;
+        const value = event.target.value;
+        this.aiBrandConfig = { ...this.aiBrandConfig, [field]: value };
+    }
+
+    handleToggleAiBrandLogoPicker() {
+        this.showAiBrandLogoPicker = !this.showAiBrandLogoPicker;
+    }
+
+    handleAiBrandLogoSelect(event) {
+        const cvId = event.currentTarget.dataset.cvid;
+        const img = this.templateImages.find(i => i.cvId === cvId);
+        if (!img) return;
+        if (img.publicUrl) {
+            this.aiBrandConfig = { ...this.aiBrandConfig, logoUrl: img.publicUrl };
+            this.showAiBrandLogoPicker = false;
+        } else {
+            createPublicImageLink({ contentVersionId: cvId })
+                .then(url => {
+                    this.templateImages = this.templateImages.map(i =>
+                        i.cvId === cvId ? { ...i, publicUrl: url } : i
+                    );
+                    this.aiBrandConfig = { ...this.aiBrandConfig, logoUrl: url };
+                    this.showAiBrandLogoPicker = false;
+                });
+        }
+    }
+
     handleAiImageToggle(event) {
         const cvId = event.target.dataset.cvid;
         const aiSelected = event.target.checked;
@@ -652,12 +854,16 @@ Generate the complete HTML template now.`;
         this.showInsertCta = false;
         this.insertImageUrl = '';
         this.showManualImageUrl = false;
+        this.imgWidth = '';
+        this.imgHeight = '';
         this.selectedInsertMergeField = '';
         this.selectedMergeQueryId = '';
         this.mergeAsTable = false;
         this.mergeColumns = [];
         this.ctaLabel = 'Click Here';
         this.ctaHref = '#';
+        this.showCtaTagPicker = false;
+        this.ctaTagSearch = '';
     }
 
     _isHtmlModeComponent(c) {

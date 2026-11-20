@@ -301,7 +301,7 @@ public with sharing class WeaveTemplateBuilderService {
             // Clone queries first; build old→new ID map for component/attachment remapping
             Map<Id, Id> queryIdMap = new Map<Id, Id>();
             List<Weave_Template_Query__c> srcQueries = [
-                SELECT Id, Name, Query_API_Name__c, SOQL_Query__c, Parent_Lookup_Field__c, Relationship_Type__c
+                SELECT Id, Name, Query_API_Name__c, SOQL_Query__c, Parent_Lookup_Field__c, Relationship_Type__c, Parent_Query__c
                 FROM Weave_Template_Query__c WHERE Weave_Template_Config__c = :templateId WITH USER_MODE
             ];
             if (!srcQueries.isEmpty()) {
@@ -320,6 +320,19 @@ public with sharing class WeaveTemplateBuilderService {
                 for (Integer i = 0; i < srcQueries.size(); i++) {
                     queryIdMap.put(srcQueries[i].Id, newQueries[i].Id);
                 }
+                // Pass 2: clone Parent_Query__c FK using old→new Id map
+                List<Weave_Template_Query__c> childUpdates = new List<Weave_Template_Query__c>();
+                for (Integer i = 0; i < srcQueries.size(); i++) {
+                    if (srcQueries[i].Parent_Query__c != null) {
+                        Id newParentId = queryIdMap.get(srcQueries[i].Parent_Query__c);
+                        if (newParentId != null) {
+                            childUpdates.add(new Weave_Template_Query__c(
+                                Id = newQueries[i].Id, Parent_Query__c = newParentId
+                            ));
+                        }
+                    }
+                }
+                if (!childUpdates.isEmpty()) update as user childUpdates;
             }
 
             // Clone components
@@ -465,6 +478,7 @@ public with sharing class WeaveTemplateBuilderService {
 
     private static void saveQueries(WeaveBuilderDTOs.WeaveBuilderTemplateDTO dto, Id templateId) {
         if (dto.queries == null || dto.queries.isEmpty()) return;
+        // Pass 1: upsert all records with Parent_Query__c omitted to get Ids for new rows
         List<Weave_Template_Query__c> records = new List<Weave_Template_Query__c>();
         for (WeaveBuilderDTOs.WeaveBuilderQueryDTO q : dto.queries) {
             String queryApiName = q.id == null ? generateApiName(q.name) : q.queryApiName;
@@ -479,10 +493,28 @@ public with sharing class WeaveTemplateBuilderService {
             ));
         }
         upsert as user records;
+        // Back-fill Ids and build localKey → Salesforce Id map
+        Map<String, Id> localKeyToId = new Map<String, Id>();
         for (Integer i = 0; i < dto.queries.size(); i++) {
             if (dto.queries[i].id == null) {
                 dto.queries[i].id = records[i].Id;
             }
+            if (String.isNotBlank(dto.queries[i].localKey)) {
+                localKeyToId.put(dto.queries[i].localKey, dto.queries[i].id);
+            }
+        }
+        // Pass 2: update Parent_Query__c for child queries
+        List<Weave_Template_Query__c> childUpdates = new List<Weave_Template_Query__c>();
+        for (Integer i = 0; i < dto.queries.size(); i++) {
+            WeaveBuilderDTOs.WeaveBuilderQueryDTO q = dto.queries[i];
+            if (String.isBlank(q.parentQueryLocalKey) && q.parentQueryId == null) continue;
+            Id parentId = String.isNotBlank(q.parentQueryLocalKey) ? localKeyToId.get(q.parentQueryLocalKey) : null;
+            if (parentId == null) parentId = q.parentQueryId;
+            if (parentId == null) continue;
+            childUpdates.add(new Weave_Template_Query__c(Id = records[i].Id, Parent_Query__c = parentId));
+        }
+        if (!childUpdates.isEmpty()) {
+            update as user childUpdates;
         }
     }
 
@@ -616,7 +648,8 @@ public with sharing class WeaveTemplateBuilderService {
     private static List<WeaveBuilderDTOs.WeaveBuilderQueryDTO> loadQueries(Id templateId) {
         List<WeaveBuilderDTOs.WeaveBuilderQueryDTO> dtos = new List<WeaveBuilderDTOs.WeaveBuilderQueryDTO>();
         for (Weave_Template_Query__c q : [
-            SELECT Id, Name, Query_API_Name__c, SOQL_Query__c, Parent_Lookup_Field__c, Relationship_Type__c
+            SELECT Id, Name, Query_API_Name__c, SOQL_Query__c, Parent_Lookup_Field__c, Relationship_Type__c,
+                   Parent_Query__c, Parent_Query__r.Query_API_Name__c
             FROM Weave_Template_Query__c
             WHERE Weave_Template_Config__c = :templateId
             WITH USER_MODE
@@ -629,6 +662,8 @@ public with sharing class WeaveTemplateBuilderService {
             dto.soqlQuery = q.SOQL_Query__c;
             dto.parentLookupField = q.Parent_Lookup_Field__c;
             dto.relationshipType = String.isBlank(q.Relationship_Type__c) ? 'down' : q.Relationship_Type__c;
+            dto.parentQueryId = q.Parent_Query__c;
+            dto.parentQueryLocalKey = q.Parent_Query__c != null ? q.Parent_Query__r.Query_API_Name__c : null;
             dtos.add(dto);
         }
         return dtos;

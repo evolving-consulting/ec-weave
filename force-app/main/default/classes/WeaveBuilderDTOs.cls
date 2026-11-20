@@ -112,6 +112,8 @@ public with sharing class WeaveBuilderDTOs {
         @AuraEnabled public String parentLookupField { get; set; }
         @AuraEnabled public String relationshipType { get; set; } // 'down' (child) or 'up' (parent lookup)
         @AuraEnabled public String soqlObject { get; set; }      // derived from SOQL, cached for UI
+        @AuraEnabled public Id parentQueryId { get; set; }
+        @AuraEnabled public String parentQueryLocalKey { get; set; }
     }
 
     public class WeaveBuilderComponentDTO {

@@ -332,7 +332,9 @@ export default class WeaveTemplateBuilder extends LightningElement {
         displayName: bd.displayName || '',
         logoUrl: bd.logoUrl || '',
         primaryColor: bd.primaryColor || '',
-        secondaryColor: bd.secondaryColor || ''
+        secondaryColor: bd.secondaryColor || '',
+        headerHtml: bd.headerHtml || '',
+        footerHtml: bd.footerHtml || ''
       };
     }
     return { displayName: this.draftTemplate.brandName || '' };
@@ -402,6 +404,31 @@ export default class WeaveTemplateBuilder extends LightningElement {
   get hasTemplates() { return this.filteredTemplates.length > 0; }
   get hasId() { return !!this.draftTemplate.id; }
   get hasQueries() { return (this.draftTemplate.queries || []).length > 0; }
+
+  get parentQueryOptions() {
+    return [{ label: '-- None (root query) --', value: '' }].concat(
+      (this.draftTemplate.queries || []).map(q => ({
+        label: q.name,
+        value: q.localKey || q.queryApiName || ''
+      }))
+    );
+  }
+
+  get queryListItems() {
+    const queries = this.draftTemplate.queries || [];
+    const keyToName = {};
+    queries.forEach(q => { keyToName[q.localKey || q.queryApiName || ''] = q.name; });
+    return queries.map(q => {
+      const parentKey = q.parentQueryLocalKey || '';
+      const parentName = parentKey ? keyToName[parentKey] : null;
+      return {
+        ...q,
+        isChild: !!parentName,
+        parentQueryName: parentName || '',
+        cardClass: parentName ? 'item-card item-card--child' : 'item-card'
+      };
+    });
+  }
   get hasRecipients() { return (this.draftTemplate.recipients || []).length > 0; }
   get hasActions() { return (this.draftTemplate.actions || []).length > 0; }
 
@@ -700,6 +727,7 @@ export default class WeaveTemplateBuilder extends LightningElement {
     this.activeTab = event.currentTarget.dataset.tab;
     if (this.activeTab === 'files') this.loadTemplateFiles();
     if (this.activeTab === 'schedules') this.loadScheduledSends();
+    if (this.activeTab === 'body') this.loadParentFieldsForMergeTags();
   }
 
   loadRelatedObjects(parentObjectApiName) {
@@ -726,6 +754,25 @@ export default class WeaveTemplateBuilder extends LightningElement {
     this.isDirty = true;
     if (field === 'parentObjectApiName' && value) {
       this.loadRelatedObjects(value);
+      // Auto-create a ParentRecord query for new templates
+      if (!this.draftTemplate.id) {
+        const hasParentQuery = this.draftTemplate.queries.some(q =>
+          q.queryApiName === 'ParentRecord' || q.relationshipType === 'self'
+        );
+        if (!hasParentQuery) {
+          const parentQuery = {
+            id: null, localKey: nextKey(), name: 'Parent Record',
+            soqlQuery: `SELECT Id FROM ${value} LIMIT 1`,
+            soqlObject: value, queryApiName: 'ParentRecord',
+            parentLookupField: 'Id', relationshipType: 'self',
+            parentQueryId: null, parentQueryLocalKey: null
+          };
+          this.draftTemplate = {
+            ...this.draftTemplate,
+            queries: [parentQuery, ...this.draftTemplate.queries]
+          };
+        }
+      }
     }
   }
 

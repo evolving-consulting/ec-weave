@@ -172,20 +172,20 @@
               <span class="editor-name">{draftTemplate.name}</span>
               <span class={templateStatusPillClass}>{draftTemplate.status}</span>
             </div>
-            <div class="editor-tabs">
-              <button class={tabClass_settings} data-tab="settings" onclick={handleTabClick}>Settings</button>
-              <button class={tabClass_queries} data-tab="queries" onclick={handleTabClick}>Queries</button>
-              <button class={tabClass_body} data-tab="body" onclick={handleTabClick}>Body Builder</button>
-              <button class={tabClass_recipients} data-tab="recipients" onclick={handleTabClick}>Recipients</button>
-              <button class={tabClass_actions} data-tab="actions" onclick={handleTabClick}>Actions</button>
-              <button class={tabClass_files} data-tab="files" onclick={handleTabClick}>Files</button>
-              <button class={tabClass_schedules} data-tab="schedules" onclick={handleTabClick}>Scheduled Sends</button>
-              <button class={tabClass_preview} data-tab="preview" onclick={handleTabClick}>Preview</button>
-            </div>
             <div class="editor-header-actions">
               <button class="btn-save-template" onclick={handleSave}>Save Draft</button>
               <button class="btn-activate-template" onclick={handleSaveActivate}>Save &amp; Activate</button>
             </div>
+          </div>
+          <div class="editor-tabs">
+            <button class={tabClass_settings} data-tab="settings" onclick={handleTabClick}>Settings</button>
+            <button class={tabClass_queries} data-tab="queries" onclick={handleTabClick}>Queries</button>
+            <button class={tabClass_body} data-tab="body" onclick={handleTabClick}>Body Builder</button>
+            <button class={tabClass_recipients} data-tab="recipients" onclick={handleTabClick}>Recipients</button>
+            <button class={tabClass_actions} data-tab="actions" onclick={handleTabClick}>Actions</button>
+            <button class={tabClass_files} data-tab="files" onclick={handleTabClick}>Files</button>
+            <button class={tabClass_schedules} data-tab="schedules" onclick={handleTabClick}>Scheduled Sends</button>
+            <button class={tabClass_preview} data-tab="preview" onclick={handleTabClick}>Preview</button>
           </div>
 
           <!-- ── Tab panels ──────────────────────────────────────────── -->
@@ -342,10 +342,13 @@
               </div>
               <template if:true={hasQueries}>
                 <div class="item-list">
-                  <template for:each={draftTemplate.queries} for:item="q">
-                    <div key={q.localKey} class="item-card">
+                  <template for:each={queryListItems} for:item="q">
+                    <div key={q.localKey} class={q.cardClass}>
                       <div class="item-card__info">
                         <strong class="item-card__name">{q.name}</strong>
+                        <template if:true={q.isChild}>
+                          <span class="query-parent-badge">↳ child of {q.parentQueryName}</span>
+                        </template>
                         <code class="item-card__soql">{q.soqlQuery}</code>
                       </div>
                       <div class="item-card__actions">
@@ -936,16 +939,16 @@
               <span class="editor-name">{draftBrand.name}</span>
               <span class={brandStatusPillClass}>{draftBrand.status}</span>
             </div>
-            <div class="editor-tabs">
-              <button class={brandTabClass_identity} data-tab="identity" onclick={handleBrandTabClick}>Identity</button>
-              <button class={brandTabClass_colors}   data-tab="colors"   onclick={handleBrandTabClick}>Colors</button>
-              <button class={brandTabClass_contact}  data-tab="contact"  onclick={handleBrandTabClick}>Contact &amp; Compliance</button>
-              <button class={brandTabClass_assets}   data-tab="assets"   onclick={handleBrandTabClick}>Assets</button>
-              <button class={brandTabClass_content}  data-tab="content"  onclick={handleBrandTabClick}>Header &amp; Footer</button>
-            </div>
             <div class="editor-header-actions">
               <button class="btn-save-template" onclick={handleSaveBrand}>Save Brand</button>
             </div>
+          </div>
+          <div class="editor-tabs">
+            <button class={brandTabClass_identity} data-tab="identity" onclick={handleBrandTabClick}>Identity</button>
+            <button class={brandTabClass_colors}   data-tab="colors"   onclick={handleBrandTabClick}>Colors</button>
+            <button class={brandTabClass_contact}  data-tab="contact"  onclick={handleBrandTabClick}>Contact &amp; Compliance</button>
+            <button class={brandTabClass_assets}   data-tab="assets"   onclick={handleBrandTabClick}>Assets</button>
+            <button class={brandTabClass_content}  data-tab="content"  onclick={handleBrandTabClick}>Header &amp; Footer</button>
           </div>
 
           <template if:true={isBrandLoading}>
@@ -1780,6 +1783,7 @@
               related-object-options={relatedObjectOptions}
               related-object-meta={relatedObjectMeta}
               parent-object-api-name={draftTemplate.parentObjectApiName}
+              parent-query-options={parentQueryOptions}
               onquerychange={handleQueryEditorChange}
             ></c-weave-builder-query-editor>
           </div>

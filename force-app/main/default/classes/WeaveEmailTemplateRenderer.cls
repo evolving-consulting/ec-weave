@@ -16,15 +16,16 @@ public with sharing class WeaveEmailTemplateRenderer {
 
         Weave_Template_Config__c template = enforceActive ? loadTemplate(templateId) : loadTemplateForPreview(templateId);
         List<Weave_Template_Component__c> components = loadComponents(templateId);
+        List<Weave_Template_Query__c> queries = loadQueries(templateId);
 
         SObject parentRecord = loadParentRecord(template, components, recordId);
 
         GenericMergeFieldResolver.MergeContext context = buildContext(parentRecord, template.Parent_Object_API_Name__c);
         context.renderHtmlFormattedFields = true;
 
-        String headerHtml = assembleRegion(components, 'Header', parentRecord, template.Parent_Object_API_Name__c, recordId, context);
-        String bodyHtml   = assembleRegion(components, 'Body',   parentRecord, template.Parent_Object_API_Name__c, recordId, context);
-        String footerHtml = assembleRegion(components, 'Footer', parentRecord, template.Parent_Object_API_Name__c, recordId, context);
+        String headerHtml = assembleRegion(components, 'Header', parentRecord, template.Parent_Object_API_Name__c, recordId, context, queries);
+        String bodyHtml   = assembleRegion(components, 'Body',   parentRecord, template.Parent_Object_API_Name__c, recordId, context, queries);
+        String footerHtml = assembleRegion(components, 'Footer', parentRecord, template.Parent_Object_API_Name__c, recordId, context, queries);
 
         Weave_Brand__c brand = template.Brand__c != null ? loadBrand(template.Brand__c, enforceActive) : null;
         String brandHeader = brand != null ? resolveBrandMergeTags(brand.Header_HTML__c, brand) : '';
@@ -93,6 +94,16 @@ public with sharing class WeaveEmailTemplateRenderer {
         ];
     }
 
+    private static List<Weave_Template_Query__c> loadQueries(Id templateId) {
+        return [
+            SELECT Id, Name, Query_API_Name__c, SOQL_Query__c, Parent_Lookup_Field__c
+            FROM Weave_Template_Query__c
+            WHERE Weave_Template_Config__c = :templateId
+            AND Parent_Query__c = null
+            WITH USER_MODE
+        ];
+    }
+
     // ── Assemble region HTML ───────────────────────────────────────────────────
 
     private static String assembleRegion(
@@ -101,12 +112,13 @@ public with sharing class WeaveEmailTemplateRenderer {
         SObject parentRecord,
         String parentObjectApiName,
         Id recordId,
-        GenericMergeFieldResolver.MergeContext context
+        GenericMergeFieldResolver.MergeContext context,
+        List<Weave_Template_Query__c> queries
     ) {
         String html = '';
         for (Weave_Template_Component__c c : components) {
             if (c.Region__c != region) continue;
-            html += renderComponent(c, parentRecord, parentObjectApiName, recordId, context);
+            html += renderComponent(c, parentRecord, parentObjectApiName, recordId, context, queries);
         }
         return html;
     }
@@ -116,14 +128,17 @@ public with sharing class WeaveEmailTemplateRenderer {
         SObject parentRecord,
         String parentObjectApiName,
         Id recordId,
-        GenericMergeFieldResolver.MergeContext context
+        GenericMergeFieldResolver.MergeContext context,
+        List<Weave_Template_Query__c> queries
     ) {
         if (c.Component_Type__c == 'Related Table') {
             return renderRelatedTableComponent(c, parentRecord, parentObjectApiName, recordId);
         }
-        // All other types: resolve merge tags in HTML_Output
+        // All other types: resolve merge tags in HTML_Output, pre-processing any
+        // {{Section.queryApiName}}<table>...</table> inline section patterns first
         if (String.isBlank(c.HTML_Output__c)) return '';
-        return GenericMergeFieldResolver.resolveTemplate(c.HTML_Output__c, context);
+        String html = processInlineSections(c.HTML_Output__c, recordId, queries, parentObjectApiName);
+        return GenericMergeFieldResolver.resolveTemplate(html, context);
     }
 
     private static String renderRelatedTableComponent(
@@ -180,9 +195,38 @@ public with sharing class WeaveEmailTemplateRenderer {
             tableSuffix = htmlTemplate.substring(closeStart);          // </tbody>…
         }
 
+        // Multi-level: load child queries of this linked query and pre-fetch their rows
+        List<Weave_Template_Query__c> childQueries = [
+            SELECT Id, Query_API_Name__c, SOQL_Query__c, Parent_Lookup_Field__c
+            FROM Weave_Template_Query__c
+            WHERE Parent_Query__c = :c.Linked_Query__c
+            WITH USER_MODE
+        ];
+        Map<Id, Map<Id, List<SObject>>> childRowsByQueryId = new Map<Id, Map<Id, List<SObject>>>();
+        if (!childQueries.isEmpty()) {
+            Set<Id> parentRowIds = new Set<Id>();
+            for (SObject r : childRecords) parentRowIds.add(r.Id);
+            for (Weave_Template_Query__c childQ : childQueries) {
+                childRowsByQueryId.put(childQ.Id, fetchChildRows(childQ.SOQL_Query__c, childQ.Parent_Lookup_Field__c, parentRowIds));
+            }
+        }
+
         String tableHtml = tablePrefix;
         for (SObject childRecord : childRecords) {
             GenericMergeFieldResolver.MergeContext childContext = buildContext(childRecord, parentObjectApiName);
+            // Populate section HTML for child queries resolved by {{Section.queryApiName}} tags
+            if (!childQueries.isEmpty()) {
+                for (Weave_Template_Query__c childQ : childQueries) {
+                    Map<Id, List<SObject>> rowsByParent = childRowsByQueryId.get(childQ.Id);
+                    List<SObject> grandChildRows = rowsByParent != null ? rowsByParent.get(childRecord.Id) : null;
+                    if (grandChildRows != null && !grandChildRows.isEmpty()) {
+                        childContext.sectionHtmlByKey.put(
+                            childQ.Query_API_Name__c,
+                            buildSimpleTableHtml(grandChildRows, childQ.SOQL_Query__c)
+                        );
+                    }
+                }
+            }
             tableHtml += GenericMergeFieldResolver.resolveTemplate(rowTemplate, childContext);
         }
         tableHtml += tableSuffix;
@@ -222,6 +266,7 @@ public with sharing class WeaveEmailTemplateRenderer {
             }
         }
         // Collect from each component's HTML_Output (non-related-table components only)
+        String parentObjApi = template.Parent_Object_API_Name__c;
         for (Weave_Template_Component__c c : components) {
             if (c.Component_Type__c == 'Related Table') continue;
             if (String.isBlank(c.HTML_Output__c)) continue;
@@ -229,7 +274,10 @@ public with sharing class WeaveEmailTemplateRenderer {
                 if (path.startsWith('Parent.')) {
                     paths.add(path.substringAfter('Parent.'));
                 } else if (!path.contains('.')) {
-                    paths.add(path);
+                    // Only add if the field actually exists on the parent object
+                    if (GenericDynamicQueryService.isValidFieldPath(parentObjApi, path)) {
+                        paths.add(path);
+                    }
                 }
             }
         }
@@ -303,6 +351,123 @@ public with sharing class WeaveEmailTemplateRenderer {
 
     // ── Utilities ─────────────────────────────────────────────────────────────
 
+    // ── Inline section rendering ──────────────────────────────────────────────
+
+    /**
+     * Finds {{Section.queryApiName}}<table>...</table> patterns in html,
+     * executes the named query filtered to recordId, renders each row using the
+     * extracted row template, and replaces the entire block with the rendered table.
+     * Any remaining (unfound) {{Section.*}} tags are left for the merge resolver.
+     */
+    @SuppressWarnings('PMD.ApexSOQLInjection')
+    private static String processInlineSections(
+        String html,
+        Id recordId,
+        List<Weave_Template_Query__c> queries,
+        String parentObjectApiName
+    ) {
+        if (String.isBlank(html) || queries == null || queries.isEmpty()) return html;
+
+        // Check if any section tags exist at all
+        if (!html.contains('{{Section.')) return html;
+
+        // Build lookup: lowercase query API name → query record
+        Map<String, Weave_Template_Query__c> queryByKey = new Map<String, Weave_Template_Query__c>();
+        for (Weave_Template_Query__c q : queries) {
+            if (!String.isBlank(q.Query_API_Name__c) && !String.isBlank(q.SOQL_Query__c) && !String.isBlank(q.Parent_Lookup_Field__c)) {
+                queryByKey.put(q.Query_API_Name__c.toLowerCase(), q);
+            }
+        }
+        if (queryByKey.isEmpty()) return html;
+
+        // Process section tags, iterating until no more replacements are found
+        Boolean changed = true;
+        Integer safetyLimit = 10;
+        while (changed && safetyLimit-- > 0) {
+            changed = false;
+            Pattern sectionPat = Pattern.compile('(?i)\\{\\{Section\\.([^}]+)\\}\\}');
+            Matcher sm = sectionPat.matcher(html);
+            if (!sm.find()) break;
+            // Process first match found (loop re-scans after each replacement)
+            String sectionKey = sm.group(1);
+            Weave_Template_Query__c q = queryByKey.get(sectionKey.toLowerCase());
+            if (q == null) continue;
+
+            Integer sectionStart = sm.start();
+            Integer sectionEnd   = sm.end();
+
+            // Find the next <table ...> after the section tag (allow whitespace/newlines)
+            String lowerHtml = html.toLowerCase();
+            Integer tableStart = lowerHtml.indexOf('<table', sectionEnd);
+            if (tableStart < 0 || tableStart - sectionEnd > 5000) {
+                // No table close enough — leave the tag for the merge resolver to blank it
+                break;
+            }
+            Integer tableEnd = findMatchingTableEnd(lowerHtml, tableStart);
+            if (tableEnd < 0) break;
+
+            // Extract table HTML and row template from tbody
+            String tableHtml   = html.substring(tableStart, tableEnd);
+            String tablePrefix = tableHtml;
+            String rowTemplate = '';
+            String tableSuffix = '';
+            Pattern tbodyOpen  = Pattern.compile('(?i)<tbody[^>]*>');
+            Pattern tbodyClose = Pattern.compile('(?i)</tbody>');
+            Matcher mOpen  = tbodyOpen.matcher(tableHtml);
+            Matcher mClose = tbodyClose.matcher(tableHtml);
+            if (mOpen.find() && mClose.find()) {
+                tablePrefix = tableHtml.substring(0, mOpen.end());
+                rowTemplate = tableHtml.substring(mOpen.end(), mClose.start());
+                tableSuffix = tableHtml.substring(mClose.start());
+            }
+
+            // Execute query filtered to this record
+            String childObjectApiName = extractObjectName(q.SOQL_Query__c);
+            String renderedSection = '';
+            if (!String.isBlank(childObjectApiName)) {
+                try {
+                    GenericDynamicQueryService.assertValidField(childObjectApiName, q.Parent_Lookup_Field__c);
+                    String finalSoql = injectParentFilter(q.SOQL_Query__c, q.Parent_Lookup_Field__c);
+                    List<SObject> rows = Database.query(finalSoql);
+                    if (rows != null && !rows.isEmpty()) {
+                        String tbodyHtml = '';
+                        for (SObject row : rows) {
+                            GenericMergeFieldResolver.MergeContext rowCtx = buildContext(row, parentObjectApiName);
+                            tbodyHtml += GenericMergeFieldResolver.resolveTemplate(rowTemplate, rowCtx);
+                        }
+                        renderedSection = tablePrefix + tbodyHtml + tableSuffix;
+                    }
+                } catch (Exception ignored) {}
+            }
+
+            // Replace {{Section.xxx}}<table>...</table> with the rendered table (or empty if no rows)
+            html = html.substring(0, sectionStart) + renderedSection + html.substring(tableEnd);
+            changed = true;
+        }
+        return html;
+    }
+
+    private static Integer findMatchingTableEnd(String lowerHtml, Integer tableStart) {
+        Integer depth = 0;
+        Integer pos = tableStart;
+        while (pos < lowerHtml.length()) {
+            Integer nextOpen  = lowerHtml.indexOf('<table', pos);
+            Integer nextClose = lowerHtml.indexOf('</table', pos);
+            if (nextOpen >= 0 && (nextClose < 0 || nextOpen < nextClose)) {
+                depth++;
+                pos = nextOpen + 6;
+            } else if (nextClose >= 0) {
+                depth--;
+                Integer closeEnd = lowerHtml.indexOf('>', nextClose) + 1;
+                if (depth == 0) return closeEnd;
+                pos = closeEnd > nextClose ? closeEnd : nextClose + 8;
+            } else {
+                break;
+            }
+        }
+        return -1;
+    }
+
     // ── SOQL helpers ──────────────────────────────────────────────────────────
 
     @SuppressWarnings('PMD.ApexSOQLInjection')
@@ -322,6 +487,73 @@ public with sharing class WeaveEmailTemplateRenderer {
             return storedSoql.trim() + filter;
         }
         return storedSoql.substring(0, insertAt).trim() + filter + ' ' + storedSoql.substring(insertAt).trim();
+    }
+
+    @SuppressWarnings('PMD.ApexSOQLInjection')
+    private static String injectParentFilterIN(String storedSoql, String parentLookupField) {
+        String upper = storedSoql.toUpperCase();
+        Integer insertAt = -1;
+        for (String keyword : new List<String>{ 'ORDER BY', 'LIMIT', 'GROUP BY', 'HAVING' }) {
+            Integer pos = upper.indexOf(keyword);
+            if (pos >= 0 && (insertAt < 0 || pos < insertAt)) insertAt = pos;
+        }
+        String filter = ' WHERE ' + parentLookupField + ' IN :parentRowIds WITH USER_MODE';
+        if (insertAt < 0) return storedSoql.trim() + filter;
+        return storedSoql.substring(0, insertAt).trim() + filter + ' ' + storedSoql.substring(insertAt).trim();
+    }
+
+    @SuppressWarnings('PMD.ApexSOQLInjection')
+    private static Map<Id, List<SObject>> fetchChildRows(
+        String storedSoql, String parentLookupField, Set<Id> parentRowIds
+    ) {
+        Map<Id, List<SObject>> result = new Map<Id, List<SObject>>();
+        if (String.isBlank(storedSoql) || String.isBlank(parentLookupField) || parentRowIds == null || parentRowIds.isEmpty()) {
+            return result;
+        }
+        String childObjectApiName = extractObjectName(storedSoql);
+        if (String.isBlank(childObjectApiName)) return result;
+        try {
+            GenericDynamicQueryService.assertValidField(childObjectApiName, parentLookupField);
+            String finalSoql = injectParentFilterIN(storedSoql, parentLookupField);
+            List<SObject> allRows = Database.query(finalSoql);
+            for (SObject row : allRows) {
+                try {
+                    Id pId = (Id) row.get(parentLookupField);
+                    if (!result.containsKey(pId)) result.put(pId, new List<SObject>());
+                    result.get(pId).add(row);
+                } catch (Exception ignored) {}
+            }
+        } catch (Exception ignored) {}
+        return result;
+    }
+
+    private static String buildSimpleTableHtml(List<SObject> rows, String soql) {
+        if (rows == null || rows.isEmpty() || String.isBlank(soql)) return '';
+        Matcher m = Pattern.compile('(?i)SELECT\\s+(.+?)\\s+FROM').matcher(soql);
+        if (!m.find()) return '';
+        List<String> fields = new List<String>();
+        for (String f : m.group(1).split(',')) {
+            String trimmed = f.trim();
+            if (String.isNotBlank(trimmed)) fields.add(trimmed);
+        }
+        if (fields.isEmpty()) return '';
+        String html = '<table style="width:100%;border-collapse:collapse;font-size:12px;">';
+        html += '<thead><tr>';
+        for (String f : fields) {
+            html += '<th style="border:1px solid #ddd;padding:4px;text-align:left;">' + f + '</th>';
+        }
+        html += '</tr></thead><tbody>';
+        for (SObject row : rows) {
+            html += '<tr>';
+            for (String f : fields) {
+                Object val;
+                try { val = row.get(f); } catch (Exception ignored) { val = null; }
+                html += '<td style="border:1px solid #ddd;padding:4px;">' + (val != null ? String.valueOf(val) : '') + '</td>';
+            }
+            html += '</tr>';
+        }
+        html += '</tbody></table>';
+        return html;
     }
 
     private static String extractObjectName(String soql) {
@@ -386,6 +618,7 @@ public with sharing class WeaveEmailTemplateRenderer {
 
         Weave_Template_Config__c template = enforceActive ? loadTemplate(templateId) : loadTemplateForPreview(templateId);
         List<Weave_Template_Component__c> components = loadComponents(templateId);
+        List<Weave_Template_Query__c> queries = loadQueries(templateId);
 
         SObject parentRecord = loadParentRecord(template, components, recordId);
         GenericMergeFieldResolver.MergeContext context = buildContext(parentRecord, template.Parent_Object_API_Name__c);
@@ -430,7 +663,7 @@ public with sharing class WeaveEmailTemplateRenderer {
                 Decimal w = c.Canvas_W__c != null ? c.Canvas_W__c : 1;
                 Decimal h = c.Canvas_H__c != null ? c.Canvas_H__c : 0.5;
                 String boxStyle = 'position:absolute;left:' + x + 'in;top:' + y + 'in;width:' + w + 'in;height:' + h + 'in;overflow:hidden;';
-                String innerHtml = renderComponent(c, parentRecord, template.Parent_Object_API_Name__c, recordId, context);
+                String innerHtml = renderComponent(c, parentRecord, template.Parent_Object_API_Name__c, recordId, context, queries);
                 pageHtml += '<div style="' + boxStyle + '">' + (innerHtml != null ? innerHtml : '') + '</div>';
             }
             pageHtml += '</div>';

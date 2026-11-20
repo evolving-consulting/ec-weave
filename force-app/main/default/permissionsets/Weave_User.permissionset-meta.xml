@@ -397,6 +397,11 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>false</editable>
+        <field>Weave_Template_Query__c.Parent_Query__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
         <field>Weave_Template_Query__c.Query_API_Name__c</field>
         <readable>true</readable>
     </fieldPermissions>
