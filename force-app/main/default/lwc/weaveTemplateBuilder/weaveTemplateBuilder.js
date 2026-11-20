@@ -323,6 +323,21 @@ export default class WeaveTemplateBuilder extends LightningElement {
   get templateHasBrand() { return !!this.draftTemplate.brandId; }
   get selectedBrandName() { return this.draftTemplate.brandName || ''; }
 
+  get templateBrandDetails() {
+    if (!this.draftTemplate.brandId) return null;
+    // Use draftBrand if it matches the template's selected brand; otherwise return name only
+    const bd = this.draftBrand;
+    if (bd && bd.id === this.draftTemplate.brandId) {
+      return {
+        displayName: bd.displayName || '',
+        logoUrl: bd.logoUrl || '',
+        primaryColor: bd.primaryColor || '',
+        secondaryColor: bd.secondaryColor || ''
+      };
+    }
+    return { displayName: this.draftTemplate.brandName || '' };
+  }
+
   get brandHeaderEditorIsRich() { return this.brandHeaderEditorMode === 'Visual'; }
   get brandHeaderEditorIsHtml() { return this.brandHeaderEditorMode === 'HTML Source'; }
   get brandFooterEditorIsRich() { return this.brandFooterEditorMode === 'Visual'; }

@@ -1,7 +1,7 @@
 <template>
   <div class="canvas-designer">
 
-    <!-- Mode toggle + PDF button -->
+    <!-- Mode toggle + AI button -->
     <div class="canvas-toolbar">
       <div class="mode-tabs">
         <button class={richTextModeClass} data-mode="richtext" onclick={handleModeChange}>
@@ -12,11 +12,8 @@
         </button>
       </div>
       <div class="toolbar-actions">
-        <template if:true={isPreviewingPdf}>
-          <lightning-spinner alternative-text="Generating PDF" size="small"></lightning-spinner>
-        </template>
-        <button class="btn-preview-pdf" onclick={handlePreviewPdf} disabled={isPreviewingPdf}>
-          Preview PDF
+        <button class="btn-generate-ai" onclick={handleOpenAiModal}>
+          ✦ Generate with AI
         </button>
       </div>
     </div>
@@ -30,81 +27,220 @@
         <button class={insertBtnClassImage} onclick={handleInsertImageToggle}>
           &#x1F5BC;&nbsp;Image
         </button>
-        <button class={insertBtnClassQuery} onclick={handleInsertQueryToggle} disabled={hasNoQueries}>
-          &#x1F4CB;&nbsp;Query Table
-        </button>
-        <button class={insertBtnClassMerge} onclick={handleInsertMergeToggle} disabled={hasNoParentFields}>
+        <button class={insertBtnClassMerge} onclick={handleInsertMergeToggle}>
           &#x1F3F7;&nbsp;Merge Tag
         </button>
-        <button class="insert-btn" onclick={handleInsertCta}>
+        <button class={insertBtnClassCta} onclick={handleInsertCtaToggle}>
           &#x1F517;&nbsp;CTA Button
         </button>
       </div>
 
-      <!-- Insert: Image URL -->
+      <!-- Insert: Image (file browser) -->
       <template if:true={showInsertImage}>
         <div class="insert-panel">
           <div class="insert-panel-header">
             <span class="insert-panel-title">Insert Image</span>
             <button class="edit-panel-close" onclick={handleInsertImageClose}>&#x2715;</button>
           </div>
-          <div class="form-row">
-            <lightning-input
-              label="Image URL"
-              value={insertImageUrl}
-              placeholder="https://example.com/image.png"
-              onchange={handleInsertImageUrlChange}
-            ></lightning-input>
-          </div>
-          <div class="insert-panel-actions">
-            <button class="btn-cancel" onclick={handleInsertImageClose}>Cancel</button>
-            <button class="btn-primary" onclick={handleInsertImageConfirm} disabled={noInsertImageUrl}>Insert</button>
-          </div>
+
+          <template if:true={isLoadingImages}>
+            <lightning-spinner alternative-text="Loading images" size="small"></lightning-spinner>
+          </template>
+
+          <template if:false={isLoadingImages}>
+            <template if:true={hasTemplateImages}>
+              <div class="image-file-grid">
+                <template for:each={templateImages} for:item="img">
+                  <div key={img.cvId} class="image-file-item">
+                    <div class="image-file-icon">&#x1F5BC;</div>
+                    <span class="image-file-name">{img.name}</span>
+                    <button class="btn-use-image" data-cvid={img.cvId} onclick={handleSelectTemplateImage}
+                      disabled={img.loading}>
+                      <template if:true={img.loading}>…</template>
+                      <template if:false={img.loading}>Use</template>
+                    </button>
+                  </div>
+                </template>
+              </div>
+            </template>
+            <template if:false={hasTemplateImages}>
+              <p class="no-images-text">No images uploaded for this template yet.</p>
+            </template>
+
+            <!-- Upload section -->
+            <div class="image-upload-section">
+              <p class="upload-label">Upload new image</p>
+              <template if:true={hasDraftTemplateId}>
+                <lightning-file-upload
+                  label="Choose image"
+                  name="templateImage"
+                  accept={imageAcceptTypes}
+                  record-id={draftTemplateId}
+                  onuploadfinished={handleImageUploadFinished}
+                  multiple
+                ></lightning-file-upload>
+              </template>
+              <template if:false={hasDraftTemplateId}>
+                <p class="field-hint">Save the template first to upload images.</p>
+              </template>
+            </div>
+
+            <!-- Manual URL fallback -->
+            <div class="manual-url-toggle">
+              <button class="btn-link" onclick={handleToggleManualImageUrl}>
+                <template if:false={showManualImageUrl}>Or enter image URL manually ›</template>
+                <template if:true={showManualImageUrl}>Hide manual URL ›</template>
+              </button>
+            </div>
+            <template if:true={showManualImageUrl}>
+              <div class="form-row">
+                <lightning-input
+                  label="Image URL"
+                  value={insertImageUrl}
+                  placeholder="https://example.com/image.png"
+                  onchange={handleInsertImageUrlChange}
+                ></lightning-input>
+              </div>
+              <div class="insert-panel-actions">
+                <button class="btn-cancel" onclick={handleInsertImageClose}>Cancel</button>
+                <button class="btn-primary" onclick={handleInsertImageConfirm} disabled={noInsertImageUrl}>Insert</button>
+              </div>
+            </template>
+          </template>
         </div>
       </template>
 
-      <!-- Insert: Query Table picker -->
-      <template if:true={showInsertQuery}>
-        <div class="insert-panel">
-          <div class="insert-panel-header">
-            <span class="insert-panel-title">Insert Query Table</span>
-            <button class="edit-panel-close" onclick={handleInsertQueryClose}>&#x2715;</button>
-          </div>
-          <div class="form-row">
-            <lightning-combobox
-              label="Select Query"
-              value={selectedInsertQueryId}
-              options={queryOptions}
-              placeholder="Choose a query..."
-              onchange={handleInsertQueryChange}
-            ></lightning-combobox>
-          </div>
-          <div class="insert-panel-actions">
-            <button class="btn-cancel" onclick={handleInsertQueryClose}>Cancel</button>
-            <button class="btn-primary" onclick={handleInsertQueryConfirm} disabled={noInsertQuerySelected}>Insert</button>
-          </div>
-        </div>
-      </template>
-
-      <!-- Insert: Merge Tag picker -->
+      <!-- Insert: Enhanced Merge Tag -->
       <template if:true={showInsertMerge}>
         <div class="insert-panel">
           <div class="insert-panel-header">
             <span class="insert-panel-title">Insert Merge Tag</span>
             <button class="edit-panel-close" onclick={handleInsertMergeClose}>&#x2715;</button>
           </div>
+
+          <!-- Source selector -->
+          <div class="merge-source-tabs">
+            <button class={mergeSourceTabParent} data-source="parent" onclick={handleMergeSourceChange}>
+              Parent Record
+            </button>
+            <button class={mergeSourceTabQuery} data-source="query" onclick={handleMergeSourceChange}
+              disabled={hasNoQueries}>
+              Related Query
+            </button>
+          </div>
+
+          <!-- Parent record fields -->
+          <template if:true={isMergeSourceParent}>
+            <div class="form-row">
+              <lightning-combobox
+                label="Select Field"
+                value={selectedInsertMergeField}
+                options={mergeTagOptions}
+                placeholder="Choose a field..."
+                onchange={handleInsertMergeChange}
+              ></lightning-combobox>
+            </div>
+            <div class="insert-panel-actions">
+              <button class="btn-cancel" onclick={handleInsertMergeClose}>Cancel</button>
+              <button class="btn-primary" onclick={handleInsertMergeParentConfirm} disabled={noInsertMergeSelected}>Insert</button>
+            </div>
+          </template>
+
+          <!-- Query section -->
+          <template if:true={isMergeSourceQuery}>
+            <div class="form-row">
+              <lightning-combobox
+                label="Select Query"
+                value={selectedMergeQueryId}
+                options={queryOptions}
+                placeholder="Choose a query..."
+                onchange={handleMergeQueryChange}
+              ></lightning-combobox>
+            </div>
+            <template if:true={selectedMergeQueryId}>
+              <div class="form-row">
+                <label class="merge-table-toggle-label">
+                  <input
+                    type="checkbox"
+                    checked={mergeAsTable}
+                    onchange={handleMergeAsTableChange}
+                    class="merge-table-toggle-input"
+                  />
+                  <span>Insert as table</span>
+                </label>
+              </div>
+              <template if:true={mergeAsTable}>
+                <div class="column-config-section">
+                  <p class="column-config-label">Configure Columns</p>
+                  <template if:true={hasMergeColumns}>
+                    <div class="column-config-list">
+                      <template for:each={mergeColumns} for:item="col" for:index="idx">
+                        <div key={col.field} class="column-config-row">
+                          <label class="col-include-label">
+                            <input type="checkbox" checked={col.selected} data-field={col.field}
+                              onchange={handleColumnToggle} />
+                          </label>
+                          <span class="col-field-name">{col.field}</span>
+                          <lightning-input
+                            label=""
+                            value={col.header}
+                            data-field={col.field}
+                            onchange={handleColumnHeaderChange}
+                            variant="label-hidden"
+                            placeholder={col.field}
+                            class="col-header-input"
+                          ></lightning-input>
+                          <div class="col-order-btns">
+                            <button class="col-order-btn" data-idx={idx} data-dir="up"
+                              onclick={handleColumnMove} disabled={col.isFirst}>▲</button>
+                            <button class="col-order-btn" data-idx={idx} data-dir="down"
+                              onclick={handleColumnMove} disabled={col.isLast}>▼</button>
+                          </div>
+                        </div>
+                      </template>
+                    </div>
+                  </template>
+                  <template if:false={hasMergeColumns}>
+                    <p class="field-hint">No fields found in this query's SOQL.</p>
+                  </template>
+                </div>
+              </template>
+            </template>
+            <div class="insert-panel-actions">
+              <button class="btn-cancel" onclick={handleInsertMergeClose}>Cancel</button>
+              <button class="btn-primary" onclick={handleInsertQueryConfirm} disabled={noMergeQuerySelected}>Insert</button>
+            </div>
+          </template>
+        </div>
+      </template>
+
+      <!-- Insert: CTA Button (with form) -->
+      <template if:true={showInsertCta}>
+        <div class="insert-panel">
+          <div class="insert-panel-header">
+            <span class="insert-panel-title">Insert CTA Button</span>
+            <button class="edit-panel-close" onclick={handleInsertCtaClose}>&#x2715;</button>
+          </div>
           <div class="form-row">
-            <lightning-combobox
-              label="Select Field"
-              value={selectedInsertMergeField}
-              options={mergeTagOptions}
-              placeholder="Choose a field..."
-              onchange={handleInsertMergeChange}
-            ></lightning-combobox>
+            <lightning-input
+              label="Button Label"
+              value={ctaLabel}
+              placeholder="Click Here"
+              onchange={handleCtaLabelChange}
+            ></lightning-input>
+          </div>
+          <div class="form-row">
+            <lightning-input
+              label="URL or Merge Field"
+              value={ctaHref}
+              placeholder="https://... or &#123;&#123;Parent.FieldApiName&#125;&#125;"
+              onchange={handleCtaHrefChange}
+            ></lightning-input>
+            <p class="field-hint">Use a full URL or a merge tag like &#123;&#123;Parent.Custom_URL__c&#125;&#125;</p>
           </div>
           <div class="insert-panel-actions">
-            <button class="btn-cancel" onclick={handleInsertMergeClose}>Cancel</button>
-            <button class="btn-primary" onclick={handleInsertMergeConfirm} disabled={noInsertMergeSelected}>Insert</button>
+            <button class="btn-cancel" onclick={handleInsertCtaClose}>Cancel</button>
+            <button class="btn-primary" onclick={handleInsertCtaConfirm} disabled={noCtaLabel}>Insert</button>
           </div>
         </div>
       </template>
@@ -121,50 +257,208 @@
 
     <!-- HTML MODE -->
     <template if:true={isHtmlMode}>
-      <div class="html-editor-section">
+      <div class="html-editor-block">
+        <lightning-textarea
+          label="HTML Template"
+          value={htmlContent}
+          placeholder="Paste or type your HTML here. Use &#123;&#123;Parent.FieldName&#125;&#125; for parent fields and &#123;&#123;Section.ApiName&#125;&#125; for query sections."
+          onchange={handleHtmlChange}
+          class="html-textarea-tall"
+        ></lightning-textarea>
+      </div>
+    </template>
 
-        <div class="html-editor-block">
-          <lightning-textarea
-            label="HTML Template"
-            value={htmlContent}
-            placeholder="Paste or type your HTML here. Use {{Parent.FieldName}} for parent fields and {{Section.ApiName}} for query sections."
-            onchange={handleHtmlChange}
-          ></lightning-textarea>
-        </div>
-
-        <!-- AI Prompt Builder -->
-        <div class="ai-prompt-panel">
-          <div class="ai-prompt-panel-header">
-            <span class="ai-prompt-eyebrow">AI PROMPT BUILDER</span>
-            <p class="ai-prompt-title">Generate HTML with AI</p>
-            <p class="ai-prompt-sub">Describe what you want to build. The prompt below is pre-loaded with Weave merge tag syntax and your available fields — paste it into any AI tool.</p>
-          </div>
-
-          <div class="ai-prompt-describe">
-            <lightning-textarea
-              label="Describe your document"
-              value={promptDescription}
-              placeholder="Example: A professional invoice showing account name, opportunity amount, close date, and a branded header with our company logo."
-              onchange={handlePromptDescriptionChange}
-            ></lightning-textarea>
-          </div>
-
-          <div class="ai-prompt-preview">
-            <div class="ai-prompt-preview-header">
-              <span class="ai-prompt-preview-label">READY-TO-COPY PROMPT</span>
-              <button class={copyBtnClass} onclick={handleCopyPrompt}>
-                <template if:false={promptCopied}>
-                  &#x2398;&nbsp; Copy Prompt
-                </template>
-                <template if:true={promptCopied}>
-                  &#x2713;&nbsp; Copied!
-                </template>
-              </button>
+    <!-- Generate with AI Modal -->
+    <template if:true={showAiModal}>
+      <div class="ai-modal-backdrop" onclick={handleAiModalBackdropClick}>
+        <div class="ai-modal" onclick={handleAiModalInnerClick}>
+          <div class="ai-modal-header">
+            <div>
+              <span class="ai-modal-eyebrow">AI PROMPT BUILDER</span>
+              <p class="ai-modal-title">Generate with AI</p>
             </div>
-            <pre class="ai-prompt-text">{weaveAiPrompt}</pre>
+            <button class="edit-panel-close ai-modal-close" onclick={handleCloseAiModal}>&#x2715;</button>
+          </div>
+
+          <div class="ai-modal-body">
+
+            <!-- Section 1: Describe -->
+            <div class="ai-section">
+              <div class="ai-section-heading">
+                <span class="ai-section-num">1</span>
+                <span class="ai-section-label">Describe your document</span>
+                <span class="ai-optional">(Optional)</span>
+              </div>
+              <lightning-textarea
+                label=""
+                value={aiDescription}
+                placeholder="Example: A professional proposal showing opportunity details with a table of related contacts and a CTA button linking to the record."
+                onchange={handleAiDescriptionChange}
+                variant="label-hidden"
+              ></lightning-textarea>
+            </div>
+
+            <!-- Section 2: Select the data -->
+            <div class="ai-section">
+              <div class="ai-section-heading">
+                <span class="ai-section-num">2</span>
+                <span class="ai-section-label">Select the data</span>
+              </div>
+
+              <!-- 2a: Merge Fields -->
+              <div class="ai-subsection">
+                <p class="ai-subsection-title">Merge Fields</p>
+                <template if:true={hasParentFields}>
+                  <div class="ai-fields-list">
+                    <template for:each={aiParentFieldOptions} for:item="f">
+                      <label key={f.value} class="ai-field-checkbox-label">
+                        <input type="checkbox" checked={f.checked} data-field={f.value}
+                          onchange={handleAiFieldToggle} />
+                        <span>{f.label}</span>
+                      </label>
+                    </template>
+                  </div>
+                </template>
+                <template if:false={hasParentFields}>
+                  <p class="field-hint">Set a parent object on the template to see available fields.</p>
+                </template>
+
+                <!-- Query table configs -->
+                <template if:true={hasQueries}>
+                  <div class="ai-queries-section">
+                    <p class="ai-subsection-subtitle">Related Queries</p>
+                    <template for:each={aiQueryConfigs} for:item="qc">
+                      <div key={qc.queryId} class="ai-query-config">
+                        <label class="ai-field-checkbox-label ai-query-toggle">
+                          <input type="checkbox" checked={qc.include} data-qid={qc.queryId}
+                            onchange={handleAiQueryToggle} />
+                          <span class="ai-query-name">{qc.queryName}</span>
+                        </label>
+                        <template if:true={qc.include}>
+                          <div class="ai-query-sub">
+                            <label class="ai-field-checkbox-label">
+                              <input type="checkbox" checked={qc.asTable} data-qid={qc.queryId}
+                                onchange={handleAiQueryAsTableToggle} />
+                              <span>Include as table</span>
+                            </label>
+                            <template if:true={qc.asTable}>
+                              <div class="ai-column-configs">
+                                <p class="ai-col-config-label">Columns (check to include, edit header)</p>
+                                <template for:each={qc.columns} for:item="col" for:index="colidx">
+                                  <div key={col.field} class="ai-col-row">
+                                    <label class="ai-field-checkbox-label">
+                                      <input type="checkbox" checked={col.selected}
+                                        data-qid={qc.queryId} data-field={col.field}
+                                        onchange={handleAiColToggle} />
+                                      <span class="ai-col-field">{col.field}</span>
+                                    </label>
+                                    <lightning-input
+                                      label=""
+                                      value={col.header}
+                                      placeholder={col.field}
+                                      data-qid={qc.queryId}
+                                      data-field={col.field}
+                                      onchange={handleAiColHeaderChange}
+                                      variant="label-hidden"
+                                      class="ai-col-header-input"
+                                    ></lightning-input>
+                                    <div class="ai-col-order-btns">
+                                      <button class="col-order-btn" data-qid={qc.queryId}
+                                        data-idx={colidx} data-dir="up"
+                                        onclick={handleAiColMove} disabled={col.isFirst}>▲</button>
+                                      <button class="col-order-btn" data-qid={qc.queryId}
+                                        data-idx={colidx} data-dir="down"
+                                        onclick={handleAiColMove} disabled={col.isLast}>▼</button>
+                                    </div>
+                                  </div>
+                                </template>
+                              </div>
+                            </template>
+                          </div>
+                        </template>
+                      </div>
+                    </template>
+                  </div>
+                </template>
+              </div>
+
+              <!-- 2b: CTA Buttons -->
+              <div class="ai-subsection">
+                <div class="ai-subsection-header">
+                  <p class="ai-subsection-title">CTA Buttons</p>
+                  <button class="btn-link" onclick={handleAiAddCta}>+ Add Button</button>
+                </div>
+                <template if:true={hasAiCtas}>
+                  <template for:each={aiCtas} for:item="cta" for:index="ci">
+                    <div key={cta.id} class="ai-cta-row">
+                      <lightning-input
+                        label="Label"
+                        value={cta.label}
+                        data-idx={ci}
+                        data-field="label"
+                        onchange={handleAiCtaChange}
+                        placeholder="Click Here"
+                      ></lightning-input>
+                      <lightning-input
+                        label="URL / Merge Field"
+                        value={cta.href}
+                        data-idx={ci}
+                        data-field="href"
+                        onchange={handleAiCtaChange}
+                        placeholder="https://... or &#123;&#123;Parent.Field&#125;&#125;"
+                      ></lightning-input>
+                      <button class="btn-remove-cta" data-idx={ci} onclick={handleAiRemoveCta}>&#x2715;</button>
+                    </div>
+                  </template>
+                </template>
+              </div>
+
+              <!-- 2c: Images -->
+              <div class="ai-subsection">
+                <p class="ai-subsection-title">Images</p>
+                <template if:true={isLoadingImages}>
+                  <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
+                </template>
+                <template if:false={isLoadingImages}>
+                  <template if:true={hasTemplateImages}>
+                    <div class="ai-image-list">
+                      <template for:each={templateImages} for:item="img">
+                        <label key={img.cvId} class="ai-image-item">
+                          <input type="checkbox" checked={img.aiSelected} data-cvid={img.cvId}
+                            onchange={handleAiImageToggle} />
+                          <span class="ai-image-icon">&#x1F5BC;</span>
+                          <span class="ai-image-name">{img.name}</span>
+                          <template if:true={img.publicUrl}>
+                            <span class="ai-image-url-pill">URL ready</span>
+                          </template>
+                        </label>
+                      </template>
+                    </div>
+                  </template>
+                  <template if:false={hasTemplateImages}>
+                    <p class="field-hint">No images uploaded for this template.</p>
+                  </template>
+                </template>
+              </div>
+            </div>
+
+            <!-- Section 3: Prompt -->
+            <div class="ai-section">
+              <div class="ai-section-heading ai-section-heading_prompt">
+                <div>
+                  <span class="ai-section-num">3</span>
+                  <span class="ai-section-label">Ready-to-copy prompt</span>
+                </div>
+                <button class={aiCopyBtnClass} onclick={handleCopyPrompt}>
+                  <template if:false={promptCopied}>&#x2398;&nbsp;Copy Prompt</template>
+                  <template if:true={promptCopied}>&#x2713;&nbsp;Copied!</template>
+                </button>
+              </div>
+              <pre class="ai-prompt-text">{weaveAiPrompt}</pre>
+            </div>
+
           </div>
         </div>
-
       </div>
     </template>
 

@@ -367,30 +367,12 @@
             <div class="tab-panel">
               <div class="tab-panel-header">
                 <h3 class="tab-section-title">Body Builder</h3>
-                <div class="add-item-controls">
-                  <lightning-combobox
-                    label=""
-                    value={newComponentType}
-                    options={componentTypeOptions}
-                    onchange={handleComponentTypeSelect}
-                    variant="label-hidden"
-                    placeholder="Component type…"
-                  ></lightning-combobox>
-                  <lightning-combobox
-                    label=""
-                    value={newComponentRegion}
-                    options={regionOptions}
-                    onchange={handleRegionSelect}
-                    variant="label-hidden"
-                    placeholder="Region…"
-                  ></lightning-combobox>
-                  <button class="btn-add-item" onclick={handleAddComponent}>+ Add</button>
-                </div>
               </div>
               <c-weave-canvas-designer
                 draft-template={draftTemplate}
                 preview-record-id={previewRecordId}
                 parent-fields={parentFieldsForMergeTags}
+                brand-details={templateBrandDetails}
                 oncomponentschanged={handleCanvasComponentsChanged}
                 oncomponentedit={handleEditComponent}
                 oncomponentdelete={handleDeleteComponent}
