@@ -10,6 +10,15 @@ public with sharing class WeaveScheduledEmailJob implements Schedulable {
         Weave_Scheduled_Send__c record = loadRecord();
         if (record == null || record.Status__c == 'Cancelled') return;
 
+        List<Weave_Template_Config__c> templates = [
+            SELECT Status__c FROM Weave_Template_Config__c
+            WHERE Id = :record.Template__c WITH USER_MODE LIMIT 1
+        ];
+        if (templates.isEmpty() || templates[0].Status__c != 'Active') {
+            updateStatus(record.Id, 'Failed', 0, 0, 0, 'Template is inactive. Please contact your administrator.');
+            return;
+        }
+
         try {
             updateStatus(record.Id, 'Running', null, null, null, null);
             if (record.Send_Type__c == 'Bulk') {

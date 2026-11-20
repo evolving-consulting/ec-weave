@@ -12,7 +12,7 @@ public without sharing class WeaveScheduledEmailExecutor implements Schedulable 
     @TestVisible
     public static void processPendingSends() {
         List<Weave_Scheduled_Send__c> pendingSends = [
-            SELECT Id, Send_Request_Payload__c, Template__c
+            SELECT Id, Send_Request_Payload__c, Template__c, Template__r.Status__c
             FROM Weave_Scheduled_Send__c
             WHERE Status__c = 'Pending'
               AND Scheduled_At__c <= :System.now()
@@ -28,6 +28,14 @@ public without sharing class WeaveScheduledEmailExecutor implements Schedulable 
     }
 
     private static void processSingleSend(Weave_Scheduled_Send__c scheduledSend) {
+        if (scheduledSend.Template__r?.Status__c != 'Active') {
+            scheduledSend.Status__c = 'Failed';
+            scheduledSend.Error_Detail__c = 'Template is inactive. Please contact your administrator.';
+            scheduledSend.Records_Failed__c = 1;
+            update scheduledSend;
+            return;
+        }
+
         scheduledSend.Status__c = 'Running';
         update scheduledSend;
 

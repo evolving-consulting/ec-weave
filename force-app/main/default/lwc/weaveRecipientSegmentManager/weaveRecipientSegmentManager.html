@@ -25,88 +25,97 @@
             <div class="preview-pill">{previewResult} record(s) match this segment</div>
         </template>
 
-        <!-- Edit / New form -->
-        <template if:true={isEditing}>
-            <div class="edit-panel">
-                <div class="edit-panel-header">
-                    <p class="edit-panel-title">{formTitle}</p>
-                    <button class="edit-panel-close" onclick={handleCancel}>&#x2715;</button>
-                </div>
+        <!-- Edit / New modal -->
+        <template if:true={showModal}>
+            <section role="dialog" class="modal-backdrop">
+                <div class="modal-container">
+                    <header class="modal-header">
+                        <h2 class="modal-title">{formTitle}</h2>
+                        <button class="modal-close" onclick={handleCancel}>&#x2715;</button>
+                    </header>
+                    <div class="modal-body">
+                        <template if:true={modalErrorMessage}>
+                            <div class="error-banner">
+                                <span>{modalErrorMessage}</span>
+                                <button class="error-dismiss" onclick={handleDismissModalError}>&#x2715;</button>
+                            </div>
+                        </template>
 
-                <div class="form-row">
-                    <lightning-input label="Segment Name" value={editRecord.Name} data-field="Name"
-                        onchange={handleFieldChange} required>
-                    </lightning-input>
-                </div>
+                        <div class="form-row">
+                            <lightning-input label="Segment Name" value={editRecord.Name} data-field="Name"
+                                onchange={handleFieldChange} required>
+                            </lightning-input>
+                        </div>
 
-                <div class="form-row">
-                    <lightning-combobox
-                        label="Object"
-                        value={editRecord.Object_API_Name__c}
-                        options={objectOptions}
-                        data-field="Object_API_Name__c"
-                        onchange={handleObjectChange}
-                        placeholder="Select an object…"
-                        required>
-                    </lightning-combobox>
-                </div>
+                        <div class="form-row">
+                            <lightning-combobox
+                                label="Object"
+                                value={editRecord.Object_API_Name__c}
+                                options={objectOptions}
+                                data-field="Object_API_Name__c"
+                                onchange={handleObjectChange}
+                                placeholder="Select an object…"
+                                required>
+                            </lightning-combobox>
+                        </div>
 
-                <template if:true={editRecord.Object_API_Name__c}>
-                    <div class="form-row">
-                        <lightning-combobox
-                            label="Email Field"
-                            value={editRecord.Email_Field_API_Name__c}
-                            options={emailFieldOptions}
-                            data-field="Email_Field_API_Name__c"
-                            onchange={handleFieldChange}
-                            placeholder="Select the email field…"
-                            required>
-                        </lightning-combobox>
+                        <template if:true={editRecord.Object_API_Name__c}>
+                            <div class="form-row">
+                                <lightning-combobox
+                                    label="Email Field"
+                                    value={editRecord.Email_Field_API_Name__c}
+                                    options={emailFieldOptions}
+                                    data-field="Email_Field_API_Name__c"
+                                    onchange={handleFieldChange}
+                                    placeholder="Select the email field…"
+                                    required>
+                                </lightning-combobox>
+                            </div>
+
+                            <div class="form-row">
+                                <lightning-combobox
+                                    label="Name Field"
+                                    value={editRecord.Name_Field_API_Name__c}
+                                    options={nameFieldOptions}
+                                    data-field="Name_Field_API_Name__c"
+                                    onchange={handleFieldChange}
+                                    placeholder="Select the name/label field…">
+                                </lightning-combobox>
+                            </div>
+
+                            <div class="form-row">
+                                <lightning-textarea
+                                    label="SOQL Filter (WHERE clause)"
+                                    value={editRecord.SOQL_Filter__c}
+                                    data-field="SOQL_Filter__c"
+                                    onchange={handleFieldChange}
+                                    placeholder="e.g. MailingState = 'ON' AND HasOptedOutOfEmail = false">
+                                </lightning-textarea>
+                                <p class="field-hint">Leave blank to include all records. Do not include the WHERE keyword.</p>
+                            </div>
+                        </template>
+
+                        <div class="form-row">
+                            <lightning-textarea label="Description" value={editRecord.Description__c}
+                                data-field="Description__c" onchange={handleFieldChange}>
+                            </lightning-textarea>
+                        </div>
+
+                        <div class="form-row">
+                            <lightning-combobox label="Status" value={editRecord.Status__c}
+                                options={statusOptions} data-field="Status__c" onchange={handleFieldChange}>
+                            </lightning-combobox>
+                        </div>
                     </div>
-
-                    <div class="form-row">
-                        <lightning-combobox
-                            label="Name Field"
-                            value={editRecord.Name_Field_API_Name__c}
-                            options={nameFieldOptions}
-                            data-field="Name_Field_API_Name__c"
-                            onchange={handleFieldChange}
-                            placeholder="Select the name/label field…">
-                        </lightning-combobox>
-                    </div>
-
-                    <div class="form-row">
-                        <lightning-textarea
-                            label="SOQL Filter (WHERE clause)"
-                            value={editRecord.SOQL_Filter__c}
-                            data-field="SOQL_Filter__c"
-                            onchange={handleFieldChange}
-                            placeholder="e.g. MailingState = 'ON' AND HasOptedOutOfEmail = false">
-                        </lightning-textarea>
-                        <p class="field-hint">Leave blank to include all records. Do not include the WHERE keyword.</p>
-                    </div>
-                </template>
-
-                <div class="form-row">
-                    <lightning-textarea label="Description" value={editRecord.Description__c}
-                        data-field="Description__c" onchange={handleFieldChange}>
-                    </lightning-textarea>
+                    <footer class="modal-footer">
+                        <button class="btn-cancel" onclick={handleCancel}>Cancel</button>
+                        <button class="btn-primary" onclick={handleSave} disabled={isLoading}>
+                            <template if:true={isLoading}>Saving…</template>
+                            <template if:false={isLoading}>Save Segment</template>
+                        </button>
+                    </footer>
                 </div>
-
-                <div class="form-row">
-                    <lightning-combobox label="Status" value={editRecord.Status__c}
-                        options={statusOptions} data-field="Status__c" onchange={handleFieldChange}>
-                    </lightning-combobox>
-                </div>
-
-                <div class="form-actions">
-                    <button class="btn-cancel" onclick={handleCancel}>Cancel</button>
-                    <button class="btn-primary" onclick={handleSave} disabled={isLoading}>
-                        <template if:true={isLoading}>Saving…</template>
-                        <template if:false={isLoading}>Save Segment</template>
-                    </button>
-                </div>
-            </div>
+            </section>
         </template>
 
         <!-- Filter row -->

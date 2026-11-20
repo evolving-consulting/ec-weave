@@ -754,6 +754,7 @@ export default class WeaveTemplateBuilder extends LightningElement {
     this.isDirty = true;
     if (field === 'parentObjectApiName' && value) {
       this.loadRelatedObjects(value);
+      this.loadSegmentsForObject(value);
       // Auto-create a ParentRecord query for new templates
       if (!this.draftTemplate.id) {
         const hasParentQuery = this.draftTemplate.queries.some(q =>

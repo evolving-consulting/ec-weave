@@ -10,9 +10,10 @@ public with sharing class WeaveEmailTemplateController {
             List<GenericEmailTemplateDTO> templates = new List<GenericEmailTemplateDTO>();
             for (Weave_Template_Config__c template : [
                 SELECT Id, Name, Description__c, Subject_Template__c, Parent_Object_API_Name__c,
-                    Allow_User_Edit_Before_Send__c, Store_Email_History__c
+                    Allow_User_Edit_Before_Send__c, Store_Email_History__c, Template_Output_Type__c
                 FROM Weave_Template_Config__c
                 WHERE Status__c = 'Active' AND Parent_Object_API_Name__c = :parentObjectApiName
+                    AND Template_Output_Type__c != 'Document'
                 WITH USER_MODE ORDER BY Name ASC
             ]) {
                 templates.add(toTemplateDTO(template));
@@ -220,6 +221,7 @@ public with sharing class WeaveEmailTemplateController {
         dto.parentObjectApiName = template.Parent_Object_API_Name__c;
         dto.allowUserEditBeforeSend = template.Allow_User_Edit_Before_Send__c;
         dto.storeEmailHistory = template.Store_Email_History__c;
+        dto.templateOutputType = template.Template_Output_Type__c;
         return dto;
     }
 

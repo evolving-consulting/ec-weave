@@ -21,10 +21,11 @@ function computeStatusClass(status) {
 export default class WeaveRecipientSegmentManager extends LightningElement {
     @track segments = [];
     @track isLoading = false;
-    @track isEditing = false;
+    @track showModal = false;
     @track editRecord = {};
     @track previewResult = null;
     @track errorMessage = '';
+    @track modalErrorMessage = '';
     @track availableObjects = [];
     @track availableFields = [];
     @track filterStatus = 'All';
@@ -129,7 +130,8 @@ export default class WeaveRecipientSegmentManager extends LightningElement {
         this.editRecord = { Status__c: 'Active' };
         this.availableFields = [];
         this.previewResult = null;
-        this.isEditing = true;
+        this.modalErrorMessage = '';
+        this.showModal = true;
     }
 
     handleEdit(event) {
@@ -138,7 +140,8 @@ export default class WeaveRecipientSegmentManager extends LightningElement {
         if (!seg) return;
         this.editRecord = { ...seg };
         this.previewResult = null;
-        this.isEditing = true;
+        this.modalErrorMessage = '';
+        this.showModal = true;
         if (seg.Object_API_Name__c) {
             this.loadFieldsForObject(seg.Object_API_Name__c);
         }
@@ -182,6 +185,10 @@ export default class WeaveRecipientSegmentManager extends LightningElement {
         this.errorMessage = '';
     }
 
+    handleDismissModalError() {
+        this.modalErrorMessage = '';
+    }
+
     handleDelete(segmentId) {
         // eslint-disable-next-line no-alert
         if (!confirm('Delete this segment?')) return;
@@ -209,29 +216,29 @@ export default class WeaveRecipientSegmentManager extends LightningElement {
     }
 
     handleSave() {
-        if (!this.editRecord.Name) { this.errorMessage = 'Segment name is required.'; return; }
-        if (!this.editRecord.Object_API_Name__c) { this.errorMessage = 'Object is required.'; return; }
-        if (!this.editRecord.Email_Field_API_Name__c) { this.errorMessage = 'Email field is required.'; return; }
-        this.errorMessage = '';
+        if (!this.editRecord.Name) { this.modalErrorMessage = 'Segment name is required.'; return; }
+        if (!this.editRecord.Object_API_Name__c) { this.modalErrorMessage = 'Object is required.'; return; }
+        if (!this.editRecord.Email_Field_API_Name__c) { this.modalErrorMessage = 'Email field is required.'; return; }
+        this.modalErrorMessage = '';
         this.isLoading = true;
         saveSegment({ segment: this.editRecord })
             .then(() => {
                 this.dispatchEvent(new ShowToastEvent({ title: 'Saved', message: 'Segment saved.', variant: 'success' }));
-                this.isEditing = false;
+                this.showModal = false;
                 this.editRecord = {};
                 this.availableFields = [];
                 this.loadSegments();
             })
             .catch(err => {
-                this.errorMessage = (err && err.body && err.body.message) || 'Unable to save segment.';
+                this.modalErrorMessage = (err && err.body && err.body.message) || 'Unable to save segment.';
                 this.isLoading = false;
             });
     }
 
     handleCancel() {
-        this.isEditing = false;
+        this.showModal = false;
         this.editRecord = {};
         this.availableFields = [];
-        this.errorMessage = '';
+        this.modalErrorMessage = '';
     }
 }

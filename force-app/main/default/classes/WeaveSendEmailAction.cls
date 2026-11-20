@@ -13,6 +13,9 @@ public with sharing class WeaveSendEmailAction {
 
         @InvocableVariable(label='Record Id' required=true description='The source record used for rendering and post-send actions.')
         public Id recordId;
+
+        @InvocableVariable(label='Attachment Content Document Ids' required=false description='Optional list of ContentDocument Ids to attach. Use with Generate Weave PDF output.')
+        public List<Id> attachmentContentDocumentIds;
     }
 
     public class SendResult {
@@ -42,6 +45,28 @@ public with sharing class WeaveSendEmailAction {
     private static SendResult processSend(SendRequest req) {
         SendResult result = new SendResult();
         try {
+            // Validate template exists, is active, and is not Document-only
+            List<Weave_Template_Config__c> templates = [
+                SELECT Status__c, Template_Output_Type__c
+                FROM Weave_Template_Config__c WHERE Id = :req.templateId WITH USER_MODE LIMIT 1
+            ];
+            if (templates.isEmpty()) {
+                result.success = false;
+                result.errorMessage = 'Template not found. Please contact your administrator.';
+                return result;
+            }
+            Weave_Template_Config__c tmpl = templates[0];
+            if (tmpl.Status__c != 'Active') {
+                result.success = false;
+                result.errorMessage = 'Template is inactive. Please contact your administrator.';
+                return result;
+            }
+            if (tmpl.Template_Output_Type__c == 'Document') {
+                result.success = false;
+                result.errorMessage = 'Template is configured for Document PDF output only. Use the Generate Weave PDF action instead.';
+                return result;
+            }
+
             // Render the template content (works for both editable and non-editable templates)
             WeaveEmailTemplateRenderer.RenderedEmailDTO rendered =
                 WeaveEmailTemplateRenderer.renderEmail(req.templateId, req.recordId);
@@ -78,6 +103,9 @@ public with sharing class WeaveSendEmailAction {
             sendReq.toRecipients  = toList;
             sendReq.ccRecipients  = ccList;
             sendReq.bccRecipients = bccList;
+            if (req.attachmentContentDocumentIds != null && !req.attachmentContentDocumentIds.isEmpty()) {
+                sendReq.attachmentContentDocumentIds = req.attachmentContentDocumentIds;
+            }
 
             DceEmailSendResultDTO sendResult = WeaveEmailSendService.sendEmail(sendReq);
             result.success = sendResult.success;
