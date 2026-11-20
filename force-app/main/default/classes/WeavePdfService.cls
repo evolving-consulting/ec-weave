@@ -8,9 +8,10 @@ public with sharing class WeavePdfService {
             ? WeaveEmailTemplateRenderer.renderCanvas(templateId, recordId)
             : WeaveEmailTemplateRenderer.renderEmail(templateId, recordId);
 
+        Boolean isCanvas = isDocumentTemplate(templateId);
         Blob pdfBlob = Test.isRunningTest()
             ? Blob.valueOf('PDF_TEST')
-            : Blob.toPdf(wrapForPdf(rendered.htmlBody, rendered.subject));
+            : Blob.toPdf(wrapForPdf(rendered.htmlBody, rendered.subject, isCanvas));
 
         ContentVersion cv = new ContentVersion();
         cv.Title = sanitizeTitle(rendered.subject);
@@ -80,17 +81,64 @@ public with sharing class WeavePdfService {
     }
 
     private static String wrapForPdf(String htmlBody, String title) {
+        return wrapForPdf(htmlBody, title, false);
+    }
+
+    // isCanvas=true: canvas/document mode — zero body margins, brand elements use
+    // position:fixed so they appear on every page without pushing canvas content off-page.
+    private static String wrapForPdf(String htmlBody, String title, Boolean isCanvas) {
         String safeTitle = title != null ? title.escapeHtml4() : 'Document';
         String safeBody = htmlBody != null ? htmlBody : '';
+
+        String baseFonts = 'font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#222;';
+
+        String css;
+        if (isCanvas == true) {
+            css = '@page{margin:0;}'
+                + 'html,body{margin:0;padding:0;' + baseFonts + '}'
+                // Brand header/footer are fixed so they overlay every PDF page
+                + '.weave-pdf-header{position:fixed;top:0;left:0;right:0;z-index:9999;}'
+                + '.weave-pdf-footer{position:fixed;bottom:0;left:0;right:0;z-index:9999;}'
+                // Page-break div between canvas pages
+                + '.weave-page-break{page-break-before:always;break-before:page;}'
+                + 'table{border-collapse:collapse;}'
+                + 'img{max-width:100%;height:auto;}'
+                + 'a{color:#0070d2;text-decoration:none;}';
+        } else {
+            css = 'body{' + baseFonts + 'margin:0;padding:16pt;}'
+                // width:100% prevents fixed-pixel tables (e.g. width="756") from overflowing the page
+                // and causing Salesforce's PDF renderer to duplicate content across pages.
+                // td/th borders are intentionally NOT set here — templates control their own cell borders
+                // via inline styles; the global border previously overrode them.
+                + 'table{border-collapse:collapse;width:100%;}'
+                // border="1" on a <table> creates black cell borders in Salesforce's PDF renderer
+                // because border-color on the table doesn't cascade. inherit forces cells to pick
+                // up the table's border-color.
+                + 'td,th{border-color:inherit;}'
+                + 'img{max-width:100%;height:auto;}'
+                + 'a{color:#0070d2;text-decoration:none;}'
+                + '.weave-page-break{page-break-before:always;break-before:page;}';
+        }
+
+        // Salesforce's PDF renderer doesn't cascade bgcolor attributes from <tr> to child <th>/<td>.
+        // Pre-process the HTML: add an inline style with background-color for every bgcolor attribute
+        // so the cell's own background renders correctly.
+        safeBody = normalizeBgcolorForPdf(safeBody);
+
         return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + safeTitle + '</title>'
-            + '<style>'
-            + 'body{font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#222;margin:0;padding:16pt;}'
-            + 'table{border-collapse:collapse;width:100%;}'
-            + 'td,th{border:1px solid #ccc;padding:4pt 6pt;}'
-            + 'th{background:#f5f5f5;font-weight:bold;}'
-            + 'img{max-width:100%;}'
-            + 'a{color:#0070d2;text-decoration:none;}'
-            + '</style></head><body>' + safeBody + '</body></html>';
+            + '<style>' + css + '</style></head><body>' + safeBody + '</body></html>';
+    }
+
+    // Convert bgcolor HTML attributes to inline background-color CSS.
+    // Salesforce's Blob.toPdf() renderer does not cascade bgcolor from <tr> to child cells,
+    // so <th style="color:#fff"> on a <tr bgcolor="#1c1c1c"> renders white-on-white.
+    // Injecting style="background-color:X" directly onto each element fixes this.
+    // If a duplicate style attribute results, the renderer uses the first one — which is fine.
+    private static String normalizeBgcolorForPdf(String html) {
+        if (String.isBlank(html) || !html.containsIgnoreCase('bgcolor')) return html;
+        // Replace bgcolor="X" with style="background-color:X" bgcolor="X"
+        // Works for <tr>, <td>, <th>, <table> elements.
+        return html.replaceAll('(?i)bgcolor\\s*=\\s*"([^"]+)"', 'style="background-color:$1" bgcolor="$1"');
     }
 
     private static String sanitizeTitle(String title) {

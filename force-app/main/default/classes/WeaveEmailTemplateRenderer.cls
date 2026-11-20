@@ -380,7 +380,8 @@ public with sharing class WeaveEmailTemplateRenderer {
         }
         if (queryByKey.isEmpty()) return html;
 
-        // Process section tags, iterating until no more replacements are found
+        // Process section tags — pattern: {{Section.key}} immediately followed by a <tr>…</tr>
+        // row template inside the same table. Each iteration replaces the first match found.
         Boolean changed = true;
         Integer safetyLimit = 10;
         while (changed && safetyLimit-- > 0) {
@@ -388,63 +389,80 @@ public with sharing class WeaveEmailTemplateRenderer {
             Pattern sectionPat = Pattern.compile('(?i)\\{\\{Section\\.([^}]+)\\}\\}');
             Matcher sm = sectionPat.matcher(html);
             if (!sm.find()) break;
-            // Process first match found (loop re-scans after each replacement)
+
             String sectionKey = sm.group(1);
             Weave_Template_Query__c q = queryByKey.get(sectionKey.toLowerCase());
-            if (q == null) continue;
+            if (q == null) {
+                // No matching query — remove the tag so the merge resolver doesn't see it
+                html = html.substring(0, sm.start()) + html.substring(sm.end());
+                changed = true;
+                continue;
+            }
 
             Integer sectionStart = sm.start();
             Integer sectionEnd   = sm.end();
 
-            // Find the next <table ...> after the section tag (allow whitespace/newlines)
+            // Find the row template: the first <tr>…</tr> after the section tag
             String lowerHtml = html.toLowerCase();
-            Integer tableStart = lowerHtml.indexOf('<table', sectionEnd);
-            if (tableStart < 0 || tableStart - sectionEnd > 5000) {
-                // No table close enough — leave the tag for the merge resolver to blank it
-                break;
+            Integer trStart = lowerHtml.indexOf('<tr', sectionEnd);
+            if (trStart < 0 || trStart - sectionEnd > 2000) {
+                // No row template found — remove the section tag and move on
+                html = html.substring(0, sectionStart) + html.substring(sectionEnd);
+                changed = true;
+                continue;
             }
-            Integer tableEnd = findMatchingTableEnd(lowerHtml, tableStart);
-            if (tableEnd < 0) break;
-
-            // Extract table HTML and row template from tbody
-            String tableHtml   = html.substring(tableStart, tableEnd);
-            String tablePrefix = tableHtml;
-            String rowTemplate = '';
-            String tableSuffix = '';
-            Pattern tbodyOpen  = Pattern.compile('(?i)<tbody[^>]*>');
-            Pattern tbodyClose = Pattern.compile('(?i)</tbody>');
-            Matcher mOpen  = tbodyOpen.matcher(tableHtml);
-            Matcher mClose = tbodyClose.matcher(tableHtml);
-            if (mOpen.find() && mClose.find()) {
-                tablePrefix = tableHtml.substring(0, mOpen.end());
-                rowTemplate = tableHtml.substring(mOpen.end(), mClose.start());
-                tableSuffix = tableHtml.substring(mClose.start());
+            Integer trEnd = findMatchingTrEnd(lowerHtml, trStart);
+            if (trEnd < 0) {
+                html = html.substring(0, sectionStart) + html.substring(sectionEnd);
+                changed = true;
+                continue;
             }
 
-            // Execute query filtered to this record
+            String rowTemplate = html.substring(trStart, trEnd);
+
+            // Execute query filtered to this record and render one copy of rowTemplate per row
+            String renderedRows = '';
             String childObjectApiName = extractObjectName(q.SOQL_Query__c);
-            String renderedSection = '';
             if (!String.isBlank(childObjectApiName)) {
                 try {
                     GenericDynamicQueryService.assertValidField(childObjectApiName, q.Parent_Lookup_Field__c);
                     String finalSoql = injectParentFilter(q.SOQL_Query__c, q.Parent_Lookup_Field__c);
                     List<SObject> rows = Database.query(finalSoql);
                     if (rows != null && !rows.isEmpty()) {
-                        String tbodyHtml = '';
                         for (SObject row : rows) {
                             GenericMergeFieldResolver.MergeContext rowCtx = buildContext(row, parentObjectApiName);
-                            tbodyHtml += GenericMergeFieldResolver.resolveTemplate(rowTemplate, rowCtx);
+                            renderedRows += GenericMergeFieldResolver.resolveTemplate(rowTemplate, rowCtx);
                         }
-                        renderedSection = tablePrefix + tbodyHtml + tableSuffix;
                     }
                 } catch (Exception ignored) {}
             }
 
-            // Replace {{Section.xxx}}<table>...</table> with the rendered table (or empty if no rows)
-            html = html.substring(0, sectionStart) + renderedSection + html.substring(tableEnd);
+            // Replace {{Section.xxx}} + row template with N rendered rows (or nothing if no data)
+            html = html.substring(0, sectionStart) + renderedRows + html.substring(trEnd);
             changed = true;
         }
         return html;
+    }
+
+    private static Integer findMatchingTrEnd(String lowerHtml, Integer trStart) {
+        Integer depth = 0;
+        Integer pos = trStart;
+        while (pos < lowerHtml.length()) {
+            Integer nextOpen  = lowerHtml.indexOf('<tr', pos);
+            Integer nextClose = lowerHtml.indexOf('</tr', pos);
+            if (nextOpen >= 0 && (nextClose < 0 || nextOpen < nextClose)) {
+                depth++;
+                pos = nextOpen + 3;
+            } else if (nextClose >= 0) {
+                depth--;
+                Integer closeEnd = lowerHtml.indexOf('>', nextClose) + 1;
+                if (depth == 0) return closeEnd;
+                pos = closeEnd > nextClose ? closeEnd : nextClose + 4;
+            } else {
+                break;
+            }
+        }
+        return -1;
     }
 
     private static Integer findMatchingTableEnd(String lowerHtml, Integer tableStart) {
@@ -655,8 +673,8 @@ public with sharing class WeaveEmailTemplateRenderer {
 
         List<String> pageDivs = new List<String>();
         for (Integer pg : pageNums) {
-            if (!pageDivs.isEmpty()) pageDivs.add('<div style="page-break-before:always;"></div>');
-            String pageHtml = '<div style="position:relative;width:' + pageW + 'in;height:' + pageH + 'in;overflow:hidden;">';
+            if (!pageDivs.isEmpty()) pageDivs.add('<div class="weave-page-break"></div>');
+            String pageHtml = '<div style="position:relative;width:' + pageW + 'in;height:' + pageH + 'in;overflow:hidden;page-break-inside:avoid;">';
             for (Weave_Template_Component__c c : byPage.get(pg)) {
                 Decimal x = c.Canvas_X__c != null ? c.Canvas_X__c : 0;
                 Decimal y = c.Canvas_Y__c != null ? c.Canvas_Y__c : 0;
@@ -672,11 +690,15 @@ public with sharing class WeaveEmailTemplateRenderer {
 
         String canvasHtml = String.join(pageDivs, '\n');
 
-        // Apply brand header/footer (same as renderEmail)
+        // Apply brand header/footer — wrap in weave-pdf-header/footer classes so the PDF
+        // wrapper can position them as fixed elements (repeating on every page) rather than
+        // placing them in the document flow where they would push the canvas page off the PDF boundary.
         Weave_Brand__c brand = template.Brand__c != null ? loadBrand(template.Brand__c, enforceActive) : null;
         String brandHeader = brand != null ? resolveBrandMergeTags(brand.Header_HTML__c, brand) : '';
         String brandFooter = brand != null ? resolveBrandMergeTags(brand.Footer_HTML__c, brand) : '';
-        String fullHtml = brandHeader + canvasHtml + brandFooter;
+        String headerDiv = String.isNotBlank(brandHeader) ? '<div class="weave-pdf-header">' + brandHeader + '</div>' : '';
+        String footerDiv = String.isNotBlank(brandFooter) ? '<div class="weave-pdf-footer">' + brandFooter + '</div>' : '';
+        String fullHtml = headerDiv + footerDiv + canvasHtml;
 
         String subject  = String.isNotBlank(template.Subject_Template__c)
             ? GenericMergeFieldResolver.resolveTemplate(template.Subject_Template__c, buildContext(parentRecord, template.Parent_Object_API_Name__c))
