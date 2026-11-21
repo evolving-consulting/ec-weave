@@ -367,6 +367,10 @@ export default class WeaveEmailComposer extends LightningElement {
 
     get hasSegments() { return this.segments.length > 0; }
 
+    get showPdfButtons() {
+        return this.selectedTemplate?.templateOutputType === 'Both';
+    }
+
     get pdfDownloadUrl() {
         if (!this.pdfContentDocumentId) return '#';
         return '/sfc/servlet.shepherd/document/download/' + this.pdfContentDocumentId;

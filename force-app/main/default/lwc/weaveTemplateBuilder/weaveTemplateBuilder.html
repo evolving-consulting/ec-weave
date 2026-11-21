@@ -1542,13 +1542,15 @@
               </template>
             </template>
 
-            <lightning-input
-              label="Filter Logic"
-              value={editingRecipient.filterLogic}
-              data-field="filterLogic"
-              onchange={handleRecipientFieldChange}
-              placeholder="Optional WHERE clause for related queries"
-            ></lightning-input>
+            <template if:false={editingRecipientIsDynamicSegment}>
+              <lightning-input
+                label="Filter Logic"
+                value={editingRecipient.filterLogic}
+                data-field="filterLogic"
+                onchange={handleRecipientFieldChange}
+                placeholder="Optional WHERE clause for related queries"
+              ></lightning-input>
+            </template>
 
             <div class="form-row-checks">
               <lightning-input type="checkbox" label="Default Selected"

@@ -1229,7 +1229,11 @@ export default class WeaveTemplateBuilder extends LightningElement {
 
   handleRecipientFieldChange(event) {
     const field = event.target.dataset.field;
-    this.editingRecipient = { ...this.editingRecipient, [field]: event.detail.value };
+    const value = event.detail.value;
+    this.editingRecipient = { ...this.editingRecipient, [field]: value };
+    if (field === 'recipientSourceType' && value === 'Dynamic Segment') {
+      this.loadSegmentsForObject(this.draftTemplate.parentObjectApiName);
+    }
   }
 
   handleRecipientQuerySelect(event) {

@@ -497,20 +497,22 @@
             <footer class="footer">
                 <lightning-button label="Cancel" onclick={handleCancel}></lightning-button>
                 <div class="footer-send-actions">
-                    <lightning-button
-                        label="Save PDF to Record"
-                        icon-name="utility:pdf"
-                        disabled={isGeneratingPdf}
-                        onclick={handleSavePdf}>
-                    </lightning-button>
-                    <lightning-button
-                        label="Download PDF"
-                        icon-name="utility:download"
-                        disabled={isGeneratingPdf}
-                        onclick={handleDownloadPdf}>
-                    </lightning-button>
-                    <template if:true={isGeneratingPdf}>
-                        <lightning-spinner size="x-small" alternative-text="Generating PDF"></lightning-spinner>
+                    <template if:true={showPdfButtons}>
+                        <lightning-button
+                            label="Save PDF to Record"
+                            icon-name="utility:pdf"
+                            disabled={isGeneratingPdf}
+                            onclick={handleSavePdf}>
+                        </lightning-button>
+                        <lightning-button
+                            label="Download PDF"
+                            icon-name="utility:download"
+                            disabled={isGeneratingPdf}
+                            onclick={handleDownloadPdf}>
+                        </lightning-button>
+                        <template if:true={isGeneratingPdf}>
+                            <lightning-spinner size="x-small" alternative-text="Generating PDF"></lightning-spinner>
+                        </template>
                     </template>
                     <template if:true={isComposeTab}>
                         <lightning-button
