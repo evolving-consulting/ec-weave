@@ -51,6 +51,13 @@
           </svg>
           Brands
         </button>
+        <button class={sidebarNavClassScheduler} data-view="scheduler" onclick={handleSidebarNav}>
+          <svg class="nav-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/>
+            <path d="M10 6v4l2.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Scheduler
+        </button>
       </nav>
 
       <div class="sidebar-footer">
@@ -185,6 +192,7 @@
             <button class={tabClass_actions} data-tab="actions" onclick={handleTabClick}>Actions</button>
             <button class={tabClass_files} data-tab="files" onclick={handleTabClick}>Files</button>
             <button class={tabClass_schedules} data-tab="schedules" onclick={handleTabClick}>Scheduled Sends</button>
+            <button class={tabClass_datasources} data-tab="datasources" onclick={handleTabClick}>Data Sources</button>
             <button class={tabClass_preview} data-tab="preview" onclick={handleTabClick}>Preview</button>
           </div>
 
@@ -620,6 +628,15 @@
 
               </template>
             </div>
+          </template>
+
+          <!-- Data Sources -->
+          <template if:true={isTab_datasources}>
+            <c-weave-data-source-editor
+              template-content={allComponentHtml}
+              parent-object-api-name={draftTemplate.parentObjectApiName}
+              onconfigchange={handleDataSourceConfigChange}
+            ></c-weave-data-source-editor>
           </template>
 
           <!-- Preview -->
@@ -1187,6 +1204,91 @@
             </div>
           </template>
 
+        </div>
+      </template>
+
+      <!-- ── SCHEDULER VIEW ──────────────────────────────────────────────── -->
+      <template if:true={isSchedulerView}>
+        <div class="library">
+          <div class="page-header">
+            <div class="page-header-left">
+              <p class="page-eyebrow">WEAVE</p>
+              <h1 class="page-title">Scheduler</h1>
+            </div>
+          </div>
+
+          <template if:true={isLoadingScheduler}>
+            <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+          </template>
+
+          <template if:false={isLoadingScheduler}>
+            <!-- Status card -->
+            <div class="scheduler-card">
+              <div class="scheduler-status-row">
+                <div class="scheduler-status-left">
+                  <p class="scheduler-label">Automated Send Job</p>
+                  <p class="scheduler-desc">When active, this job picks up all Pending scheduled sends and processes them on the selected frequency.</p>
+                </div>
+                <div class="scheduler-status-right">
+                  <span class={schedulerStatusPillClass}>{schedulerStatusLabel}</span>
+                </div>
+              </div>
+
+              <template if:true={schedulerIsActive}>
+                <div class="scheduler-info-row">
+                  <div class="scheduler-info-block">
+                    <p class="scheduler-info-label">FREQUENCY</p>
+                    <p class="scheduler-info-value">{schedulerFrequencyLabel}</p>
+                  </div>
+                  <template if:true={schedulerNextFireTime}>
+                    <div class="scheduler-info-block">
+                      <p class="scheduler-info-label">NEXT RUN</p>
+                      <p class="scheduler-info-value">{schedulerNextFireTime}</p>
+                    </div>
+                  </template>
+                  <template if:true={schedulerCronExpression}>
+                    <div class="scheduler-info-block">
+                      <p class="scheduler-info-label">CRON</p>
+                      <p class="scheduler-info-value scheduler-cron">{schedulerCronExpression}</p>
+                    </div>
+                  </template>
+                </div>
+              </template>
+
+              <div class="scheduler-controls">
+                <lightning-combobox
+                  label="Run Frequency"
+                  value={selectedFrequency}
+                  options={frequencyOptions}
+                  onchange={handleSchedulerFrequencyChange}
+                  disabled={schedulerIsActive}
+                ></lightning-combobox>
+                <p class="field-hint">Select how often the job should run, then activate it. To change frequency, deactivate first.</p>
+              </div>
+
+              <div class="scheduler-actions">
+                <template if:false={schedulerIsActive}>
+                  <button class="btn-new-template" onclick={handleActivateScheduler} disabled={isTogglingScheduler}>
+                    <template if:true={isTogglingScheduler}>Activating…</template>
+                    <template if:false={isTogglingScheduler}>Activate Scheduler</template>
+                  </button>
+                </template>
+                <template if:true={schedulerIsActive}>
+                  <button class="btn-scheduler-deactivate" onclick={handleDeactivateScheduler} disabled={isTogglingScheduler}>
+                    <template if:true={isTogglingScheduler}>Deactivating…</template>
+                    <template if:false={isTogglingScheduler}>Deactivate Scheduler</template>
+                  </button>
+                </template>
+                <button class="btn-secondary scheduler-refresh-btn" onclick={loadSchedulerStatus}>Refresh Status</button>
+              </div>
+            </div>
+
+            <!-- Info banner -->
+            <div class="info-banner" style="margin-top: 1rem;">
+              <lightning-icon icon-name="utility:info" size="x-small"></lightning-icon>
+              <span>The scheduler runs <strong>WeaveScheduledEmailExecutor</strong>, which processes all <strong>Pending</strong> scheduled sends. Individual one-time sends scheduled from the template editor each have their own job and are unaffected by this setting.</span>
+            </div>
+          </template>
         </div>
       </template>
 

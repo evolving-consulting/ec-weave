@@ -29,6 +29,9 @@ import createBrandPublicImageLink from '@salesforce/apex/WeaveTemplateBuilderCon
 import deleteBrandFile from '@salesforce/apex/WeaveTemplateBuilderController.deleteBrandFile';
 import getActiveSegments from '@salesforce/apex/WeaveTemplateBuilderController.getActiveSegments';
 import cloneTemplate from '@salesforce/apex/WeaveTemplateBuilderController.cloneTemplate';
+import getSchedulerStatus from '@salesforce/apex/WeaveTemplateBuilderController.getSchedulerStatus';
+import activateScheduler from '@salesforce/apex/WeaveTemplateBuilderController.activateScheduler';
+import deactivateScheduler from '@salesforce/apex/WeaveTemplateBuilderController.deactivateScheduler';
 
 const STATUS_OPTIONS = [
   { label: 'Draft', value: 'Draft' },
@@ -240,6 +243,10 @@ export default class WeaveTemplateBuilder extends LightningElement {
   @track cloneApiName = '';
   @track cloneOutputType = 'Email';
   @track isCloning = false;
+  @track schedulerStatus = null;
+  @track isLoadingScheduler = false;
+  @track selectedFrequency = 'every_hour';
+  @track isTogglingScheduler = false;
 
   statusOptions = STATUS_OPTIONS;
   fromEmailTypeOptions = FROM_EMAIL_TYPE_OPTIONS;
@@ -381,6 +388,31 @@ export default class WeaveTemplateBuilder extends LightningElement {
 
   get isSegmentsView()   { return this.sidebarView === 'segments'; }
   get sidebarNavClassSegments() { return 'sidebar-nav-btn' + (this.sidebarView === 'segments' ? ' sidebar-nav-btn_active' : ''); }
+  get isSchedulerView()  { return this.sidebarView === 'scheduler'; }
+  get sidebarNavClassScheduler() { return 'sidebar-nav-btn' + (this.sidebarView === 'scheduler' ? ' sidebar-nav-btn_active' : ''); }
+
+  get schedulerIsActive() { return !!(this.schedulerStatus && this.schedulerStatus.isActive); }
+  get schedulerStatusLabel() { return this.schedulerIsActive ? 'Active' : 'Inactive'; }
+  get schedulerStatusPillClass() { return this.schedulerIsActive ? 'status-pill status-pill_active' : 'status-pill status-pill_draft'; }
+  get schedulerNextFireTime() {
+    if (!this.schedulerStatus || !this.schedulerStatus.nextFireTime) return null;
+    return new Date(this.schedulerStatus.nextFireTime).toLocaleString();
+  }
+  get schedulerCronExpression() { return this.schedulerStatus ? this.schedulerStatus.cronExpression : null; }
+  get schedulerFrequencyLabel() {
+    const opt = this.frequencyOptions.find(o => o.value === (this.schedulerStatus && this.schedulerStatus.frequency));
+    return opt ? opt.label : (this.schedulerStatus && this.schedulerStatus.cronExpression) || '';
+  }
+  get frequencyOptions() {
+    return [
+      { label: 'Every 15 minutes', value: 'every_15_min' },
+      { label: 'Every 30 minutes', value: 'every_30_min' },
+      { label: 'Every hour',       value: 'every_hour' },
+      { label: 'Every 6 hours',    value: 'every_6_hours' },
+      { label: 'Every 12 hours',   value: 'every_12_hours' },
+      { label: 'Daily (8 AM)',     value: 'daily' }
+    ];
+  }
 
   get isLibraryView() { return !this.isEditing && this.isTemplatesView; }
   get isEditorView() { return this.isEditing; }
@@ -548,8 +580,13 @@ export default class WeaveTemplateBuilder extends LightningElement {
   get editingComponentButtonConfig()   { return this._parseComponentConfig(this.editingComponent.configJson); }
   get isTab_files()      { return this.activeTab === 'files'; }
   get tabClass_files()   { return 'editor-tab' + (this.activeTab === 'files'     ? ' editor-tab_active' : ''); }
-  get isTab_schedules()  { return this.activeTab === 'schedules'; }
-  get tabClass_schedules() { return 'editor-tab' + (this.activeTab === 'schedules' ? ' editor-tab_active' : ''); }
+  get isTab_schedules()    { return this.activeTab === 'schedules'; }
+  get tabClass_schedules() { return 'editor-tab' + (this.activeTab === 'schedules'   ? ' editor-tab_active' : ''); }
+  get isTab_datasources()    { return this.activeTab === 'datasources'; }
+  get tabClass_datasources() { return 'editor-tab' + (this.activeTab === 'datasources' ? ' editor-tab_active' : ''); }
+  get allComponentHtml() {
+    return (this.draftTemplate.components || []).map(c => c.htmlContent || '').join('\n');
+  }
   get scheduleModeOptions() { return [{ label: 'Send Once', value: 'once' }, { label: 'Recurring', value: 'recurring' }]; }
   get isScheduleModeOnce() { return this.scheduleMode === 'once'; }
   get isScheduleModeRecurring() { return this.scheduleMode === 'recurring'; }
@@ -728,6 +765,17 @@ export default class WeaveTemplateBuilder extends LightningElement {
     if (this.activeTab === 'files') this.loadTemplateFiles();
     if (this.activeTab === 'schedules') this.loadScheduledSends();
     if (this.activeTab === 'body') this.loadParentFieldsForMergeTags();
+  }
+
+  handleDataSourceConfigChange(event) {
+    const config = event.detail;
+    if (!config) return;
+    this.draftTemplate = {
+      ...this.draftTemplate,
+      templateChannels: config.templateChannels || this.draftTemplate.templateChannels,
+      dataSourceConfig: JSON.stringify(config)
+    };
+    this.isDirty = true;
   }
 
   loadRelatedObjects(parentObjectApiName) {
@@ -1775,6 +1823,7 @@ export default class WeaveTemplateBuilder extends LightningElement {
     this.isEditing = false;
     this.isBrandEditing = false;
     if (view === 'brands') this._refreshBrands();
+    if (view === 'scheduler') this.loadSchedulerStatus();
   }
 
   _refreshBrands() {
@@ -1977,5 +2026,48 @@ export default class WeaveTemplateBuilder extends LightningElement {
 
   showToast(title, message, variant) {
     this.dispatchEvent(new ShowToastEvent({ title, message, variant }));
+  }
+
+  // ── Scheduler ────────────────────────────────────────────────────────────────
+
+  loadSchedulerStatus() {
+    this.isLoadingScheduler = true;
+    getSchedulerStatus()
+      .then(status => {
+        this.schedulerStatus = status;
+        if (status && status.frequency) {
+          this.selectedFrequency = status.frequency;
+        }
+      })
+      .catch(err => { this.errorMessage = this.extractError(err); })
+      .finally(() => { this.isLoadingScheduler = false; });
+  }
+
+  handleSchedulerFrequencyChange(event) {
+    this.selectedFrequency = event.detail.value;
+  }
+
+  handleActivateScheduler() {
+    this.isTogglingScheduler = true;
+    this.errorMessage = null;
+    activateScheduler({ frequency: this.selectedFrequency })
+      .then(status => {
+        this.schedulerStatus = status;
+        this.dispatchEvent(new ShowToastEvent({ title: 'Scheduler activated', message: 'The automated send job is now running.', variant: 'success' }));
+      })
+      .catch(err => { this.errorMessage = this.extractError(err); })
+      .finally(() => { this.isTogglingScheduler = false; });
+  }
+
+  handleDeactivateScheduler() {
+    this.isTogglingScheduler = true;
+    this.errorMessage = null;
+    deactivateScheduler()
+      .then(() => {
+        this.schedulerStatus = { isActive: false, jobId: null, cronExpression: null, nextFireTime: null, frequency: null };
+        this.dispatchEvent(new ShowToastEvent({ title: 'Scheduler deactivated', message: 'The automated send job has been stopped.', variant: 'success' }));
+      })
+      .catch(err => { this.errorMessage = this.extractError(err); })
+      .finally(() => { this.isTogglingScheduler = false; });
   }
 }

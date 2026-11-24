@@ -4,11 +4,11 @@ public with sharing class WeavePdfService {
         if (templateId == null) throw new AuraHandledException('Template Id is required.');
         if (recordId == null) throw new AuraHandledException('Record Id is required.');
 
-        WeaveEmailTemplateRenderer.RenderedEmailDTO rendered = isDocumentTemplate(templateId)
+        Boolean isCanvas = isDocumentTemplate(templateId);
+        WeaveEmailTemplateRenderer.RenderedEmailDTO rendered = isCanvas
             ? WeaveEmailTemplateRenderer.renderCanvas(templateId, recordId)
             : WeaveEmailTemplateRenderer.renderEmail(templateId, recordId);
 
-        Boolean isCanvas = isDocumentTemplate(templateId);
         Blob pdfBlob = Test.isRunningTest()
             ? Blob.valueOf('PDF_TEST')
             : Blob.toPdf(wrapForPdf(rendered.htmlBody, rendered.subject, isCanvas));
@@ -31,8 +31,10 @@ public with sharing class WeavePdfService {
 
         List<String> htmlParts = new List<String>();
         for (Integer i = 0; i < templateIds.size(); i++) {
-            WeaveEmailTemplateRenderer.RenderedEmailDTO rendered =
-                WeaveEmailTemplateRenderer.renderEmail(templateIds[i], recordIds[i]);
+            Boolean isCanvas = isDocumentTemplate(templateIds[i]);
+            WeaveEmailTemplateRenderer.RenderedEmailDTO rendered = isCanvas
+                ? WeaveEmailTemplateRenderer.renderCanvas(templateIds[i], recordIds[i])
+                : WeaveEmailTemplateRenderer.renderEmail(templateIds[i], recordIds[i]);
             if (i > 0) htmlParts.add('<div style="page-break-before:always;"></div>');
             htmlParts.add(rendered.htmlBody != null ? rendered.htmlBody : '');
         }

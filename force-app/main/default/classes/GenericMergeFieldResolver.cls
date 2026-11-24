@@ -500,13 +500,7 @@ public with sharing class GenericMergeFieldResolver {
     if (decimalValue == null) {
       return String.valueOf(value);
     }
-
-    Decimal percentValue = decimalValue;
-    if (decimalValue.abs() <= 1) {
-      percentValue = decimalValue * 100;
-    }
-
-    return formatDecimalCompact(percentValue) + '%';
+    return formatDecimalCompact(decimalValue) + '%';
   }
 
   private static String formatDecimalWithScale(Decimal value, Integer scale) {

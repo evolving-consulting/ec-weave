@@ -1330,3 +1330,108 @@
 .sched-list-title {
   margin-top: 0.5rem;
 }
+
+/* ── Scheduler view ──────────────────────────────────────────────────────── */
+.scheduler-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  max-width: 600px;
+}
+.scheduler-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+.scheduler-status-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.scheduler-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ec-brand-ink);
+}
+.scheduler-desc {
+  font-size: 12px;
+  color: var(--ec-brand-muted);
+  margin-top: 2px;
+}
+.scheduler-info-row {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 1.25rem;
+}
+.scheduler-info-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.scheduler-info-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ec-brand-muted);
+}
+.scheduler-info-value {
+  font-size: 13px;
+  color: var(--ec-brand-ink);
+  font-weight: 500;
+}
+.scheduler-cron {
+  font-family: monospace;
+  background: #f3f4f6;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--ec-brand-muted);
+}
+.scheduler-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.scheduler-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.btn-scheduler-deactivate {
+  background: #fff;
+  border: 1px solid #fca5a5;
+  color: #dc2626;
+  border-radius: 8px;
+  padding: 9px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-scheduler-deactivate:hover {
+  background: #fef2f2;
+}
+.btn-scheduler-deactivate:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.scheduler-refresh-btn {
+  background: none;
+  border: none;
+  color: var(--ec-brand-muted);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: color 0.15s;
+}
+.scheduler-refresh-btn:hover {
+  color: var(--ec-brand-teal);
+}

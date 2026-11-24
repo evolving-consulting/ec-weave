@@ -500,7 +500,10 @@ public with sharing class WeaveEmailTemplateRenderer {
             }
         }
         // parentLookupField is validated by assertValidField before this call
-        String filter = ' WHERE ' + parentLookupField + ' = :recordId WITH USER_MODE';
+        Boolean hasWhere = upper.indexOf(' WHERE ') >= 0;
+        String filter = hasWhere
+            ? ' AND ' + parentLookupField + ' = :recordId WITH USER_MODE'
+            : ' WHERE ' + parentLookupField + ' = :recordId WITH USER_MODE';
         if (insertAt < 0) {
             return storedSoql.trim() + filter;
         }
@@ -515,7 +518,10 @@ public with sharing class WeaveEmailTemplateRenderer {
             Integer pos = upper.indexOf(keyword);
             if (pos >= 0 && (insertAt < 0 || pos < insertAt)) insertAt = pos;
         }
-        String filter = ' WHERE ' + parentLookupField + ' IN :parentRowIds WITH USER_MODE';
+        Boolean hasWhere = upper.indexOf(' WHERE ') >= 0;
+        String filter = hasWhere
+            ? ' AND ' + parentLookupField + ' IN :parentRowIds WITH USER_MODE'
+            : ' WHERE ' + parentLookupField + ' IN :parentRowIds WITH USER_MODE';
         if (insertAt < 0) return storedSoql.trim() + filter;
         return storedSoql.substring(0, insertAt).trim() + filter + ' ' + storedSoql.substring(insertAt).trim();
     }

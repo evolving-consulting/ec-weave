@@ -33,7 +33,7 @@ public with sharing class WeaveEmailTemplateController {
             assertTemplateConfigReadable();
             List<Weave_Template_Config__c> templates = [
                 SELECT Id, Name, Description__c, Subject_Template__c, Parent_Object_API_Name__c,
-                    Allow_User_Edit_Before_Send__c, Store_Email_History__c
+                    Allow_User_Edit_Before_Send__c, Store_Email_History__c, Template_Output_Type__c
                 FROM Weave_Template_Config__c WHERE Id = :templateId WITH USER_MODE LIMIT 1
             ];
             if (templates.isEmpty()) throw new AuraHandledException('Template not found.');

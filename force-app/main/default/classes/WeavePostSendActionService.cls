@@ -22,7 +22,7 @@ public with sharing class WeavePostSendActionService {
 
         for (Weave_Template_Action__c action : actions) {
             if (action.Action_Type__c == 'Update Field') {
-                SObject updateRecord = handleUpdateField(action, sourceRecordId, parentObjectApiName);
+                SObject updateRecord = handleUpdateField(action, sourceRecordId, parentObjectApiName, sourceRecord);
                 if (updateRecord != null) recordUpdates.add(updateRecord);
             } else if (action.Action_Type__c == 'Create Task') {
                 Task t = handleCreateTask(action, sourceRecordId, sourceRecord, parentObjectApiName);
@@ -39,12 +39,15 @@ public with sharing class WeavePostSendActionService {
 
         Set<String> fieldPaths = new Set<String>{ 'Id', 'Name' };
         for (Weave_Template_Action__c action : actions) {
-            if (action.Action_Type__c != 'Create Task') continue;
-            if (!String.isBlank(action.Task_Subject__c)) {
-                fieldPaths.addAll(GenericMergeFieldResolver.extractParentFieldPaths(action.Task_Subject__c, parentObjectApiName, null));
-            }
-            if (!String.isBlank(action.Task_Description__c)) {
-                fieldPaths.addAll(GenericMergeFieldResolver.extractParentFieldPaths(action.Task_Description__c, parentObjectApiName, null));
+            if (action.Action_Type__c == 'Create Task') {
+                if (!String.isBlank(action.Task_Subject__c)) {
+                    fieldPaths.addAll(GenericMergeFieldResolver.extractParentFieldPaths(action.Task_Subject__c, parentObjectApiName, null));
+                }
+                if (!String.isBlank(action.Task_Description__c)) {
+                    fieldPaths.addAll(GenericMergeFieldResolver.extractParentFieldPaths(action.Task_Description__c, parentObjectApiName, null));
+                }
+            } else if (action.Action_Type__c == 'Update Field' && action.Value_Type__c == 'Merge Field' && !String.isBlank(action.Value__c)) {
+                fieldPaths.addAll(GenericMergeFieldResolver.extractParentFieldPaths(action.Value__c, parentObjectApiName, null));
             }
         }
 
@@ -72,22 +75,28 @@ public with sharing class WeavePostSendActionService {
         }
     }
 
-    private static SObject handleUpdateField(Weave_Template_Action__c action, Id recordId, String objectApiName) {
+    private static SObject handleUpdateField(Weave_Template_Action__c action, Id recordId, String objectApiName, SObject sourceRecord) {
         if (String.isBlank(action.Field_API_Name__c)) return null;
         if (String.isBlank(objectApiName) || !Schema.getGlobalDescribe().containsKey(objectApiName)) return null;
 
         SObject record = Schema.getGlobalDescribe().get(objectApiName).newSObject(recordId);
-        Object fieldValue = resolveFieldValue(action);
+        Object fieldValue = resolveFieldValue(action, sourceRecord, objectApiName);
         record.put(action.Field_API_Name__c, fieldValue);
         return record;
     }
 
-    private static Object resolveFieldValue(Weave_Template_Action__c action) {
+    private static Object resolveFieldValue(Weave_Template_Action__c action, SObject sourceRecord, String parentObjectApiName) {
         String valueType = action.Value_Type__c;
         if (valueType == 'Boolean') return Boolean.valueOf(action.Value__c);
         if (valueType == 'Current Date') return Date.today();
         if (valueType == 'Current DateTime') return DateTime.now();
-        if (valueType == 'Static' || valueType == 'Merge Field') return action.Value__c;
+        if (valueType == 'Merge Field' && sourceRecord != null && !String.isBlank(action.Value__c)) {
+            GenericMergeFieldResolver.MergeContext ctx = new GenericMergeFieldResolver.MergeContext();
+            ctx.parentRecord = sourceRecord;
+            ctx.parentObjectApiName = parentObjectApiName;
+            ctx.escapeHtml = false;
+            return GenericMergeFieldResolver.resolveTemplate(action.Value__c, ctx);
+        }
         return action.Value__c;
     }
 
