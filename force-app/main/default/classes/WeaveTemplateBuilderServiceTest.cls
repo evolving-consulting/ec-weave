@@ -188,6 +188,7 @@ private class WeaveTemplateBuilderServiceTest {
 
     @IsTest
     static void getFieldsForObject_returnsFields() {
+        WeaveTemplateSecurityService.enableManagementForTest();
         Test.startTest();
         List<WeaveBuilderDTOs.WeaveBuilderFieldDTO> fields = WeaveTemplateBuilderService.getFieldsForObject('Account');
         Test.stopTest();

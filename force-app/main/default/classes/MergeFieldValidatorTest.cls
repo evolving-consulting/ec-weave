@@ -150,7 +150,7 @@ private class MergeFieldValidatorTest {
     static void validateMergeField_invalidFlowSyntax_returnsInvalid() {
         MergeFieldValidator.ValidationResult result =
             MergeFieldValidator.validateMergeField('Flow.a.b', 'Account');
-        System.assertFalse(result.isValid);
-        System.assertEquals(1, result.errors.size());
+        Assert.isFalse(result.isValid);
+        Assert.areEqual(1, result.errors.size());
     }
 }

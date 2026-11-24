@@ -11,8 +11,8 @@
       <value><fullName>Text</fullName><default>false</default><label>Text</label></value>
       <value><fullName>Columns</fullName><default>false</default><label>Columns</label></value>
       <value><fullName>Static Text</fullName><default>false</default><label>Static Text</label><isActive>false</isActive></value>
-      <value><fullName>Text Block</fullName><default>false</default><label>Text Block</label><isActive>false</isActive></value>
-      <value><fullName>Related</fullName><default>false</default><label>Related</label><isActive>false</isActive></value>
+      <value><fullName>Text Block</fullName><default>false</default><label>Text Block</label></value>
+      <value><fullName>Related</fullName><default>false</default><label>Related</label></value>
       <value><fullName>Table</fullName><default>false</default><label>Table</label><isActive>false</isActive></value>
     </valueSetDefinition>
   </valueSet>

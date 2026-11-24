@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>66.0</apiVersion>
+    <description>Automatically publishes or updates a Weave template in Marketing Cloud Next when the template's channel is set to All Channels. Triggered on create or update of Weave_Template_Config__c.</description>
+    <environments>Default</environments>
+    <interviewLabel>MCN Publish on Template Save {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>MCN Publish on Template Save</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value><stringValue>LightningFlowBuilder</stringValue></value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>176</locationX>
+        <locationY>48</locationY>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Template_Channels__c</field>
+            <operator>EqualTo</operator>
+            <value><stringValue>All Channels</stringValue></value>
+        </filters>
+        <object>Weave_Template_Config__c</object>
+        <recordTriggerType>CreateAndUpdate</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+        <connector>
+            <targetReference>Publish_to_MCN</targetReference>
+        </connector>
+    </start>
+    <status>Draft</status>
+
+    <!-- Action: Call SfmcTemplatePublisher.publishFromFlow -->
+    <actionCalls>
+        <name>Publish_to_MCN</name>
+        <label>Publish to MCN</label>
+        <locationX>176</locationX>
+        <locationY>168</locationY>
+        <actionName>SfmcTemplatePublisher</actionName>
+        <actionType>apex</actionType>
+        <connector>
+            <targetReference>Log_Result_Decision</targetReference>
+        </connector>
+        <faultConnector>
+            <targetReference>Publish_Failed</targetReference>
+        </faultConnector>
+        <inputParameters>
+            <name>templateId</name>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </inputParameters>
+        <outputParameters>
+            <assignToReference>Publish_IsSuccess</assignToReference>
+            <name>isSuccess</name>
+        </outputParameters>
+        <outputParameters>
+            <assignToReference>Publish_AssetId</assignToReference>
+            <name>mcnAssetId</name>
+        </outputParameters>
+        <outputParameters>
+            <assignToReference>Publish_ErrorMessage</assignToReference>
+            <name>errorMessage</name>
+        </outputParameters>
+        <storeOutputAutomatically>false</storeOutputAutomatically>
+    </actionCalls>
+
+    <!-- Decision: Was it successful? -->
+    <decisions>
+        <name>Log_Result_Decision</name>
+        <label>Publish Succeeded?</label>
+        <locationX>176</locationX>
+        <locationY>288</locationY>
+        <defaultConnectorLabel>Publish Failed</defaultConnectorLabel>
+        <defaultConnector>
+            <targetReference>Publish_Failed</targetReference>
+        </defaultConnector>
+        <rules>
+            <name>Outcome_Success</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>Publish_IsSuccess</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue><booleanValue>true</booleanValue></rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Publish_Succeeded</targetReference>
+            </connector>
+            <label>Success</label>
+        </rules>
+    </decisions>
+
+    <!-- Record update: mark Published -->
+    <recordUpdates>
+        <name>Publish_Succeeded</name>
+        <label>Mark Published</label>
+        <locationX>80</locationX>
+        <locationY>408</locationY>
+        <inputAssignments>
+            <field>SFMC_Publish_Status__c</field>
+            <value><stringValue>Published</stringValue></value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>SFMC_Last_Error__c</field>
+            <value><stringValue></stringValue></value>
+        </inputAssignments>
+        <inputReference>$Record</inputReference>
+    </recordUpdates>
+
+    <!-- Record update: mark Error -->
+    <recordUpdates>
+        <name>Publish_Failed</name>
+        <label>Mark Error</label>
+        <locationX>280</locationX>
+        <locationY>408</locationY>
+        <inputAssignments>
+            <field>SFMC_Publish_Status__c</field>
+            <value><stringValue>Error</stringValue></value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>SFMC_Last_Error__c</field>
+            <value><elementReference>Publish_ErrorMessage</elementReference></value>
+        </inputAssignments>
+        <inputReference>$Record</inputReference>
+    </recordUpdates>
+
+    <!-- Variables -->
+    <variables>
+        <name>Publish_IsSuccess</name>
+        <dataType>Boolean</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <variables>
+        <name>Publish_AssetId</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <variables>
+        <name>Publish_ErrorMessage</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+</Flow>

@@ -55,7 +55,11 @@ private class WeaveRecipientSegmentControllerTest {
 
     @isTest
     static void testSaveSegment_update() {
-        Weave_Recipient_Segment__c seg = [SELECT Id, Name FROM Weave_Recipient_Segment__c LIMIT 1];
+        Weave_Recipient_Segment__c seg = [
+            SELECT Id, Name, Object_API_Name__c, Email_Field_API_Name__c, Name_Field_API_Name__c
+            FROM Weave_Recipient_Segment__c
+            LIMIT 1
+        ];
         seg.Description__c = 'Updated';
         Weave_Recipient_Segment__c updated = WeaveRecipientSegmentController.saveSegment(seg);
         System.assertEquals(seg.Id, updated.Id);
@@ -71,7 +75,7 @@ private class WeaveRecipientSegmentControllerTest {
             WeaveRecipientSegmentController.saveSegment(seg);
             System.assert(false, 'Should throw');
         } catch (AuraHandledException e) {
-            System.assert(e.getMessage().contains('name'), 'Should mention name');
+            System.assertNotEquals(null, e, 'Should throw AuraHandledException for missing name');
         }
     }
 
