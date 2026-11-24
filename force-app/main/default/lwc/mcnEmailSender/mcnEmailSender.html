@@ -1,0 +1,59 @@
+<template>
+    <div class="sender-container">
+        <!-- Error banner -->
+        <template if:true={hasError}>
+            <div class="error-banner" role="alert">
+                <span class="error-icon">&#9888;</span>
+                <span class="error-text">{errorMessage}</span>
+                <button class="error-dismiss" onclick={clearError} aria-label="Dismiss">&#x2715;</button>
+            </div>
+        </template>
+
+        <!-- Success banner -->
+        <template if:true={hasSent}>
+            <div class="success-banner" role="status">
+                <span class="success-icon">&#10003;</span>
+                <span>Email sent via Marketing Cloud Next</span>
+                <template if:true={messageId}>
+                    <span class="message-id"> &mdash; Message ID: {messageId}</span>
+                </template>
+            </div>
+        </template>
+
+        <!-- Input row -->
+        <template if:false={hasSent}>
+            <div class="form-row">
+                <lightning-input
+                    type="email"
+                    label="Recipient Email"
+                    placeholder="recipient@example.com"
+                    value={recipientEmailValue}
+                    onchange={handleEmailChange}
+                    required
+                    class="email-input">
+                </lightning-input>
+            </div>
+
+            <div class="form-actions">
+                <button
+                    class="btn-primary"
+                    onclick={handleSend}
+                    disabled={isSendDisabled}
+                    aria-label="Send via Marketing Cloud Next">
+                    <template if:true={isSending}>
+                        <lightning-spinner size="x-small" alternative-text="Sending"></lightning-spinner>
+                    </template>
+                    <template if:false={isSending}>
+                        Send via Marketing Cloud Next
+                    </template>
+                </button>
+            </div>
+        </template>
+
+        <template if:true={hasSent}>
+            <div class="form-actions">
+                <button class="btn-secondary" onclick={handleReset}>Send Another</button>
+            </div>
+        </template>
+    </div>
+</template>

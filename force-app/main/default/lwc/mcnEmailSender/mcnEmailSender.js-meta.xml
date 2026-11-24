@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>66.0</apiVersion>
+    <isExposed>true</isExposed>
+    <targets>
+        <target>lightning__AppPage</target>
+        <target>lightning__RecordPage</target>
+        <target>lightningCommunity__Page</target>
+        <target>lightningCommunity__Default_Page</target>
+    </targets>
+    <targetConfigs>
+        <targetConfig targets="lightning__RecordPage">
+            <property name="templateId" type="String" label="Template ID"/>
+        </targetConfig>
+        <targetConfig targets="lightningCommunity__Page,lightningCommunity__Default_Page">
+            <property name="templateId" type="String" label="Template ID"/>
+            <property name="recipientEmail" type="String" label="Recipient Email"/>
+            <property name="contextData" type="String" label="Context Data (JSON)"/>
+        </targetConfig>
+    </targetConfigs>
+</LightningComponentBundle>

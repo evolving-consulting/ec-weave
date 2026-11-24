@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <description>Tracks end-user email sends dispatched through Marketing Cloud Next via the Weave integration.</description>
+    <enableActivities>false</enableActivities>
+    <enableFeeds>false</enableFeeds>
+    <enableHistory>false</enableHistory>
+    <enableReports>true</enableReports>
+    <label>Weave MCN Email Send</label>
+    <nameField>
+        <label>Weave MCN Email Send Name</label>
+        <type>AutoNumber</type>
+        <displayFormat>MCN-SEND-{0000000}</displayFormat>
+    </nameField>
+    <pluralLabel>Weave MCN Email Sends</pluralLabel>
+    <sharingModel>Private</sharingModel>
+</CustomObject>

@@ -6,6 +6,7 @@ import renderEmail from '@salesforce/apex/GenericEmailTemplateController.renderE
 import sendEmail from '@salesforce/apex/GenericEmailTemplateController.sendEmail';
 import getObjectApiNameFromRecordId from '@salesforce/apex/GenericEmailTemplateController.getObjectApiNameFromRecordId';
 import getRecordSummary from '@salesforce/apex/GenericEmailTemplateController.getRecordSummary';
+import mcnSendEmail from '@salesforce/apex/MCNEmailSendService.sendEmail';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import { CloseActionScreenEvent } from 'lightning/actions';
 import { RefreshEvent } from 'lightning/refresh';
@@ -49,6 +50,7 @@ export default class GenericEmailTemplateComposer extends LightningElement {
     @api finishFlowOnSend = false;
     @api emailSent = false;
     @api cancelled = false;
+    @api mcnEnabled = false;
 
     @wire(CurrentPageReference)
     setCurrentPageReference(pageRef) {
@@ -877,6 +879,57 @@ export default class GenericEmailTemplateComposer extends LightningElement {
             const message = this.getErrorMessage(error) || 'Unable to send email. Please contact your administrator.';
             this.setError(message);
             this.showToast('Unable to send email', message, 'error');
+        } finally {
+            this.isSending = false;
+            this.isLoading = false;
+        }
+    }
+
+    async handleSendViaMcn() {
+        if (this.isSending) return;
+        this.clearError();
+
+        const recipientPayload = this.buildSendRecipientPayload();
+        const toAddresses = recipientPayload.toRecipients
+            .filter(r => r.email)
+            .map(r => r.email);
+
+        if (!toAddresses.length) {
+            this.setError('At least one To recipient with an email address is required for MCN send.');
+            return;
+        }
+
+        const templateId = this.effectiveTemplateId;
+        const recordId   = this.effectiveRecordId;
+        const ctxJson    = JSON.stringify({ recordId: recordId });
+
+        this.isSending = true;
+        this.isLoading = true;
+
+        try {
+            const result = await mcnSendEmail({
+                templateId:      templateId,
+                recipientEmail:  toAddresses[0],
+                contextDataJson: ctxJson
+            });
+
+            if (result.isSuccess) {
+                this.emailSent = true;
+                this.showToast(
+                    'Sent via Marketing Cloud Next',
+                    'Email dispatched successfully. Message ID: ' + (result.messageId || 'N/A'),
+                    'success'
+                );
+                this.dispatchEvent(new CustomEvent('mcnsent', {
+                    detail: { messageId: result.messageId, status: result.status }
+                }));
+            } else {
+                this.setError(result.errorMessage || 'MCN send failed. Please try again.');
+            }
+        } catch (error) {
+            const message = this.getErrorMessage(error) || 'MCN send failed. Please contact your administrator.';
+            this.setError(message);
+            this.showToast('MCN Send Failed', message, 'error');
         } finally {
             this.isSending = false;
             this.isLoading = false;
