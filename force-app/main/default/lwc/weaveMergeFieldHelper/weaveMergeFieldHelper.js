@@ -30,7 +30,7 @@ export default class WeaveMergeFieldHelper extends LightningElement {
     }
 
     handleInputChange(event) {
-        this.value = event.target.value;
+        this.value = event.detail.value;
         this._applyFilter();
         this._scheduleValidation();
     }

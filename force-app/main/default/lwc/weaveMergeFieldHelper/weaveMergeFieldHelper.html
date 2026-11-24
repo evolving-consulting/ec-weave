@@ -20,7 +20,7 @@
                 <template for:each={filteredSuggestions} for:item="s">
                     <li key={s.value} class="mfh-suggestion-item" role="option"
                         data-value={s.value} onclick={handleSuggestionClick}>
-                        <span class="suggestion-tag">{{s.displayTag}}</span>
+                        <span class="suggestion-tag">{s.displayTag}</span>
                         <span class="suggestion-label">{s.label}</span>
                         <span class={s.badgeClass}>{s.sourceType}</span>
                     </li>
