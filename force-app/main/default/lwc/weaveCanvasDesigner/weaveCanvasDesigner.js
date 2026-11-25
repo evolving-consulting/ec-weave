@@ -330,13 +330,22 @@ ${desc}
 
 OUTPUT REQUIREMENTS:
 • Return ONLY the HTML body content — no <html>, <head>, <body>, or <style> tags
-• Inline CSS only
+• Inline CSS only — no <style> blocks anywhere in the output
 • Use HTML tables for layout (no flexbox or CSS grid) — required for PDF/email rendering
 • Web-safe fonts only: Arial, Helvetica, Georgia, Times New Roman, Courier New
 • Design for US Letter (8.5 × 11 in) with ~0.5 in margins
 • All colors as hex values (#rrggbb)
 • No JavaScript
-• The document title above becomes the PDF title — use it as the main heading of the document
+
+PROHIBITED ELEMENTS (Salesforce sanitizer will reject these and block saving):
+• NO <meta> tags of any kind (no charset, viewport, etc.)
+• NO <link> tags (no external stylesheets or font imports)
+• NO <script> tags or inline event handlers (onclick, onload, onerror, etc.)
+• NO <iframe>, <object>, <embed>, or <form> tags
+• NO <style> blocks — all CSS must be inline on each element
+• NO javascript: protocol in href or src attributes
+• NO data: URIs in src attributes
+• The output must be pasteable directly into a Salesforce rich-text field without triggering sanitization
 
 WEAVE MERGE TAG SYNTAX:
 • Parent record fields: {{Parent.FieldApiName}}
