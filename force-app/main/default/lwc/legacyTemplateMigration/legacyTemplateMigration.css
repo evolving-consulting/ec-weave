@@ -1,0 +1,182 @@
+:host {
+    --ec-brand-teal:        #1f5f5b;
+    --ec-brand-teal-mid:    #2d7a73;
+    --ec-brand-teal-light:  #4f9b93;
+    --ec-brand-teal-bg:     #ebf4f3;
+    --ec-brand-teal-border: #c0deda;
+    --ec-brand-ink:         #2b2b29;
+    --ec-brand-muted:       #6b7280;
+}
+
+.migration-shell {
+    padding: 0 32px 32px;
+    background: #f9fafb;
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Header */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 28px 0 20px;
+}
+
+.eyebrow {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    color: var(--ec-brand-teal);
+    margin: 0 0 4px;
+    text-transform: uppercase;
+}
+
+.page-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--ec-brand-ink);
+    margin: 0;
+}
+
+/* Buttons */
+.btn-primary {
+    background: var(--ec-brand-teal);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 9px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.btn-primary:hover:not(:disabled) { background: var(--ec-brand-teal-mid); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-secondary {
+    background: transparent;
+    color: var(--ec-brand-teal);
+    border: 1px solid var(--ec-brand-teal-border);
+    border-radius: 8px;
+    padding: 7px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.btn-secondary:hover { background: var(--ec-brand-teal-bg); }
+
+/* Banners */
+.banner-error {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fef2f2;
+    border: 1px solid #fca5a5;
+    color: #991b1b;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 13px;
+    margin-bottom: 16px;
+}
+.banner-dismiss { background: none; border: none; cursor: pointer; color: #991b1b; }
+
+.banner-info {
+    background: var(--ec-brand-teal-bg);
+    border: 1px solid var(--ec-brand-teal-border);
+    color: var(--ec-brand-teal);
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 13px;
+    margin-bottom: 16px;
+}
+
+/* Summary row */
+.summary-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+.summary-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 16px 24px;
+    text-align: center;
+    min-width: 100px;
+}
+.summary-card_good { border-color: #6ee7b7; background: #d1fae5; }
+.summary-card_warn { border-color: #fcd34d; background: #fef3c7; }
+.summary-value { font-size: 28px; font-weight: 700; color: var(--ec-brand-ink); margin: 0; }
+.summary-label { font-size: 11px; font-weight: 600; color: var(--ec-brand-muted); margin: 4px 0 0; text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* Toolbar */
+.table-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.filter-tabs { display: flex; gap: 8px; }
+.toolbar-actions { display: flex; gap: 8px; }
+
+.filter-tab {
+    background: transparent;
+    border: 1px solid #e5e7eb;
+    border-radius: 20px;
+    color: var(--ec-brand-muted);
+    padding: 5px 14px;
+    font-size: 12px;
+    cursor: pointer;
+}
+.filter-tab_active {
+    background: var(--ec-brand-teal);
+    border-color: var(--ec-brand-teal);
+    color: #fff;
+    font-weight: 600;
+}
+
+/* Table */
+thead th {
+    background: #f3f4f6;
+    color: var(--ec-brand-muted);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+tbody td {
+    color: var(--ec-brand-ink);
+    font-size: 13px;
+    vertical-align: middle;
+}
+tbody tr:hover td { background: #f9fafb; }
+
+.col-name  { font-weight: 500; color: var(--ec-brand-teal); }
+.col-issues { font-size: 11px; color: var(--ec-brand-muted); max-width: 240px; }
+
+/* Score pills */
+.score-pill { border-radius: 12px; padding: 2px 10px; font-size: 12px; font-weight: 600; }
+.score-high { background: #d1fae5; color: #065f46; }
+.score-mid  { background: #fef3c7; color: #92400e; }
+.score-low  { background: #fee2e2; color: #991b1b; }
+
+/* Recommendation pills */
+.rec-pill    { border-radius: 12px; padding: 2px 10px; font-size: 12px; font-weight: 600; }
+.rec-migrate { background: #d1fae5; color: #065f46; }
+.rec-manual  { background: #fef3c7; color: #92400e; }
+.rec-skip    { background: #f3f4f6; color: var(--ec-brand-muted); }
+
+/* Progress */
+.progress-panel {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    background: var(--ec-brand-teal-bg);
+    border-radius: 8px;
+    margin-top: 16px;
+}
+.progress-label { font-size: 14px; color: var(--ec-brand-teal); font-weight: 500; }

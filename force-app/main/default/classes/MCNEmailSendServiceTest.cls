@@ -125,10 +125,10 @@ private class MCNEmailSendServiceTest {
         System.assertEquals(false, result.isSuccess);
     }
 
-    // ── Log update ────────────────────────────────────────────────────────────
+    // ── Log creation ─────────────────────────────────────────────────────────
 
     @IsTest
-    static void testLogCreatedInPendingState() {
+    static void testLogCreatedWithFinalStatus() {
         Test.setMock(HttpCalloutMock.class, new SuccessMock());
         Weave_Template_Config__c t = makeTemplate();
 
@@ -141,5 +141,101 @@ private class MCNEmailSendServiceTest {
             WHERE Template__c = :t.Id
         ];
         System.assert(!logs.isEmpty(), 'Log record must be created');
+        System.assertNotEquals('Pending', logs[0].Send_Status__c, 'Log must have final status after synchronous send');
+    }
+
+    // ── sendBulk ──────────────────────────────────────────────────────────────
+
+    @IsTest
+    static void testSendBulk_successPath_withRecordId() {
+        Test.setMock(HttpCalloutMock.class, new SuccessMock());
+        Weave_Template_Config__c t = makeTemplate();
+        Contact c = makeContact();
+        String ctx = JSON.serialize(new Map<String, Object>{ 'recordId' => String.valueOf(c.Id) });
+
+        List<Id>     tids   = new List<Id>{ t.Id };
+        List<String> emails = new List<String>{ 'bulk@test.com' };
+        List<String> ctxs   = new List<String>{ ctx };
+
+        Test.startTest();
+        List<MCNEmailSendService.SendResult> results = MCNEmailSendService.sendBulk(tids, emails, ctxs);
+        Test.stopTest();
+
+        System.assertEquals(1, results.size());
+        System.assertNotEquals(null, results[0].status);
+    }
+
+    @IsTest
+    static void testSendBulk_returnsOneResultPerRequest() {
+        Test.setMock(HttpCalloutMock.class, new SuccessMock());
+        Weave_Template_Config__c t = makeTemplate();
+
+        List<Id>     tids   = new List<Id>{ t.Id, t.Id };
+        List<String> emails = new List<String>{ 'a@test.com', 'b@test.com' };
+        List<String> ctxs   = new List<String>{ null, null };
+
+        Test.startTest();
+        List<MCNEmailSendService.SendResult> results = MCNEmailSendService.sendBulk(tids, emails, ctxs);
+        Test.stopTest();
+
+        System.assertEquals(2, results.size(), 'Must return one result per request');
+        for (MCNEmailSendService.SendResult r : results) {
+            System.assertNotEquals(null, r, 'No null results');
+            System.assertNotEquals(null, r.status, 'Status must be populated');
+        }
+    }
+
+    @IsTest
+    static void testSendBulk_logsCreatedForAllRequests() {
+        Test.setMock(HttpCalloutMock.class, new SuccessMock());
+        Weave_Template_Config__c t = makeTemplate();
+
+        List<Id>     tids   = new List<Id>{ t.Id, t.Id, t.Id };
+        List<String> emails = new List<String>{ 'x@test.com', 'y@test.com', 'z@test.com' };
+        List<String> ctxs   = new List<String>{ '{}', '{}', '{}' };
+
+        Test.startTest();
+        MCNEmailSendService.sendBulk(tids, emails, ctxs);
+        Test.stopTest();
+
+        List<Weave_MCN_Email_Send__c> logs = [
+            SELECT Send_Status__c FROM Weave_MCN_Email_Send__c
+            WHERE Template__c = :t.Id
+        ];
+        System.assert(logs.size() >= 3, 'At least 3 log records should be created');
+    }
+
+    @IsTest
+    static void testSendBulk_invalidEmailsReturnFailure() {
+        Test.setMock(HttpCalloutMock.class, new SuccessMock());
+        Weave_Template_Config__c t = makeTemplate();
+
+        List<Id>     tids   = new List<Id>{ t.Id };
+        List<String> emails = new List<String>{ 'not-valid' };
+        List<String> ctxs   = new List<String>{ null };
+
+        Test.startTest();
+        List<MCNEmailSendService.SendResult> results = MCNEmailSendService.sendBulk(tids, emails, ctxs);
+        Test.stopTest();
+
+        System.assertEquals(1, results.size());
+        System.assertEquals(false, results[0].isSuccess);
+    }
+
+    @IsTest
+    static void testSendBulk_mcnFailureReturnsFailed() {
+        Test.setMock(HttpCalloutMock.class, new FailMock());
+        Weave_Template_Config__c t = makeTemplate();
+
+        List<Id>     tids   = new List<Id>{ t.Id };
+        List<String> emails = new List<String>{ 'fail@test.com' };
+        List<String> ctxs   = new List<String>{ '{}' };
+
+        Test.startTest();
+        List<MCNEmailSendService.SendResult> results = MCNEmailSendService.sendBulk(tids, emails, ctxs);
+        Test.stopTest();
+
+        System.assertEquals(1, results.size());
+        System.assertEquals(false, results[0].isSuccess);
     }
 }

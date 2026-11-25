@@ -41,17 +41,19 @@ public with sharing class MCNEmailSendService {
 
     /**
      * Renders the template, sends via MCN, and logs the result.
+     * DML is deferred until after the callout to avoid "uncommitted work pending" errors.
      */
     @AuraEnabled
     public static SendResult sendEmail(Id templateId, String recipientEmail, String contextDataJson) {
-        Id logId = createPendingLog(templateId, recipientEmail, contextDataJson);
         try {
             validateInputs(templateId, recipientEmail);
 
             MCNTemplateRenderService.RenderResult rendered =
                 MCNTemplateRenderService.resolveTemplate(templateId, contextDataJson);
             if (!rendered.isSuccess) {
-                return failAndLog(logId, 'Failed', 'Template render failed: ' + rendered.errorMessage);
+                String err = 'Template render failed: ' + rendered.errorMessage;
+                createLog(templateId, recipientEmail, contextDataJson, 'Failed', null, err);
+                return new SendResult('Failed', err);
             }
 
             String mcnDefinitionKey = resolveDefinitionKey(templateId);
@@ -61,85 +63,78 @@ public with sharing class MCNEmailSendService {
             SfmcHttpClient.McnResponse response = client.post(MCN_SEND_ENDPOINT, payload);
 
             if (!response.isSuccess) {
-                return failAndLog(logId, 'Failed', response.errorMessage);
+                createLog(templateId, recipientEmail, contextDataJson, 'Failed', null, response.errorMessage);
+                return new SendResult('Failed', response.errorMessage);
             }
 
             String messageId = extractMessageId(response);
-            updateLog(logId, 'Sent', messageId, null);
+            createLog(templateId, recipientEmail, contextDataJson, 'Sent', messageId, null);
             return new SendResult(messageId);
 
         } catch (Exception e) {
-            return failAndLog(logId, 'Failed', e.getMessage());
+            createLog(templateId, recipientEmail, contextDataJson, 'Failed', null, e.getMessage());
+            return new SendResult('Failed', e.getMessage());
         }
     }
 
     /**
-     * Bulkified send — 2 DML operations regardless of list size.
+     * Bulkified send — 1 SOQL + 1 DML regardless of list size.
+     * All callouts run before the single bulk-insert, avoiding "uncommitted work pending".
      * Used by MCNFlowActionAdapter to stay within governor limits.
      */
     public static List<SendResult> sendBulk(List<Id> templateIds, List<String> emails, List<String> contexts) {
         Integer size = templateIds.size();
 
-        // 1 — bulk insert pending logs
-        List<Weave_MCN_Email_Send__c> logs = new List<Weave_MCN_Email_Send__c>();
-        for (Integer i = 0; i < size; i++) {
-            String ctx = contexts.get(i);
-            logs.add(new Weave_MCN_Email_Send__c(
-                Template__c        = templateIds.get(i),
-                Recipient_Email__c = emails.get(i),
-                Context_Data__c    = ctx != null && ctx.length() > 131072 ? ctx.left(131072) : ctx,
-                Send_Status__c     = 'Pending'
-            ));
-        }
-        try { insert logs; } catch (Exception e) { /* non-fatal */ }
-
-        // 2 — render + callout per record, collect log updates
-        List<SendResult> results = new List<SendResult>();
-        List<Weave_MCN_Email_Send__c> logsToUpdate = new List<Weave_MCN_Email_Send__c>();
-
         // Bulk-resolve definition keys (1 SOQL for all unique templates)
         Map<Id, String> defKeyByTemplateId = resolveDefinitionKeys(new Set<Id>(templateIds));
 
+        // Render + callout per record (no DML)
+        List<SendResult>              results      = new List<SendResult>();
+        List<Weave_MCN_Email_Send__c> logsToInsert = new List<Weave_MCN_Email_Send__c>();
+
         for (Integer i = 0; i < size; i++) {
-            Id logId = logs.get(i).Id;
             SendResult res;
-            Weave_MCN_Email_Send__c logUpdate = new Weave_MCN_Email_Send__c(Id = logId);
+            Weave_MCN_Email_Send__c logRec = new Weave_MCN_Email_Send__c(
+                Template__c        = templateIds.get(i),
+                Recipient_Email__c = emails.get(i),
+                Context_Data__c    = truncate(contexts.get(i))
+            );
             try {
                 validateInputs(templateIds.get(i), emails.get(i));
                 MCNTemplateRenderService.RenderResult rendered =
                     MCNTemplateRenderService.resolveTemplate(templateIds.get(i), contexts.get(i));
                 if (!rendered.isSuccess) {
-                    logUpdate.Send_Status__c  = 'Failed';
-                    logUpdate.Error_Message__c = 'Render failed: ' + rendered.errorMessage;
-                    res = new SendResult('Failed', logUpdate.Error_Message__c);
+                    logRec.Send_Status__c   = 'Failed';
+                    logRec.Error_Message__c = 'Render failed: ' + rendered.errorMessage;
+                    res = new SendResult('Failed', logRec.Error_Message__c);
                 } else {
                     String defKey  = defKeyByTemplateId.get(templateIds.get(i));
                     String payload = buildPayload(defKey, emails.get(i), rendered, contexts.get(i));
                     SfmcHttpClient client = new SfmcHttpClient();
                     SfmcHttpClient.McnResponse resp = client.post(MCN_SEND_ENDPOINT, payload);
                     if (!resp.isSuccess) {
-                        logUpdate.Send_Status__c   = 'Failed';
-                        logUpdate.Error_Message__c = resp.errorMessage;
+                        logRec.Send_Status__c   = 'Failed';
+                        logRec.Error_Message__c = resp.errorMessage;
                         res = new SendResult('Failed', resp.errorMessage);
                     } else {
                         String msgId = extractMessageId(resp);
-                        logUpdate.Send_Status__c   = 'Sent';
-                        logUpdate.MCN_Message_ID__c = msgId;
-                        logUpdate.Sent_DateTime__c  = System.now();
+                        logRec.Send_Status__c    = 'Sent';
+                        logRec.MCN_Message_ID__c = msgId;
+                        logRec.Sent_DateTime__c  = System.now();
                         res = new SendResult(msgId);
                     }
                 }
             } catch (Exception e) {
-                logUpdate.Send_Status__c   = 'Failed';
-                logUpdate.Error_Message__c = e.getMessage();
+                logRec.Send_Status__c   = 'Failed';
+                logRec.Error_Message__c = e.getMessage();
                 res = new SendResult('Failed', e.getMessage());
             }
-            logsToUpdate.add(logUpdate);
+            logsToInsert.add(logRec);
             results.add(res);
         }
 
-        // 3 — bulk update logs
-        try { update logsToUpdate; } catch (Exception e) { /* non-fatal */ }
+        // Single bulk insert after all callouts (1 DML)
+        try { insert logsToInsert; } catch (Exception e) { /* non-fatal */ }
 
         return results;
     }
@@ -222,40 +217,24 @@ public with sharing class MCNEmailSendService {
 
     // ── Send log helpers ─────────────────────────────────────────────────────
 
-    private static Id createPendingLog(Id templateId, String recipientEmail, String contextDataJson) {
+    private static void createLog(Id templateId, String recipientEmail, String contextDataJson,
+                                  String status, String messageId, String error) {
         try {
-            Weave_MCN_Email_Send__c log = new Weave_MCN_Email_Send__c(
-                Template__c       = templateId,
+            insert new Weave_MCN_Email_Send__c(
+                Template__c        = templateId,
                 Recipient_Email__c = recipientEmail,
-                Context_Data__c   = contextDataJson != null && contextDataJson.length() > 131072
-                                    ? contextDataJson.left(131072) : contextDataJson,
-                Send_Status__c    = 'Pending'
+                Context_Data__c    = truncate(contextDataJson),
+                Send_Status__c     = status,
+                MCN_Message_ID__c  = messageId,
+                Sent_DateTime__c   = status == 'Sent' ? System.now() : null,
+                Error_Message__c   = error
             );
-            insert log;
-            return log.Id;
         } catch (Exception e) {
-            return null;
+            // Log failure must not surface to caller
         }
     }
 
-    private static void updateLog(Id logId, String status, String messageId, String error) {
-        if (logId == null) return;
-        try {
-            Weave_MCN_Email_Send__c log = new Weave_MCN_Email_Send__c(
-                Id              = logId,
-                Send_Status__c  = status,
-                MCN_Message_ID__c = messageId,
-                Error_Message__c  = error,
-                Sent_DateTime__c  = status == 'Sent' ? System.now() : null
-            );
-            update log;
-        } catch (Exception e) {
-            // Log update failure should not surface to caller
-        }
-    }
-
-    private static SendResult failAndLog(Id logId, String status, String error) {
-        updateLog(logId, status, null, error);
-        return new SendResult(status, error);
+    private static String truncate(String s) {
+        return s != null && s.length() > 131072 ? s.left(131072) : s;
     }
 }

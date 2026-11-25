@@ -1,0 +1,119 @@
+<template>
+    <div class="dashboard-shell">
+        <!-- Header -->
+        <div class="page-header">
+            <div>
+                <p class="eyebrow">WEAVE — MCN</p>
+                <h1 class="page-title">Integration Health</h1>
+            </div>
+            <div class="header-actions">
+                <span class="last-refresh">Last refreshed: {lastRefreshLabel}</span>
+                <button class="btn-primary" onclick={handleRefresh} disabled={isLoading}>
+                    Refresh
+                </button>
+            </div>
+        </div>
+
+        <!-- Error banner -->
+        <template if:true={errorMessage}>
+            <div class="banner-error" role="alert">
+                <span>{errorMessage}</span>
+                <button class="banner-dismiss" onclick={clearError}>&#x2715;</button>
+            </div>
+        </template>
+
+        <!-- Health status banner -->
+        <template if:true={hasMetrics}>
+            <div class={overallHealthClass}>
+                <span class="health-icon">{healthIcon}</span>
+                <span class="health-label">{healthLabel}</span>
+                <span class="health-detail">{healthDetail}</span>
+            </div>
+        </template>
+
+        <!-- Metric cards row -->
+        <template if:true={hasMetrics}>
+            <div class="metric-row">
+                <div class="metric-card">
+                    <p class="metric-value">{metrics.publishedLast24h}</p>
+                    <p class="metric-label">Published (24h)</p>
+                </div>
+                <div class="metric-card">
+                    <p class="metric-value">{metrics.sentLast24h}</p>
+                    <p class="metric-label">Sends (24h)</p>
+                </div>
+                <div class="metric-card metric-card_error">
+                    <p class="metric-value">{metrics.errorsLast24h}</p>
+                    <p class="metric-label">Errors (24h)</p>
+                </div>
+                <div class="metric-card">
+                    <p class="metric-value">{metrics.errorRatePct}%</p>
+                    <p class="metric-label">Error Rate (1h)</p>
+                </div>
+                <div class="metric-card">
+                    <p class="metric-value">{metrics.migratedCount}</p>
+                    <p class="metric-label">Templates Migrated</p>
+                </div>
+            </div>
+
+            <!-- Service health row -->
+            <div class="section-heading">Service Health</div>
+            <div class="service-row">
+                <div class="service-card">
+                    <span class={syncStatusClass}></span>
+                    <div>
+                        <p class="service-name">MCN Sync</p>
+                        <p class="service-detail">{metrics.lastSyncLabel}</p>
+                    </div>
+                </div>
+                <div class="service-card">
+                    <span class={publishStatusClass}></span>
+                    <div>
+                        <p class="service-name">Publisher</p>
+                        <p class="service-detail">{metrics.lastPublishLabel}</p>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <!-- Recent errors -->
+        <template if:true={hasErrors}>
+            <div class="section-heading">Recent Errors (Last 10)</div>
+            <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                <thead>
+                    <tr class="slds-line-height_reset">
+                        <th scope="col"><span class="slds-truncate">TIME</span></th>
+                        <th scope="col"><span class="slds-truncate">TEMPLATE</span></th>
+                        <th scope="col"><span class="slds-truncate">OPERATION</span></th>
+                        <th scope="col"><span class="slds-truncate">ERROR</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template for:each={recentErrors} for:item="err">
+                        <tr key={err.id} class="slds-hint-parent">
+                            <td class="col-time">{err.createdLabel}</td>
+                            <td>{err.templateName}</td>
+                            <td><span class="op-pill">{err.operation}</span></td>
+                            <td class="col-error">{err.errorMessage}</td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </template>
+
+        <!-- Empty state -->
+        <template if:false={hasMetrics}>
+            <template if:false={isLoading}>
+                <div class="empty-state">
+                    <p class="empty-title">No data yet</p>
+                    <p class="empty-body">Click Refresh to load integration health metrics.</p>
+                    <button class="btn-primary" onclick={handleRefresh}>Load Metrics</button>
+                </div>
+            </template>
+        </template>
+
+        <template if:true={isLoading}>
+            <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+        </template>
+    </div>
+</template>
