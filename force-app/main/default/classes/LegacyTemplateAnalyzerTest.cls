@@ -17,11 +17,11 @@ private class LegacyTemplateAnalyzerTest {
 
     private static Weave_Template_Component__c makeComponent(Id templateId, String region, String html) {
         Weave_Template_Component__c c = new Weave_Template_Component__c(
-            Name              = 'Test Component',
-            Template_Config__c = templateId,
-            Region__c         = region,
-            Component_HTML__c = html,
-            Sort_Order__c     = 1
+            Name                   = 'Test Component',
+            Weave_Template_Config__c = templateId,
+            Region__c              = region,
+            HTML_Output__c         = html,
+            Display_Order__c       = 1
         );
         insert c;
         return c;

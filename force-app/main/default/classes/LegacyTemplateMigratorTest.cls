@@ -14,11 +14,11 @@ private class LegacyTemplateMigratorTest {
         insert t;
         // Add body component so analyzer scores it high enough
         insert new Weave_Template_Component__c(
-            Name               = 'Body',
-            Template_Config__c = t.Id,
-            Region__c          = 'Body',
-            Component_HTML__c  = '<p>Hello {{Parent.Name}}</p>',
-            Sort_Order__c      = 1
+            Name                     = 'Body',
+            Weave_Template_Config__c = t.Id,
+            Region__c                = 'Body',
+            HTML_Output__c           = '<p>Hello {{Parent.Name}}</p>',
+            Display_Order__c         = 1
         );
         return t;
     }

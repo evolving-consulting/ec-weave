@@ -113,7 +113,7 @@ public with sharing class LegacyTemplateAnalyzer {
         // Check: must have at least one body component
         Boolean hasBody = false;
         for (Weave_Template_Component__c comp : components) {
-            if (comp.Region__c == 'Body' && String.isNotBlank(comp.Component_HTML__c)) {
+            if (comp.Region__c == 'Body' && String.isNotBlank(comp.HTML_Output__c)) {
                 hasBody = true;
                 break;
             }
@@ -158,7 +158,7 @@ public with sharing class LegacyTemplateAnalyzer {
         Set<String> checked = new Set<String>();
 
         for (Weave_Template_Component__c comp : components) {
-            String html = comp.Component_HTML__c;
+            String html = comp.HTML_Output__c;
             if (String.isBlank(html)) continue;
 
             if (html.containsIgnoreCase('<script') && !checked.contains('script')) {
@@ -197,8 +197,8 @@ public with sharing class LegacyTemplateAnalyzer {
 
         // Check components
         for (Weave_Template_Component__c comp : components) {
-            if (String.isBlank(comp.Component_HTML__c)) continue;
-            Matcher m = mergePattern.matcher(comp.Component_HTML__c);
+            if (String.isBlank(comp.HTML_Output__c)) continue;
+            Matcher m = mergePattern.matcher(comp.HTML_Output__c);
             while (m.find()) {
                 String tag = m.group(1);
                 if (tag.startsWith('Section.') && !issues.contains('Section tag in body')) {
@@ -208,7 +208,8 @@ public with sharing class LegacyTemplateAnalyzer {
             }
         }
         // Remove internal sentinel
-        issues.remove('Section tag in body');
+        Integer sentinelIdx = issues.indexOf('Section tag in body');
+        if (sentinelIdx >= 0) issues.remove(sentinelIdx);
         return issues;
     }
 
@@ -235,15 +236,15 @@ public with sharing class LegacyTemplateAnalyzer {
     private static Map<Id, List<Weave_Template_Component__c>> loadComponentsByTemplateIds(Set<Id> templateIds) {
         Map<Id, List<Weave_Template_Component__c>> result = new Map<Id, List<Weave_Template_Component__c>>();
         for (Weave_Template_Component__c comp : [
-            SELECT Id, Name, Region__c, Component_HTML__c, Template_Config__c
+            SELECT Id, Name, Region__c, HTML_Output__c, Weave_Template_Config__c
             FROM   Weave_Template_Component__c
-            WHERE  Template_Config__c IN :templateIds
+            WHERE  Weave_Template_Config__c IN :templateIds
             WITH   USER_MODE
         ]) {
-            if (!result.containsKey(comp.Template_Config__c)) {
-                result.put(comp.Template_Config__c, new List<Weave_Template_Component__c>());
+            if (!result.containsKey(comp.Weave_Template_Config__c)) {
+                result.put(comp.Weave_Template_Config__c, new List<Weave_Template_Component__c>());
             }
-            result.get(comp.Template_Config__c).add(comp);
+            result.get(comp.Weave_Template_Config__c).add(comp);
         }
         return result;
     }

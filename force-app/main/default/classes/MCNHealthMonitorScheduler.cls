@@ -37,8 +37,7 @@ public with sharing class MCNHealthMonitorScheduler implements Schedulable {
         }
     }
 
-    @TestVisible
-    static HealthCheckResult runHealthCheck() {
+    public static HealthCheckResult runHealthCheck() {
         DateTime oneHourAgo = DateTime.now().addHours(-1);
 
         HealthCheckResult r = new HealthCheckResult();
