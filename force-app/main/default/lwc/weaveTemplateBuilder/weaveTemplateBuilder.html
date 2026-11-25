@@ -1233,68 +1233,120 @@
                   <button class="edit-panel-close ai-modal-close" onclick={handleCloseBrandAiModal}>&#x2715;</button>
                 </div>
 
-                <!-- Body: all in one panel -->
+                <!-- Step indicator -->
+                <div class="ai-step-indicator">
+                  <div class={brandAiStepClass1}>
+                    <span class="ai-step-num">1</span>
+                    <span class="ai-step-name">Describe</span>
+                  </div>
+                  <div class="ai-step-connector"></div>
+                  <div class={brandAiStepClass2}>
+                    <span class="ai-step-num">2</span>
+                    <span class="ai-step-name">Review Prompt</span>
+                  </div>
+                </div>
+
+                <!-- Body -->
                 <div class="ai-modal-body">
 
-                  <!-- Brand merge tags — click to copy -->
-                  <div class="ai-section">
-                    <p class="ai-section-title">Brand Merge Tags — click to copy</p>
-                    <div class="merge-group__chips" style="flex-wrap:wrap;gap:6px;display:flex;">
-                      <template for:each={brandStaticTags} for:item="bt">
-                        <button key={bt.key} class="merge-chip" data-tag={bt.tag}
-                          onclick={handleBrandTagCopy}>{bt.label}</button>
+                  <!-- Step 1: tags + images + descriptions -->
+                  <template if:true={isBrandAiStep1}>
+
+                    <!-- Brand merge tags — click to copy -->
+                    <div class="ai-section">
+                      <p class="ai-section-title">Brand Merge Tags — click to copy</p>
+                      <div class="merge-group__chips" style="flex-wrap:wrap;gap:6px;display:flex;">
+                        <template for:each={brandStaticTags} for:item="bt">
+                          <button key={bt.key} class="merge-chip" data-tag={bt.tag}
+                            onclick={handleBrandTagCopy}>{bt.label}</button>
+                        </template>
+                      </div>
+                      <template if:true={copiedTag}>
+                        <p class="brand-tags-copied" style="margin-top:6px;">✓ Copied to clipboard</p>
                       </template>
                     </div>
-                    <template if:true={copiedTag}>
-                      <p class="brand-tags-copied" style="margin-top:6px;">✓ Copied to clipboard</p>
-                    </template>
-                  </div>
 
-                  <!-- Asset image tags with width + copy -->
-                  <template if:true={brandAiImages.length}>
+                    <!-- Asset image tags with W × H + copy -->
+                    <template if:true={brandAiImages.length}>
+                      <div class="ai-section">
+                        <p class="ai-section-title">Asset Image Tags — set size, then copy</p>
+                        <template for:each={brandAiImages} for:item="img" for:index="idx">
+                          <div key={img.contentDocumentId} class="ai-brand-image-row">
+                            <span class="ai-brand-image-title">{img.title}</span>
+                            <label class="ai-brand-image-width-label">W</label>
+                            <input type="number" value={img.width} min="1" max="2400" data-idx={idx}
+                              onchange={handleBrandAiImageWidthChange} class="ai-brand-image-width-input" />
+                            <span class="ai-brand-image-sep">×</span>
+                            <label class="ai-brand-image-width-label">H</label>
+                            <input type="number" value={img.height} min="1" max="2400" data-idx={idx}
+                              onchange={handleBrandAiImageHeightChange} class="ai-brand-image-width-input"
+                              placeholder="auto" />
+                            <button class="ai-brand-image-copy-btn" data-idx={idx}
+                              onclick={handleCopyBrandImageTag}>Copy &lt;img&gt;</button>
+                          </div>
+                        </template>
+                      </div>
+                    </template>
+
+                    <!-- Header description -->
                     <div class="ai-section">
-                      <p class="ai-section-title">Asset Image Tags — set width, then copy</p>
-                      <template for:each={brandAiImages} for:item="img" for:index="idx">
-                        <div key={img.contentDocumentId} class="ai-brand-image-row">
-                          <span class="ai-brand-image-title">{img.title}</span>
-                          <label class="ai-brand-image-width-label">Width (px)</label>
-                          <input type="number" value={img.width} min="50" max="1200" data-idx={idx}
-                            onchange={handleBrandAiImageWidthChange} class="ai-brand-image-width-input" />
-                          <button class="ai-brand-image-copy-btn" data-idx={idx}
-                            onclick={handleCopyBrandImageTag}>Copy &lt;img&gt;</button>
-                        </div>
-                      </template>
+                      <p class="ai-section-title">Describe the Header</p>
+                      <lightning-textarea
+                        label=""
+                        value={brandAiHeaderDesc}
+                        onchange={handleBrandAiHeaderDescChange}
+                        placeholder="e.g. Logo on the left using {{Brand.LogoUrl}}, company name in white, dark teal background, physical address on right"
+                        max-length="800"></lightning-textarea>
+                    </div>
+
+                    <!-- Footer description -->
+                    <div class="ai-section">
+                      <p class="ai-section-title">Describe the Footer</p>
+                      <lightning-textarea
+                        label=""
+                        value={brandAiFooterDesc}
+                        onchange={handleBrandAiFooterDescChange}
+                        placeholder="e.g. Light gray background, {{Brand.UnsubscribeLink}} centered, {{Brand.ContactEmail}} below"
+                        max-length="800"></lightning-textarea>
+                    </div>
+
+                  </template>
+
+                  <!-- Step 2: Review Prompt -->
+                  <template if:true={isBrandAiStep2}>
+                    <div class="pdf-constraints-banner" onclick={handleToggleBrandSfRules}>
+                      <span class="pdf-constraints-badge">🔒 Salesforce HTML rules applied</span>
+                      <span class="pdf-constraints-chevron">{brandSfRulesChevron}</span>
+                    </div>
+                    <template if:true={brandSfRulesExpanded}>
+                      <div class="pdf-constraints-body">
+                        <ul>
+                          <li>No <code>&lt;meta&gt;</code>, <code>&lt;link&gt;</code>, <code>&lt;script&gt;</code>, or <code>&lt;style&gt;</code> tags</li>
+                          <li>No <code>&lt;iframe&gt;</code>, <code>&lt;object&gt;</code>, <code>&lt;embed&gt;</code>, or <code>&lt;form&gt;</code> tags</li>
+                          <li>No inline event handlers (onclick, onload, etc.)</li>
+                          <li>No <code>javascript:</code> or <code>data:</code> URIs in href/src</li>
+                          <li>No <code>url(https://…)</code> in CSS — all images must use <code>&lt;img&gt;</code> tags</li>
+                          <li>All CSS must be inline <code>style="…"</code></li>
+                        </ul>
+                      </div>
+                    </template>
+                    <div class="ai-section" style="padding:0;">
+                      <pre class="ai-prompt-text">{brandAiPrompt}</pre>
                     </div>
                   </template>
 
-                  <!-- Header description -->
-                  <div class="ai-section">
-                    <p class="ai-section-title">Describe the Header</p>
-                    <lightning-textarea
-                      label=""
-                      value={brandAiHeaderDesc}
-                      onchange={handleBrandAiHeaderDescChange}
-                      placeholder="e.g. Logo on the left using {{Brand.LogoUrl}}, company name in white, dark teal background {{Brand.PrimaryColor}}, physical address on right"
-                      max-length="800"></lightning-textarea>
-                  </div>
-
-                  <!-- Footer description -->
-                  <div class="ai-section">
-                    <p class="ai-section-title">Describe the Footer</p>
-                    <lightning-textarea
-                      label=""
-                      value={brandAiFooterDesc}
-                      onchange={handleBrandAiFooterDescChange}
-                      placeholder="e.g. Light gray background, {{Brand.UnsubscribeLink}} centered, {{Brand.ContactEmail}} below"
-                      max-length="800"></lightning-textarea>
-                  </div>
-
                 </div>
 
-                <!-- Footer -->
+                <!-- Footer navigation -->
                 <div class="ai-modal-footer">
-                  <button class="btn-cancel" onclick={handleCloseBrandAiModal}>Cancel</button>
-                  <button class={brandAiCopyBtnClass} onclick={handleCopyBrandPrompt}>{brandAiCopyBtnLabel}</button>
+                  <template if:true={isBrandAiStep1}>
+                    <button class="btn-cancel" onclick={handleCloseBrandAiModal}>Cancel</button>
+                    <button class="btn-primary" onclick={handleBrandAiNext}>Next: Review Prompt →</button>
+                  </template>
+                  <template if:true={isBrandAiStep2}>
+                    <button class="btn-cancel" onclick={handleBrandAiBack}>← Back</button>
+                    <button class={brandAiCopyBtnClass} onclick={handleCopyBrandPrompt}>{brandAiCopyBtnLabel}</button>
+                  </template>
                 </div>
 
               </div>

@@ -368,8 +368,6 @@ export default class WeaveTemplateBuilder extends LightningElement {
 
   get brandStaticTags() {
     return [
-      { key: 'PrimaryColor',    label: '{{Brand.PrimaryColor}}',    tag: '{{Brand.PrimaryColor}}'    },
-      { key: 'SecondaryColor',  label: '{{Brand.SecondaryColor}}',  tag: '{{Brand.SecondaryColor}}'  },
       { key: 'LogoUrl',         label: '{{Brand.LogoUrl}}',         tag: '{{Brand.LogoUrl}}'         },
       { key: 'DisplayName',     label: '{{Brand.DisplayName}}',     tag: '{{Brand.DisplayName}}'     },
       { key: 'PhysicalAddress', label: '{{Brand.PhysicalAddress}}', tag: '{{Brand.PhysicalAddress}}' },
@@ -436,7 +434,11 @@ export default class WeaveTemplateBuilder extends LightningElement {
     ].filter(Boolean).join('\n');
 
     const imageLines = this.brandAiIncludedImages
-      .map(img => `  ${img.title}: <img src="${img.publicUrl}" width="${img.width || 600}" alt="${img.title}" style="max-width:100%;display:block;">`)
+      .map(img => {
+        const w = img.width || 600;
+        const hAttr = img.height ? ` height="${img.height}"` : '';
+        return `  ${img.title}: <img src="${img.publicUrl}" width="${w}"${hAttr} alt="${img.title}" style="max-width:100%;display:block;">`;
+      })
       .join('\n');
 
     const sfRules = `\n\nSALESFORCE HTML RULES — the following will BLOCK saving:\n` +
@@ -482,8 +484,6 @@ ${logoLine}
 ${extraDetails}
 
 AVAILABLE MERGE TAGS (use these — do not hardcode values):
-  {{Brand.PrimaryColor}}
-  {{Brand.SecondaryColor}}
   {{Brand.LogoUrl}}
   {{Brand.DisplayName}}
   {{Brand.PhysicalAddress}}
@@ -501,7 +501,7 @@ OUTPUT REQUIREMENTS:
 • Use table-based layout (table, tr, td) — no div-only layouts
 • Max outer table width: 600px
 • Web-safe fonts only: Arial, Helvetica, Georgia, 'Times New Roman', Verdana
-• Do NOT hardcode color values — use merge tags like {{Brand.PrimaryColor}} where colors appear
+• Use the exact hex color values from BRAND DETAILS above for all inline CSS colors
 • Do NOT hardcode the logo src — use {{Brand.LogoUrl}} or the asset tag provided above
 ${sfRules}
 
@@ -2076,7 +2076,7 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
     this.brandSfRulesExpanded = false;
     this.brandAiImages = (this.brandImages || [])
       .filter(img => img.publicUrl)
-      .map(img => ({ ...img, width: 600, include: true }));
+      .map(img => ({ ...img, width: 600, height: '', include: true }));
     this.showBrandAiModal = true;
   }
 
@@ -2085,7 +2085,7 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
   handleBrandAiModalInnerClick(event) { event.stopPropagation(); }
 
   handleBrandAiNext() {
-    if (this.brandAiStep < 3) this.brandAiStep += 1;
+    if (this.brandAiStep < 2) this.brandAiStep += 1;
   }
   handleBrandAiBack() {
     if (this.brandAiStep > 1) this.brandAiStep -= 1;
@@ -2098,6 +2098,13 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
     const idx = parseInt(event.currentTarget.dataset.idx, 10);
     const val = parseInt(event.target.value, 10) || 600;
     this.brandAiImages = this.brandAiImages.map((img, i) => i === idx ? { ...img, width: val } : img);
+  }
+
+  handleBrandAiImageHeightChange(event) {
+    const idx = parseInt(event.currentTarget.dataset.idx, 10);
+    const raw = event.target.value.trim();
+    const val = raw === '' ? '' : (parseInt(raw, 10) || '');
+    this.brandAiImages = this.brandAiImages.map((img, i) => i === idx ? { ...img, height: val } : img);
   }
 
   handleBrandAiImageToggle(event) {
@@ -2119,7 +2126,8 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
     const idx = parseInt(event.currentTarget.dataset.idx, 10);
     const img = this.brandAiImages[idx];
     if (!img || !img.publicUrl) return;
-    const tag = `<img src="${img.publicUrl}" width="${img.width}" alt="${img.title}" style="max-width:100%;display:block;">`;
+    const hAttr = img.height ? ` height="${img.height}"` : '';
+    const tag = `<img src="${img.publicUrl}" width="${img.width || 600}"${hAttr} alt="${img.title}" style="max-width:100%;display:block;">`;
     navigator.clipboard.writeText(tag).catch(() => {});
   }
 

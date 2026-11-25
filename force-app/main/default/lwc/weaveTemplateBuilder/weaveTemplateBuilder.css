@@ -1779,6 +1779,13 @@
     text-overflow: ellipsis;
 }
 
+.ai-brand-image-sep {
+    font-size: 13px;
+    color: var(--ec-brand-muted);
+    font-weight: 600;
+    padding: 0 1px;
+}
+
 .ai-brand-image-copy-btn {
     background: none;
     border: 1px solid var(--ec-brand-teal-border);
