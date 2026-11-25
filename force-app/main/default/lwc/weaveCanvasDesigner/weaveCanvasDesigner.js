@@ -326,32 +326,39 @@ PDF RENDERING RULES (this template outputs to PDF — these rules are mandatory)
 • Max outer table width: 756px (US Letter minus ~0.5 in side margins)` : '';
 
         return `You are building an HTML template for Weave, a Salesforce Dynamic Communication Engine.
+
+⚠️ CRITICAL — READ BEFORE WRITING ANYTHING:
+Your response must begin IMMEDIATELY with a table or block-level HTML tag (e.g. <table ...).
+Do NOT output <!DOCTYPE>, <html>, <head>, <meta>, <body>, <style>, or any document wrapper — not even as a comment.
+The very first character of your response must be < and the very first tag must be a content tag.
+If you wrap the output in a document structure, it will be REJECTED and cannot be saved.
+
+PROHIBITED TAGS — any of these will block saving:
+<meta> <html> <head> <body> <link> <script> <style> <iframe> <object> <embed>
+<form> <input> <button> <svg> <math> <video> <audio> <base> <noscript>
+<template> <details> <summary> <dialog> <picture> <source>
+
+PROHIBITED PATTERNS — also block saving:
+• Any event handler attribute: onclick, onload, onerror, onmouseover, etc.
+• javascript: or vbscript: in any href or src
+• url() in CSS containing any http/https address
+• @import, expression(), -moz-binding:, behavior:
+• HTML entities inside tag attributes (e.g. &#x6a;)
+
+ALLOWED TAGS ONLY: <table> <thead> <tbody> <tfoot> <tr> <th> <td> <a> <p> <div> <span>
+<img> <h1> <h2> <h3> <h4> <h5> <h6> <ul> <ol> <li> <br> <strong> <em> <u> <blockquote> <hr>
 ${subjectLine}
 DOCUMENT DESCRIPTION:
 ${desc}
 
 OUTPUT REQUIREMENTS:
-• Return ONLY the HTML body content — no <html>, <head>, <body>, or <style> tags
-• Inline CSS only — no <style> blocks anywhere in the output
+• All CSS must be inline style="…" on each element — no <style> blocks anywhere
 • Use HTML tables for layout (no flexbox or CSS grid) — required for PDF/email rendering
 • Web-safe fonts only: Arial, Helvetica, Georgia, Times New Roman, Courier New
 • Design for US Letter (8.5 × 11 in) with ~0.5 in margins
 • All colors as hex values (#rrggbb)
 • No JavaScript
-
-PROHIBITED — these tags and patterns will block saving. Do NOT use any of them:
-TAGS: <meta> <link> <script> <style> <iframe> <object> <embed> <form> <input> <button>
-      <svg> <math> <video> <audio> <base> <noscript> <template> <details> <summary>
-      <dialog> <picture> <source> <head> <html>
-ATTRIBUTES: any event handler (onclick, onload, onerror, onmouseover, etc.)
-PROTOCOLS: javascript: or vbscript: in any href or src
-CSS: url() with any http/https address; @import; expression(); -moz-binding; behavior:
-ENCODING: HTML entities inside tag attributes (e.g. &#x6a;)
-
-REQUIRED instead:
-• All CSS as inline style="…" on each element — no <style> blocks anywhere
-• Use <table>, <tr>, <td>, <tr>, <a>, <p>, <span>, <div>, <img>, <h1>–<h6>, <ul>, <ol>, <li>, <br>, <strong>, <em>, <u> only
-• Images via direct https:// URL in src attribute (no data: URIs)
+• Images: use a direct https:// URL in the src attribute (no data: URIs)
 
 WEAVE MERGE TAG SYNTAX:
 • Parent record fields: {{Parent.FieldApiName}}
