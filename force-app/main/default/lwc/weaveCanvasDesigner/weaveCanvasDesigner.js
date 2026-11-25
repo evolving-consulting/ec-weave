@@ -241,8 +241,7 @@ export default class WeaveCanvasDesigner extends LightningElement {
         const selectedParentFields = (this.aiParentFieldOptions || []).filter(f => f.checked);
         const parentFieldLines = selectedParentFields.length
             ? selectedParentFields.map(f => `  - ${f.label} → {{Parent.${f.value}}}`).join('\n')
-            : (this.parentFields || []).map(f => `  - ${f.label} → {{Parent.${f.value}}}`).join('\n')
-              || '  No fields available — parent object not set yet';
+            : '  (none selected — go back to Step 2 and choose the fields to include)';
 
         // Query sections
         const includedQueries = (this.aiQueryConfigs || []).filter(qc => qc.include);
@@ -669,13 +668,13 @@ Generate the complete HTML template now.`;
                 .map(f => ({
                     value: f,
                     label: fieldLabelMap[f] || f,
-                    checked: true
+                    checked: false
                 }));
         } else {
             // Fallback: all parent fields except Id
             this.aiParentFieldOptions = (this.parentFields || [])
                 .filter(f => f.value !== 'Id')
-                .map(f => ({ value: f.value, label: f.label, checked: true }));
+                .map(f => ({ value: f.value, label: f.label, checked: false }));
         }
 
         // Build query configs — exclude parent-record queries (those live in Merge Fields)
