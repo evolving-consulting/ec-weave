@@ -7,13 +7,8 @@
         <target>lightning__RecordPage</target>
         <target>lightning__HomePage</target>
         <target>lightningCommunity__Page</target>
-        <target>lightningCommunity__Default_Page</target>
     </targets>
     <targetConfigs>
-        <targetConfig targets="lightningCommunity__Page,lightningCommunity__Default_Page">
-            <property name="templateId" type="String" label="Template ID" description="Weave_Template_Config__c record ID"/>
-            <property name="contextData" type="String" label="Context Data (JSON)" description="JSON with recordId, flowVariables, dataCloudValues"/>
-        </targetConfig>
         <targetConfig targets="lightning__RecordPage">
             <property name="templateId" type="String" label="Template ID"/>
         </targetConfig>

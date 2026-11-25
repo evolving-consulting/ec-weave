@@ -22,13 +22,13 @@ public with sharing class MCNTemplateRenderService {
     }
 
     public class RenderResult {
-        public Boolean isSuccess    { get; private set; }
-        public String  subject      { get; private set; }
-        public String  htmlBody     { get; private set; }
-        public String  plainText    { get; private set; }
-        public String  errorMessage { get; private set; }
+        @AuraEnabled public Boolean isSuccess    { get; private set; }
+        @AuraEnabled public String  subject      { get; private set; }
+        @AuraEnabled public String  htmlBody     { get; private set; }
+        @AuraEnabled public String  plainText    { get; private set; }
+        @AuraEnabled public String  errorMessage { get; private set; }
 
-        public RenderResult(RenderedEmailDTO dto) {
+        public RenderResult(WeaveEmailTemplateRenderer.RenderedEmailDTO dto) {
             this.isSuccess = true;
             this.subject   = dto.subject;
             this.htmlBody  = dto.htmlBody;
@@ -47,6 +47,7 @@ public with sharing class MCNTemplateRenderService {
      * @param templateId      Weave_Template_Config__c record ID
      * @param contextDataJson JSON object: { "recordId": "...", "flowVariables": {}, "dataCloudValues": {} }
      */
+    @AuraEnabled
     public static RenderResult resolveTemplate(Id templateId, String contextDataJson) {
         try {
             if (templateId == null) throw new IllegalArgumentException('templateId is required.');
@@ -57,7 +58,7 @@ public with sharing class MCNTemplateRenderService {
             RenderResult cached = getCached(cacheKey);
             if (cached != null) return cached;
 
-            RenderedEmailDTO dto = renderWithContext(templateId, ctx);
+            WeaveEmailTemplateRenderer.RenderedEmailDTO dto = renderWithContext(templateId, ctx);
 
             RenderResult result = new RenderResult(dto);
             putCache(cacheKey, result);
@@ -71,12 +72,12 @@ public with sharing class MCNTemplateRenderService {
     // ── Context parsing ───────────────────────────────────────────────────────
 
     @TestVisible
-    static ContextData parseContext(String json) {
+    static ContextData parseContext(String jsonStr) {
         ContextData ctx = new ContextData();
-        if (String.isBlank(json)) return ctx;
+        if (String.isBlank(jsonStr)) return ctx;
 
         try {
-            Map<String, Object> raw = (Map<String, Object>) JSON.deserializeUntyped(json);
+            Map<String, Object> raw = (Map<String, Object>) JSON.deserializeUntyped(jsonStr);
             ctx.parentRecordId   = (String) raw.get('recordId');
             ctx.flowVariables    = extractStringObjectMap(raw, 'flowVariables');
             ctx.dataCloudValues  = extractStringStringMap(raw, 'dataCloudValues');
@@ -87,13 +88,9 @@ public with sharing class MCNTemplateRenderService {
     }
 
     @TestVisible
-    static RenderedEmailDTO renderWithContext(Id templateId, ContextData ctx) {
-        // Delegate full HTML assembly to the standard renderer pipeline.
-        // The existing renderer uses GenericMergeFieldResolver which only handles
-        // {{Parent.*}} fields.  We need to inject Flow and DataCloud values too,
-        // so we pre-render then do a second pass for extended merge fields.
+    static WeaveEmailTemplateRenderer.RenderedEmailDTO renderWithContext(Id templateId, ContextData ctx) {
         Id recordId = ctx.parentRecordId != null ? Id.valueOf(ctx.parentRecordId) : null;
-        RenderedEmailDTO dto = WeaveEmailTemplateRenderer.renderEmail(templateId, recordId, false);
+        WeaveEmailTemplateRenderer.RenderedEmailDTO dto = WeaveEmailTemplateRenderer.renderEmail(templateId, recordId, false);
 
         if ((ctx.flowVariables != null && !ctx.flowVariables.isEmpty())
             || (ctx.dataCloudValues != null && !ctx.dataCloudValues.isEmpty())) {
@@ -164,8 +161,8 @@ public with sharing class MCNTemplateRenderService {
 
     @TestVisible
     class ContextData {
-        String parentRecordId;
-        Map<String, Object> flowVariables    = new Map<String, Object>();
-        Map<String, String> dataCloudValues  = new Map<String, String>();
+        public String parentRecordId;
+        public Map<String, Object> flowVariables    = new Map<String, Object>();
+        public Map<String, String> dataCloudValues  = new Map<String, String>();
     }
 }

@@ -42,6 +42,7 @@ public with sharing class MCNEmailSendService {
     /**
      * Renders the template, sends via MCN, and logs the result.
      */
+    @AuraEnabled
     public static SendResult sendEmail(Id templateId, String recipientEmail, String contextDataJson) {
         Id logId = createPendingLog(templateId, recipientEmail, contextDataJson);
         try {
@@ -72,6 +73,77 @@ public with sharing class MCNEmailSendService {
         }
     }
 
+    /**
+     * Bulkified send — 2 DML operations regardless of list size.
+     * Used by MCNFlowActionAdapter to stay within governor limits.
+     */
+    public static List<SendResult> sendBulk(List<Id> templateIds, List<String> emails, List<String> contexts) {
+        Integer size = templateIds.size();
+
+        // 1 — bulk insert pending logs
+        List<Weave_MCN_Email_Send__c> logs = new List<Weave_MCN_Email_Send__c>();
+        for (Integer i = 0; i < size; i++) {
+            String ctx = contexts.get(i);
+            logs.add(new Weave_MCN_Email_Send__c(
+                Template__c        = templateIds.get(i),
+                Recipient_Email__c = emails.get(i),
+                Context_Data__c    = ctx != null && ctx.length() > 131072 ? ctx.left(131072) : ctx,
+                Send_Status__c     = 'Pending'
+            ));
+        }
+        try { insert logs; } catch (Exception e) { /* non-fatal */ }
+
+        // 2 — render + callout per record, collect log updates
+        List<SendResult> results = new List<SendResult>();
+        List<Weave_MCN_Email_Send__c> logsToUpdate = new List<Weave_MCN_Email_Send__c>();
+
+        // Bulk-resolve definition keys (1 SOQL for all unique templates)
+        Map<Id, String> defKeyByTemplateId = resolveDefinitionKeys(new Set<Id>(templateIds));
+
+        for (Integer i = 0; i < size; i++) {
+            Id logId = logs.get(i).Id;
+            SendResult res;
+            Weave_MCN_Email_Send__c logUpdate = new Weave_MCN_Email_Send__c(Id = logId);
+            try {
+                validateInputs(templateIds.get(i), emails.get(i));
+                MCNTemplateRenderService.RenderResult rendered =
+                    MCNTemplateRenderService.resolveTemplate(templateIds.get(i), contexts.get(i));
+                if (!rendered.isSuccess) {
+                    logUpdate.Send_Status__c  = 'Failed';
+                    logUpdate.Error_Message__c = 'Render failed: ' + rendered.errorMessage;
+                    res = new SendResult('Failed', logUpdate.Error_Message__c);
+                } else {
+                    String defKey  = defKeyByTemplateId.get(templateIds.get(i));
+                    String payload = buildPayload(defKey, emails.get(i), rendered, contexts.get(i));
+                    SfmcHttpClient client = new SfmcHttpClient();
+                    SfmcHttpClient.McnResponse resp = client.post(MCN_SEND_ENDPOINT, payload);
+                    if (!resp.isSuccess) {
+                        logUpdate.Send_Status__c   = 'Failed';
+                        logUpdate.Error_Message__c = resp.errorMessage;
+                        res = new SendResult('Failed', resp.errorMessage);
+                    } else {
+                        String msgId = extractMessageId(resp);
+                        logUpdate.Send_Status__c   = 'Sent';
+                        logUpdate.MCN_Message_ID__c = msgId;
+                        logUpdate.Sent_DateTime__c  = System.now();
+                        res = new SendResult(msgId);
+                    }
+                }
+            } catch (Exception e) {
+                logUpdate.Send_Status__c   = 'Failed';
+                logUpdate.Error_Message__c = e.getMessage();
+                res = new SendResult('Failed', e.getMessage());
+            }
+            logsToUpdate.add(logUpdate);
+            results.add(res);
+        }
+
+        // 3 — bulk update logs
+        try { update logsToUpdate; } catch (Exception e) { /* non-fatal */ }
+
+        return results;
+    }
+
     // ── Validation ────────────────────────────────────────────────────────────
 
     private static void validateInputs(Id templateId, String recipientEmail) {
@@ -98,6 +170,25 @@ public with sharing class MCNEmailSendService {
         }
         // Fall back to Salesforce record ID as definition key
         return String.valueOf(templateId);
+    }
+
+    private static Map<Id, String> resolveDefinitionKeys(Set<Id> templateIds) {
+        Map<Id, String> result = new Map<Id, String>();
+        for (Weave_Template_Config__c t : [
+            SELECT Id, SFMC_Template_ID__c
+            FROM Weave_Template_Config__c
+            WHERE Id IN :templateIds
+            WITH USER_MODE
+        ]) {
+            result.put(t.Id, String.isNotBlank(t.SFMC_Template_ID__c)
+                ? t.SFMC_Template_ID__c
+                : String.valueOf(t.Id));
+        }
+        // Fallback for IDs not found
+        for (Id tid : templateIds) {
+            if (!result.containsKey(tid)) result.put(tid, String.valueOf(tid));
+        }
+        return result;
     }
 
     private static String buildPayload(

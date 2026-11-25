@@ -39,26 +39,28 @@ public with sharing class MCNFlowActionAdapter {
         category='Dynamic Communication Engine'
     )
     public static List<SendResult> sendEmail(List<SendRequest> requests) {
-        List<SendResult> results = new List<SendResult>();
+        List<Id>     templateIds = new List<Id>();
+        List<String> emails      = new List<String>();
+        List<String> contexts    = new List<String>();
 
         for (SendRequest req : requests) {
-            SendResult res = new SendResult();
-            try {
-                MCNEmailSendService.SendResult svcResult =
-                    MCNEmailSendService.sendEmail(req.templateId, req.recipientEmail, req.contextVariablesJson);
-
-                res.isSuccess    = svcResult.isSuccess;
-                res.messageId    = svcResult.messageId;
-                res.sendStatus   = svcResult.status;
-                res.errorMessage = svcResult.errorMessage;
-            } catch (Exception e) {
-                res.isSuccess    = false;
-                res.sendStatus   = 'Failed';
-                res.errorMessage = e.getMessage();
-            }
-            results.add(res);
+            templateIds.add(req.templateId);
+            emails.add(req.recipientEmail);
+            contexts.add(req.contextVariablesJson);
         }
 
+        List<MCNEmailSendService.SendResult> svcResults =
+            MCNEmailSendService.sendBulk(templateIds, emails, contexts);
+
+        List<SendResult> results = new List<SendResult>();
+        for (MCNEmailSendService.SendResult svc : svcResults) {
+            SendResult res = new SendResult();
+            res.isSuccess    = svc.isSuccess;
+            res.messageId    = svc.messageId;
+            res.sendStatus   = svc.status;
+            res.errorMessage = svc.errorMessage;
+            results.add(res);
+        }
         return results;
     }
 }
