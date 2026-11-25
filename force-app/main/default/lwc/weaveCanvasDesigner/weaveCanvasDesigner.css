@@ -1525,3 +1525,57 @@ lightning-input-rich-text {
     border-color: var(--ec-brand-teal);
     color: var(--ec-brand-teal);
 }
+
+/* PDF constraints banner (Step 4 of AI prompt builder) */
+.pdf-constraints-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 12px;
+    margin-bottom: 8px;
+    background: var(--ec-brand-teal-bg);
+    border: 1px solid var(--ec-brand-teal-border);
+    border-radius: 6px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.pdf-constraints-badge {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ec-brand-teal);
+    letter-spacing: 0.03em;
+}
+
+.pdf-constraints-chevron {
+    font-size: 10px;
+    color: var(--ec-brand-teal);
+}
+
+.pdf-constraints-body {
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    background: #f9fafb;
+    border: 1px solid var(--ec-brand-teal-border);
+    border-radius: 6px;
+    font-size: 11px;
+    color: var(--ec-brand-ink);
+    line-height: 1.6;
+}
+
+.pdf-constraints-body ul {
+    margin: 0;
+    padding-left: 16px;
+}
+
+.pdf-constraints-body li {
+    margin-bottom: 3px;
+}
+
+.pdf-constraints-body code {
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    background: #e5e7eb;
+    padding: 1px 4px;
+    border-radius: 3px;
+}

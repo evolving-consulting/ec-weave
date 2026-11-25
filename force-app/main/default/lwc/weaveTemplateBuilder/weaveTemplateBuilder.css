@@ -432,7 +432,8 @@
   font-weight: 600;
   padding: 7px 14px;
 }
-.btn-activate-template:hover { background: var(--ec-brand-teal-mid); }
+.btn-activate-template:hover:not(:disabled) { background: var(--ec-brand-teal-mid); }
+.btn-activate-template:disabled { opacity: 0.55; cursor: not-allowed; }
 
 .btn-preview-pdf {
   background: transparent;
@@ -1024,6 +1025,8 @@
 
 /* ── Scheduled Sends tab ─────────────────────────────────────────────────── */
 .sched-filter-row { margin-top: 10px; }
+.sched-mode-row { margin-top: 14px; }
+.sched-mode-row .qed-label { margin-bottom: 6px; }
 .sched-row-top { margin-top: 12px; }
 .sched-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 12px; }
 .sched-table th { text-align: left; padding: 8px 10px; background: #f3f4f6; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #374151; }

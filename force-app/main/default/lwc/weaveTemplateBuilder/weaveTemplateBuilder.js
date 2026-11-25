@@ -590,6 +590,8 @@ export default class WeaveTemplateBuilder extends LightningElement {
   get scheduleModeOptions() { return [{ label: 'Send Once', value: 'once' }, { label: 'Recurring', value: 'recurring' }]; }
   get isScheduleModeOnce() { return this.scheduleMode === 'once'; }
   get isScheduleModeRecurring() { return this.scheduleMode === 'recurring'; }
+  get schedModeTabOnce() { return this.scheduleMode === 'once' ? 'filter-tab filter-tab_active' : 'filter-tab'; }
+  get schedModeTabRecurring() { return this.scheduleMode === 'recurring' ? 'filter-tab filter-tab_active' : 'filter-tab'; }
   get isRecurringEndByDate() { return this.recurringEndType === 'endDate'; }
   get isRecurringEndByMaxSends() { return this.recurringEndType === 'maxSends'; }
   get minScheduleDate() {
@@ -1540,6 +1542,10 @@ export default class WeaveTemplateBuilder extends LightningElement {
 
   handleScheduleModeChange(event) {
     this.scheduleMode = event.detail.value;
+  }
+
+  handleScheduleModeToggle(event) {
+    this.scheduleMode = event.currentTarget.dataset.value;
   }
 
   handleBulkFilterChange(event) {

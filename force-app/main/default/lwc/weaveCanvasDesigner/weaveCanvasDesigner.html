@@ -648,6 +648,23 @@
                     <template if:true={promptCopied}>&#x2713;&nbsp;Copied!</template>
                   </button>
                 </div>
+                <template if:true={isPdfTemplate}>
+                  <div class="pdf-constraints-banner" onclick={handleTogglePdfConstraints}>
+                    <span class="pdf-constraints-badge">&#x1F4C4; PDF constraints applied</span>
+                    <span class="pdf-constraints-chevron">{pdfConstraintsChevron}</span>
+                  </div>
+                  <template if:true={pdfConstraintsExpanded}>
+                    <div class="pdf-constraints-body">
+                      <ul>
+                        <li>Tables use <code>border="0"</code> — borders applied via inline CSS on <code>&lt;td&gt;</code> only</li>
+                        <li>Footer rows include <code>page-break-inside:avoid; break-inside:avoid</code></li>
+                        <li>No <code>position:fixed</code> or <code>position:absolute</code></li>
+                        <li>No <code>min-height</code> — padding used instead</li>
+                        <li>Max outer table width: 756px (US Letter)</li>
+                      </ul>
+                    </div>
+                  </template>
+                </template>
                 <pre class="ai-prompt-text">{weaveAiPrompt}</pre>
               </div>
             </template>

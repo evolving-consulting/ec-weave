@@ -384,6 +384,7 @@
                 preview-record-id={previewRecordId}
                 parent-fields={parentFieldsForMergeTags}
                 brand-details={templateBrandDetails}
+                output-type={draftTemplate.templateOutputType}
                 oncomponentschanged={handleCanvasComponentsChanged}
                 oncomponentedit={handleEditComponent}
                 oncomponentdelete={handleDeleteComponent}
@@ -703,14 +704,11 @@
                 </div>
 
                 <div class="sched-mode-row">
-                  <lightning-radio-group
-                    name="scheduleMode"
-                    label="Schedule Mode"
-                    options={scheduleModeOptions}
-                    value={scheduleMode}
-                    type="button"
-                    onchange={handleScheduleModeChange}
-                  ></lightning-radio-group>
+                  <p class="qed-label">Schedule Mode</p>
+                  <div class="filter-tabs">
+                    <button class={schedModeTabOnce} data-value="once" onclick={handleScheduleModeToggle}>Send Once</button>
+                    <button class={schedModeTabRecurring} data-value="recurring" onclick={handleScheduleModeToggle}>Recurring</button>
+                  </div>
                 </div>
 
                 <!-- Send Once -->
@@ -733,7 +731,7 @@
                     ></lightning-input>
                   </div>
                   <div class="preview-btn-wrap">
-                    <button class="btn-secondary" onclick={handleCreateScheduledSend} disabled={isScheduling}>
+                    <button class="btn-activate-template" onclick={handleCreateScheduledSend} disabled={isScheduling}>
                       <template if:true={isScheduling}>Scheduling…</template>
                       <template if:false={isScheduling}>Schedule Send</template>
                     </button>
@@ -799,7 +797,7 @@
                       ></lightning-input>
                     </template>
                     <div class="preview-btn-wrap">
-                      <button class="btn-secondary" onclick={handleCreateRecurringSchedule} disabled={isScheduling}>
+                      <button class="btn-activate-template" onclick={handleCreateRecurringSchedule} disabled={isScheduling}>
                         <template if:true={isScheduling}>Scheduling…</template>
                         <template if:false={isScheduling}>Schedule Recurring Send</template>
                       </button>

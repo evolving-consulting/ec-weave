@@ -35,6 +35,7 @@ export default class WeaveCanvasDesigner extends LightningElement {
     @api parentFields;
     @api previewRecordId;
     @api brandDetails; // {displayName, logoUrl, primaryColor, secondaryColor, headerHtml, footerHtml}
+    @api outputType = 'Email'; // 'Email' | 'Document'
 
     _draftTemplate = {};
 
@@ -75,6 +76,7 @@ export default class WeaveCanvasDesigner extends LightningElement {
     // AI Modal
     @track showAiModal = false;
     @track aiStep = 1;
+    @track pdfConstraintsExpanded = false;
     @track aiDescription = '';
     @track aiParentFieldOptions = [];
     @track aiQueryConfigs = [];
@@ -216,6 +218,12 @@ export default class WeaveCanvasDesigner extends LightningElement {
     get aiStepClass3() { return 'ai-step-dot' + (this.aiStep === 3 ? ' ai-step-dot_active' : (this.aiStep > 3 ? ' ai-step-dot_done' : '')); }
     get aiStepClass4() { return 'ai-step-dot' + (this.aiStep === 4 ? ' ai-step-dot_active' : ''); }
 
+    // ── PDF / output type computed ────────────────────────────────────────────
+
+    get isPdfTemplate() { return this.outputType === 'Document'; }
+
+    get pdfConstraintsChevron() { return this.pdfConstraintsExpanded ? '▴' : '▾'; }
+
     // ── AI prompt computed ────────────────────────────────────────────────────
 
     get aiCopyBtnClass() {
@@ -302,6 +310,19 @@ export default class WeaveCanvasDesigner extends LightningElement {
 
         const subjectLine = subject ? `\nDOCUMENT TITLE: ${subject}\n` : '';
 
+        // PDF-specific guardrails injected automatically for Document output type
+        const pdfRules = this.isPdfTemplate ? `
+
+PDF RENDERING RULES (this template outputs to PDF — these rules are mandatory):
+• NEVER use border="1" on <table> elements — PDF renderers draw black borders that ignore CSS border-color
+  ✗ Wrong:  <table border="1" style="border-color:#eeeeee">
+  ✓ Correct: <table border="0"> with border:1px solid #eeeeee on each <td>
+• Footer sections must have page-break-inside:avoid; break-inside:avoid on the containing <tr> AND <td> so they never split across pages
+• Add page-break-inside:avoid to any section that must stay on one page (e.g. a signature block, a totals row)
+• Do NOT use position:fixed or position:absolute — unsupported in PDF renderers
+• Do NOT use min-height — use padding instead
+• Max outer table width: 756px (US Letter minus ~0.5 in side margins)` : '';
+
         return `You are building an HTML template for Weave, a Salesforce Dynamic Communication Engine.
 ${subjectLine}
 DOCUMENT DESCRIPTION:
@@ -325,7 +346,7 @@ WEAVE MERGE TAG SYNTAX:
 • Keep merge tags verbatim — do not replace them with sample values
 
 AVAILABLE PARENT FIELDS (${objectName}):
-${parentFieldLines}${querySection}${ctaSection}${imageSection}${brandSection}
+${parentFieldLines}${querySection}${ctaSection}${imageSection}${brandSection}${pdfRules}
 
 Generate the complete HTML template now.`;
     }
@@ -802,6 +823,10 @@ Generate the complete HTML template now.`;
         this.templateImages = this.templateImages.map(i =>
             i.cvId === cvId ? { ...i, aiSelected } : i
         );
+    }
+
+    handleTogglePdfConstraints() {
+        this.pdfConstraintsExpanded = !this.pdfConstraintsExpanded;
     }
 
     handleCopyPrompt() {
