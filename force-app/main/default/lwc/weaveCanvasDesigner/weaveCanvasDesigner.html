@@ -665,6 +665,21 @@
                     </div>
                   </template>
                 </template>
+                <div class="pdf-constraints-banner" onclick={handleToggleSfRules}>
+                  <span class="pdf-constraints-badge">&#x1F512; Salesforce HTML rules applied</span>
+                  <span class="pdf-constraints-chevron">{sfRulesChevron}</span>
+                </div>
+                <template if:true={sfRulesExpanded}>
+                  <div class="pdf-constraints-body">
+                    <ul>
+                      <li>No <code>&lt;meta&gt;</code>, <code>&lt;link&gt;</code>, <code>&lt;script&gt;</code>, or <code>&lt;style&gt;</code> tags</li>
+                      <li>No <code>&lt;iframe&gt;</code>, <code>&lt;object&gt;</code>, <code>&lt;embed&gt;</code>, or <code>&lt;form&gt;</code> tags</li>
+                      <li>No inline event handlers (<code>onclick</code>, <code>onload</code>, <code>onerror</code>, etc.)</li>
+                      <li>No <code>javascript:</code> or <code>data:</code> URIs in <code>href</code> / <code>src</code></li>
+                      <li>All CSS must be inline — no <code>&lt;style&gt;</code> blocks</li>
+                    </ul>
+                  </div>
+                </template>
                 <pre class="ai-prompt-text">{weaveAiPrompt}</pre>
               </div>
             </template>

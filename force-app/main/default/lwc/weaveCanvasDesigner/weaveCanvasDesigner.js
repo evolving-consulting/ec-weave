@@ -77,6 +77,7 @@ export default class WeaveCanvasDesigner extends LightningElement {
     @track showAiModal = false;
     @track aiStep = 1;
     @track pdfConstraintsExpanded = false;
+    @track sfRulesExpanded = false;
     @track aiDescription = '';
     @track aiParentFieldOptions = [];
     @track aiQueryConfigs = [];
@@ -223,6 +224,7 @@ export default class WeaveCanvasDesigner extends LightningElement {
     get isPdfTemplate() { return this.outputType === 'Document'; }
 
     get pdfConstraintsChevron() { return this.pdfConstraintsExpanded ? '▴' : '▾'; }
+    get sfRulesChevron() { return this.sfRulesExpanded ? '▴' : '▾'; }
 
     // ── AI prompt computed ────────────────────────────────────────────────────
 
@@ -836,6 +838,10 @@ Generate the complete HTML template now.`;
 
     handleTogglePdfConstraints() {
         this.pdfConstraintsExpanded = !this.pdfConstraintsExpanded;
+    }
+
+    handleToggleSfRules() {
+        this.sfRulesExpanded = !this.sfRulesExpanded;
     }
 
     handleCopyPrompt() {
