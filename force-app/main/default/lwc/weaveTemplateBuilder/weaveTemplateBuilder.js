@@ -749,6 +749,11 @@ export default class WeaveTemplateBuilder extends LightningElement {
           this.loadRelatedObjects(dto.parentObjectApiName);
           this.loadSegmentsForObject(dto.parentObjectApiName);
         }
+        if (dto.brandId) {
+          loadBrand({ brandId: dto.brandId })
+            .then(b => { this.draftBrand = { ...emptyBrand(), ...b }; })
+            .catch(() => {});
+        }
       })
       .catch(err => { this.errorMessage = this.extractError(err); })
       .finally(() => { this.isLoading = false; });
@@ -2028,6 +2033,21 @@ export default class WeaveTemplateBuilder extends LightningElement {
       brandName: brand ? (brand.displayName || brand.name) : null
     };
     this.isDirty = true;
+    // Load full brand details so the AI prompt builder can use them
+    if (brandId) {
+      loadBrand({ brandId })
+        .then(b => { this.draftBrand = { ...emptyBrand(), ...b }; })
+        .catch(() => {
+          // Fall back to summary fields already in the brands list
+          if (brand) {
+            this.draftBrand = { ...emptyBrand(), id: brand.id, displayName: brand.displayName || brand.name,
+              primaryColor: brand.primaryColor || '', secondaryColor: brand.secondaryColor || '',
+              logoUrl: brand.logoUrl || '' };
+          }
+        });
+    } else {
+      this.draftBrand = emptyBrand();
+    }
   }
 
   showToast(title, message, variant) {
