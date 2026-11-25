@@ -2115,6 +2115,14 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
     }).catch(() => {});
   }
 
+  handleCopyBrandImageTag(event) {
+    const idx = parseInt(event.currentTarget.dataset.idx, 10);
+    const img = this.brandAiImages[idx];
+    if (!img || !img.publicUrl) return;
+    const tag = `<img src="${img.publicUrl}" width="${img.width}" alt="${img.title}" style="max-width:100%;display:block;">`;
+    navigator.clipboard.writeText(tag).catch(() => {});
+  }
+
   handleToggleBrandSfRules() { this.brandSfRulesExpanded = !this.brandSfRulesExpanded; }
 
   handleBrandTabClick(event) { this.brandActiveTab = event.currentTarget.dataset.tab; }

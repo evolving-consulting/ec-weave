@@ -1439,6 +1439,33 @@
   color: var(--ec-brand-teal);
 }
 
+/* ── Generate with AI button (matches canvas designer style) ─────────────── */
+
+.btn-generate-ai {
+    background: var(--ec-brand-teal);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 7px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+}
+
+.btn-generate-ai:hover {
+    background: var(--ec-brand-teal-mid);
+}
+
+/* ── Half-width form grid (email + phone side by side) ───────────────────── */
+
+.form-row_half-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
 /* ── Brand AI Prompt Builder Modal ───────────────────────────────────────── */
 
 .ai-modal-backdrop {
@@ -1750,4 +1777,21 @@
     max-width: 180px;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.ai-brand-image-copy-btn {
+    background: none;
+    border: 1px solid var(--ec-brand-teal-border);
+    border-radius: 4px;
+    color: var(--ec-brand-teal);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+}
+
+.ai-brand-image-copy-btn:hover {
+    background: var(--ec-brand-teal-bg);
 }
