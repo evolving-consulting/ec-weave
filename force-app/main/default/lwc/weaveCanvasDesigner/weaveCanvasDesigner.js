@@ -339,15 +339,19 @@ OUTPUT REQUIREMENTS:
 • All colors as hex values (#rrggbb)
 • No JavaScript
 
-PROHIBITED ELEMENTS (Salesforce sanitizer will reject these and block saving):
-• NO <meta> tags of any kind (no charset, viewport, etc.)
-• NO <link> tags (no external stylesheets or font imports)
-• NO <script> tags or inline event handlers (onclick, onload, onerror, etc.)
-• NO <iframe>, <object>, <embed>, or <form> tags
-• NO <style> blocks — all CSS must be inline on each element
-• NO javascript: protocol in href or src attributes
-• NO data: URIs in src attributes
-• The output must be pasteable directly into a Salesforce rich-text field without triggering sanitization
+PROHIBITED — these tags and patterns will block saving. Do NOT use any of them:
+TAGS: <meta> <link> <script> <style> <iframe> <object> <embed> <form> <input> <button>
+      <svg> <math> <video> <audio> <base> <noscript> <template> <details> <summary>
+      <dialog> <picture> <source> <head> <html>
+ATTRIBUTES: any event handler (onclick, onload, onerror, onmouseover, etc.)
+PROTOCOLS: javascript: or vbscript: in any href or src
+CSS: url() with any http/https address; @import; expression(); -moz-binding; behavior:
+ENCODING: HTML entities inside tag attributes (e.g. &#x6a;)
+
+REQUIRED instead:
+• All CSS as inline style="…" on each element — no <style> blocks anywhere
+• Use <table>, <tr>, <td>, <tr>, <a>, <p>, <span>, <div>, <img>, <h1>–<h6>, <ul>, <ol>, <li>, <br>, <strong>, <em>, <u> only
+• Images via direct https:// URL in src attribute (no data: URIs)
 
 WEAVE MERGE TAG SYNTAX:
 • Parent record fields: {{Parent.FieldApiName}}
