@@ -1067,6 +1067,24 @@
                     placeholder="Unsubscribe"></lightning-input>
                 </div>
               </div>
+              <div class="form-row">
+                <lightning-input
+                  type="email"
+                  label="Contact Email (optional — &#123;&#123;Brand.ContactEmail&#125;&#125;)"
+                  value={draftBrand.contactEmail}
+                  data-field="contactEmail"
+                  onchange={handleBrandFieldChange}
+                  placeholder="hello@yourcompany.com"></lightning-input>
+              </div>
+              <div class="form-row">
+                <lightning-input
+                  type="tel"
+                  label="Contact Phone (optional — &#123;&#123;Brand.ContactPhone&#125;&#125;)"
+                  value={draftBrand.contactPhone}
+                  data-field="contactPhone"
+                  onchange={handleBrandFieldChange}
+                  placeholder="+1 (555) 000-0000"></lightning-input>
+              </div>
             </div>
           </template>
 
@@ -1132,8 +1150,9 @@
           <!-- ── Tab 5: Header & Footer ─────────────────────────────────── -->
           <template if:true={isBrandTab_content}>
             <div class="tab-panel">
-              <div class="tab-panel-header">
+              <div class="tab-panel-header" style="display:flex;justify-content:space-between;align-items:center;">
                 <h3 class="tab-section-title">Header &amp; Footer HTML</h3>
+                <button class="btn-primary" style="font-size:12px;padding:7px 14px;" onclick={handleOpenBrandAiModal}>✨ Generate with AI</button>
               </div>
               <p class="tab-panel-desc">HTML injected above and below every email that uses this brand. Click any tag to copy it.</p>
 
@@ -1198,6 +1217,138 @@
                   <textarea class="html-source-editor" value={draftBrand.footerHtml}
                     data-field="footerHtml" oninput={handleBrandFieldChange}></textarea>
                 </template>
+              </div>
+            </div>
+          </template>
+
+          <!-- ── Brand AI Prompt Builder Modal ──────────────────────────── -->
+          <template if:true={showBrandAiModal}>
+            <div class="ai-modal-backdrop" onclick={handleBrandAiModalBackdropClick}>
+              <div class="ai-modal" onclick={handleBrandAiModalInnerClick}>
+
+                <!-- Header -->
+                <div class="ai-modal-header">
+                  <div>
+                    <span class="ai-modal-eyebrow">AI PROMPT BUILDER</span>
+                    <p class="ai-modal-title">Generate Brand Header &amp; Footer</p>
+                  </div>
+                  <button class="edit-panel-close ai-modal-close" onclick={handleCloseBrandAiModal}>&#x2715;</button>
+                </div>
+
+                <!-- Step indicator -->
+                <div class="ai-step-indicator">
+                  <div class={brandAiStepClass1}>
+                    <span class="ai-step-num">1</span>
+                    <span class="ai-step-name">Describe</span>
+                  </div>
+                  <div class="ai-step-connector"></div>
+                  <div class={brandAiStepClass2}>
+                    <span class="ai-step-num">2</span>
+                    <span class="ai-step-name">Brand Data</span>
+                  </div>
+                  <div class="ai-step-connector"></div>
+                  <div class={brandAiStepClass3}>
+                    <span class="ai-step-num">3</span>
+                    <span class="ai-step-name">Review Prompt</span>
+                  </div>
+                </div>
+
+                <!-- Body -->
+                <div class="ai-modal-body">
+
+                  <!-- Step 1: Describe -->
+                  <template if:true={isBrandAiStep1}>
+                    <div class="ai-section">
+                      <p class="ai-section-title">Describe the Header</p>
+                      <lightning-textarea
+                        label=""
+                        value={brandAiHeaderDesc}
+                        onchange={handleBrandAiHeaderDescChange}
+                        placeholder="e.g. Logo on the left, physical address on the right, dark teal background, company name in white"
+                        max-length="600"
+                        style="margin-bottom:1rem;"></lightning-textarea>
+                      <p class="ai-section-title">Describe the Footer</p>
+                      <lightning-textarea
+                        label=""
+                        value={brandAiFooterDesc}
+                        onchange={handleBrandAiFooterDescChange}
+                        placeholder="e.g. Light gray background, unsubscribe link centered, copyright notice"
+                        max-length="600"></lightning-textarea>
+                    </div>
+                  </template>
+
+                  <!-- Step 2: Brand Data reference + asset sizing -->
+                  <template if:true={isBrandAiStep2}>
+                    <div class="ai-section">
+                      <p class="ai-section-title">Brand Merge Tags</p>
+                      <p class="field-hint" style="margin-bottom:8px;">These tags will be included in the prompt. The AI will use them instead of hardcoded values.</p>
+                      <div class="merge-group__chips" style="flex-wrap:wrap;gap:6px;display:flex;">
+                        <template for:each={brandStaticTags} for:item="bt">
+                          <span key={bt.key} class="merge-chip" style="cursor:default;">{bt.label}</span>
+                        </template>
+                      </div>
+                    </div>
+                    <template if:true={brandAiImages.length}>
+                      <div class="ai-section">
+                        <p class="ai-section-title">Asset Images</p>
+                        <p class="field-hint" style="margin-bottom:12px;">Check which images to include and set their display width. The AI will receive the full &lt;img&gt; tag.</p>
+                        <template for:each={brandAiImages} for:item="img" for:index="idx">
+                          <div key={img.contentDocumentId} class="ai-brand-image-row">
+                            <input type="checkbox" checked={img.include} data-idx={idx}
+                              onchange={handleBrandAiImageToggle} />
+                            <span class="ai-brand-image-title">{img.title}</span>
+                            <label class="ai-brand-image-width-label">Width (px)</label>
+                            <input type="number" value={img.width} min="50" max="1200" data-idx={idx}
+                              onchange={handleBrandAiImageWidthChange} class="ai-brand-image-width-input" />
+                            <code class="ai-brand-image-tag">&lt;img src="…" width="{img.width}"&gt;</code>
+                          </div>
+                        </template>
+                      </div>
+                    </template>
+                  </template>
+
+                  <!-- Step 3: Review Prompt -->
+                  <template if:true={isBrandAiStep3}>
+                    <!-- SF rules badge -->
+                    <div class="pdf-constraints-banner" onclick={handleToggleBrandSfRules}>
+                      <span class="pdf-constraints-badge">🔒 Salesforce HTML rules applied</span>
+                      <span class="pdf-constraints-chevron">{brandSfRulesChevron}</span>
+                    </div>
+                    <template if:true={brandSfRulesExpanded}>
+                      <div class="pdf-constraints-body">
+                        <ul>
+                          <li>No <code>&lt;meta&gt;</code>, <code>&lt;link&gt;</code>, <code>&lt;script&gt;</code>, or <code>&lt;style&gt;</code> tags</li>
+                          <li>No <code>&lt;iframe&gt;</code>, <code>&lt;object&gt;</code>, <code>&lt;embed&gt;</code>, or <code>&lt;form&gt;</code> tags</li>
+                          <li>No inline event handlers (onclick, onload, etc.)</li>
+                          <li>No <code>javascript:</code> or <code>data:</code> URIs in href/src</li>
+                          <li>No <code>url(https://…)</code> in CSS — all images must use <code>&lt;img&gt;</code> tags</li>
+                          <li>All CSS must be inline <code>style="…"</code></li>
+                        </ul>
+                      </div>
+                    </template>
+                    <div class="ai-section" style="padding:0;">
+                      <pre class="ai-prompt-text">{brandAiPrompt}</pre>
+                    </div>
+                  </template>
+
+                </div>
+
+                <!-- Footer navigation -->
+                <div class="ai-modal-footer">
+                  <template if:true={isBrandAiStep1}>
+                    <button class="btn-cancel" onclick={handleCloseBrandAiModal}>Cancel</button>
+                    <button class="btn-primary" onclick={handleBrandAiNext}>Next: Brand Data →</button>
+                  </template>
+                  <template if:true={isBrandAiStep2}>
+                    <button class="btn-cancel" onclick={handleBrandAiBack}>← Back</button>
+                    <button class="btn-primary" onclick={handleBrandAiNext}>Next: Review Prompt →</button>
+                  </template>
+                  <template if:true={isBrandAiStep3}>
+                    <button class="btn-cancel" onclick={handleBrandAiBack}>← Back</button>
+                    <button class={brandAiCopyBtnClass} onclick={handleCopyBrandPrompt}>{brandAiCopyBtnLabel}</button>
+                  </template>
+                </div>
+
               </div>
             </div>
           </template>

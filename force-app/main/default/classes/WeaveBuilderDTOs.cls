@@ -92,6 +92,8 @@ public with sharing class WeaveBuilderDTOs {
         @AuraEnabled public String footerHtml { get; set; }
         @AuraEnabled public String footerEditorMode { get; set; }
         @AuraEnabled public String description { get; set; }
+        @AuraEnabled public String contactEmail { get; set; }
+        @AuraEnabled public String contactPhone { get; set; }
 
         public WeaveBrandDTO() {
             this.status = 'Active';

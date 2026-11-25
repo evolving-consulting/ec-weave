@@ -248,6 +248,16 @@ export default class WeaveTemplateBuilder extends LightningElement {
   @track selectedFrequency = 'every_hour';
   @track isTogglingScheduler = false;
 
+  // Brand AI Prompt Builder
+  @track showBrandAiModal = false;
+  @track brandAiStep = 1;
+  @track brandAiHeaderDesc = '';
+  @track brandAiFooterDesc = '';
+  @track brandAiImages = []; // { id, title, publicUrl, imgTag, width, include }
+  @track brandPromptCopied = false;
+  @track brandSfRulesExpanded = false;
+  _brandCopyTimer = null;
+
   statusOptions = STATUS_OPTIONS;
   fromEmailTypeOptions = FROM_EMAIL_TYPE_OPTIONS;
   outputTypeOptions = OUTPUT_TYPE_OPTIONS;
@@ -363,7 +373,9 @@ export default class WeaveTemplateBuilder extends LightningElement {
       { key: 'LogoUrl',         label: '{{Brand.LogoUrl}}',         tag: '{{Brand.LogoUrl}}'         },
       { key: 'DisplayName',     label: '{{Brand.DisplayName}}',     tag: '{{Brand.DisplayName}}'     },
       { key: 'PhysicalAddress', label: '{{Brand.PhysicalAddress}}', tag: '{{Brand.PhysicalAddress}}' },
-      { key: 'UnsubscribeLink', label: '{{Brand.UnsubscribeLink}}', tag: '{{Brand.UnsubscribeLink}}' }
+      { key: 'UnsubscribeLink', label: '{{Brand.UnsubscribeLink}}', tag: '{{Brand.UnsubscribeLink}}' },
+      { key: 'ContactEmail',    label: '{{Brand.ContactEmail}}',    tag: '{{Brand.ContactEmail}}'    },
+      { key: 'ContactPhone',    label: '{{Brand.ContactPhone}}',    tag: '{{Brand.ContactPhone}}'    }
     ];
   }
 
@@ -381,6 +393,121 @@ export default class WeaveTemplateBuilder extends LightningElement {
   get isBrandTab_contact()  { return this.brandActiveTab === 'contact'; }
   get isBrandTab_assets()   { return this.brandActiveTab === 'assets'; }
   get isBrandTab_content()  { return this.brandActiveTab === 'content'; }
+  // Brand AI step classes
+  get brandAiStepClass1() { return 'ai-step-dot' + (this.brandAiStep === 1 ? ' ai-step-dot_active' : (this.brandAiStep > 1 ? ' ai-step-dot_done' : '')); }
+  get brandAiStepClass2() { return 'ai-step-dot' + (this.brandAiStep === 2 ? ' ai-step-dot_active' : (this.brandAiStep > 2 ? ' ai-step-dot_done' : '')); }
+  get brandAiStepClass3() { return 'ai-step-dot' + (this.brandAiStep === 3 ? ' ai-step-dot_active' : ''); }
+  get isBrandAiStep1() { return this.brandAiStep === 1; }
+  get isBrandAiStep2() { return this.brandAiStep === 2; }
+  get isBrandAiStep3() { return this.brandAiStep === 3; }
+  get brandSfRulesChevron() { return this.brandSfRulesExpanded ? '▲' : '▼'; }
+  get brandAiCopyBtnClass() { return 'ai-copy-btn' + (this.brandPromptCopied ? ' ai-copy-btn_success' : ''); }
+  get brandAiCopyBtnLabel() { return this.brandPromptCopied ? '✓ Copied!' : '⌘ Copy Prompt'; }
+  get brandAiIncludedImages() { return (this.brandAiImages || []).filter(i => i.include && i.publicUrl); }
+
+  get brandAiPrompt() {
+    const bd = this.draftBrand;
+    const name = bd.displayName || bd.name || '';
+    const primary = bd.primaryColor || '';
+    const secondary = bd.secondaryColor || '';
+    const logoUrl = bd.logoUrl || '';
+    const physical = bd.physicalAddress || '';
+    const unsubUrl = bd.unsubscribeUrl || '';
+    const unsubLabel = bd.unsubscribeLabel || 'Unsubscribe';
+    const contactEmail = bd.contactEmail || '';
+    const contactPhone = bd.contactPhone || '';
+
+    const logoLine = logoUrl
+      ? `  Logo: <img src="${logoUrl}" width="600" alt="${name}" style="max-width:100%;display:block;">`
+      : '  Logo: (none)';
+
+    const unsubLine = unsubUrl
+      ? `  Unsubscribe: {{Brand.UnsubscribeLink}} = "${unsubUrl}" / label: "${unsubLabel}"`
+      : '';
+    const emailLine = contactEmail ? `  Contact Email: {{Brand.ContactEmail}} = "${contactEmail}"` : '';
+    const phoneLine = contactPhone ? `  Contact Phone: {{Brand.ContactPhone}} = "${contactPhone}"` : '';
+
+    const extraDetails = [unsubLine, emailLine, phoneLine].filter(Boolean).join('\n');
+
+    const extraTags = [
+      unsubUrl ? '  {{Brand.UnsubscribeLink}}' : '',
+      contactEmail ? '  {{Brand.ContactEmail}}' : '',
+      contactPhone ? '  {{Brand.ContactPhone}}' : ''
+    ].filter(Boolean).join('\n');
+
+    const imageLines = this.brandAiIncludedImages
+      .map(img => `  ${img.title}: <img src="${img.publicUrl}" width="${img.width || 600}" alt="${img.title}" style="max-width:100%;display:block;">`)
+      .join('\n');
+
+    const sfRules = `\n\nSALESFORCE HTML RULES — the following will BLOCK saving:\n` +
+      `PROHIBITED TAGS: <meta> <html> <head> <body> <link> <script> <style> <iframe> <object> <embed>\n` +
+      `  <form> <input> <button> <svg> <math> <video> <audio> <base> <noscript>\n` +
+      `  <template> <details> <summary> <dialog> <picture> <source>\n` +
+      `PROHIBITED PATTERNS: event handlers (onclick, onload…), javascript:/vbscript: URIs,\n` +
+      `  url(https://…) in CSS, @import, expression(), -moz-binding:, behavior:`;
+
+    return `⚠️ CRITICAL — READ BEFORE WRITING ANYTHING:
+Your response must begin IMMEDIATELY with an HTML tag (e.g. <table ...).
+Do NOT output <!DOCTYPE>, <html>, <head>, <meta>, <body>, <style>, or any document wrapper.
+The very first character must be < and the first tag must be a content tag.
+
+PROHIBITED TAGS — any of these will block saving:
+<meta> <html> <head> <body> <link> <script> <style> <iframe> <object> <embed>
+<form> <input> <button> <svg> <math> <video> <audio> <base> <noscript>
+<template> <details> <summary> <dialog> <picture> <source>
+
+PROHIBITED PATTERNS — also block saving:
+• Any event handler attribute: onclick, onload, onerror, onmouseover, etc.
+• javascript: or vbscript: in any href or src
+• url() in CSS containing any http/https address
+• @import, expression(), -moz-binding:, behavior:
+
+You are building brand HTML for Weave — HTML injected into every email that uses this brand.
+Generate TWO separate HTML blocks, clearly labelled:
+
+  <!-- BRAND_HEADER -->
+  ... your header HTML here ...
+  <!-- END BRAND_HEADER -->
+
+  <!-- BRAND_FOOTER -->
+  ... your footer HTML here ...
+  <!-- END BRAND_FOOTER -->
+
+BRAND DETAILS:
+  Brand Name: ${name}
+  Primary Color: ${primary}
+  Secondary Color: ${secondary}
+${logoLine}
+  Physical Address: {{Brand.PhysicalAddress}} = "${physical}"
+${extraDetails}
+
+AVAILABLE MERGE TAGS (use these — do not hardcode values):
+  {{Brand.PrimaryColor}}
+  {{Brand.SecondaryColor}}
+  {{Brand.LogoUrl}}
+  {{Brand.DisplayName}}
+  {{Brand.PhysicalAddress}}
+${extraTags}
+
+${imageLines ? `ASSET IMAGE TAGS (use these for images, do not change the src):\n${imageLines}\n` : ''}
+HEADER DESCRIPTION:
+  ${this.brandAiHeaderDesc || '(none provided)'}
+
+FOOTER DESCRIPTION:
+  ${this.brandAiFooterDesc || '(none provided)'}
+
+OUTPUT REQUIREMENTS:
+• All CSS must be inline style="…" on each element — no <style> blocks
+• Use table-based layout (table, tr, td) — no div-only layouts
+• Max outer table width: 600px
+• Web-safe fonts only: Arial, Helvetica, Georgia, 'Times New Roman', Verdana
+• Do NOT hardcode color values — use merge tags like {{Brand.PrimaryColor}} where colors appear
+• Do NOT hardcode the logo src — use {{Brand.LogoUrl}} or the asset tag provided above
+${sfRules}
+
+Generate BRAND_HEADER and BRAND_FOOTER now.`;
+  }
+
   get brandStatusPillClass() {
     const s = (this.draftBrand.status || '').toLowerCase();
     return 'status-pill' + (s === 'active' ? ' status-pill_active' : ' status-pill_draft');
@@ -1938,6 +2065,57 @@ export default class WeaveTemplateBuilder extends LightningElement {
       return { ...f, imgWidth: w, imgTag };
     });
   }
+
+  // ── Brand AI Prompt Builder ──────────────────────────────────────────────────
+
+  handleOpenBrandAiModal() {
+    this.brandAiStep = 1;
+    this.brandAiHeaderDesc = '';
+    this.brandAiFooterDesc = '';
+    this.brandPromptCopied = false;
+    this.brandSfRulesExpanded = false;
+    this.brandAiImages = (this.brandImages || [])
+      .filter(img => img.publicUrl)
+      .map(img => ({ ...img, width: 600, include: true }));
+    this.showBrandAiModal = true;
+  }
+
+  handleCloseBrandAiModal() { this.showBrandAiModal = false; }
+  handleBrandAiModalBackdropClick() { this.showBrandAiModal = false; }
+  handleBrandAiModalInnerClick(event) { event.stopPropagation(); }
+
+  handleBrandAiNext() {
+    if (this.brandAiStep < 3) this.brandAiStep += 1;
+  }
+  handleBrandAiBack() {
+    if (this.brandAiStep > 1) this.brandAiStep -= 1;
+  }
+
+  handleBrandAiHeaderDescChange(event) { this.brandAiHeaderDesc = event.detail.value; }
+  handleBrandAiFooterDescChange(event) { this.brandAiFooterDesc = event.detail.value; }
+
+  handleBrandAiImageWidthChange(event) {
+    const idx = parseInt(event.currentTarget.dataset.idx, 10);
+    const val = parseInt(event.target.value, 10) || 600;
+    this.brandAiImages = this.brandAiImages.map((img, i) => i === idx ? { ...img, width: val } : img);
+  }
+
+  handleBrandAiImageToggle(event) {
+    const idx = parseInt(event.currentTarget.dataset.idx, 10);
+    const checked = event.target.checked;
+    this.brandAiImages = this.brandAiImages.map((img, i) => i === idx ? { ...img, include: checked } : img);
+  }
+
+  handleCopyBrandPrompt() {
+    const text = this.brandAiPrompt;
+    navigator.clipboard.writeText(text).then(() => {
+      this.brandPromptCopied = true;
+      if (this._brandCopyTimer) clearTimeout(this._brandCopyTimer);
+      this._brandCopyTimer = setTimeout(() => { this.brandPromptCopied = false; }, 2000);
+    }).catch(() => {});
+  }
+
+  handleToggleBrandSfRules() { this.brandSfRulesExpanded = !this.brandSfRulesExpanded; }
 
   handleBrandTabClick(event) { this.brandActiveTab = event.currentTarget.dataset.tab; }
   handleBrandColorPickerChange(event) {
