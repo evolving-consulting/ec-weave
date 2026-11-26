@@ -20,11 +20,6 @@
             </div>
         </template>
 
-        <!-- Preview pill -->
-        <template if:true={previewResult}>
-            <div class="preview-pill">{previewResult} record(s) match this segment</div>
-        </template>
-
         <!-- Edit / New modal -->
         <template if:true={showModal}>
             <section role="dialog" class="modal-backdrop">
@@ -41,71 +36,149 @@
                             </div>
                         </template>
 
-                        <div class="form-row">
-                            <lightning-input label="Segment Name" value={editRecord.Name} data-field="Name"
-                                onchange={handleFieldChange} required>
-                            </lightning-input>
-                        </div>
+                        <!-- Section 1: Details -->
+                        <div class="form-section">
+                            <p class="form-section-title">Details</p>
 
-                        <div class="form-row">
-                            <lightning-combobox
-                                label="Object"
-                                value={editRecord.Object_API_Name__c}
-                                options={objectOptions}
-                                data-field="Object_API_Name__c"
-                                onchange={handleObjectChange}
-                                placeholder="Select an object…"
-                                required>
-                            </lightning-combobox>
-                        </div>
+                            <div class="form-row">
+                                <lightning-input label="Segment Name" value={editRecord.Name} data-field="Name"
+                                    onchange={handleFieldChange} required>
+                                </lightning-input>
+                            </div>
 
-                        <template if:true={editRecord.Object_API_Name__c}>
+                            <div class="form-row">
+                                <lightning-combobox label="Status" value={editRecord.Status__c}
+                                    options={statusOptions} data-field="Status__c" onchange={handleFieldChange} required>
+                                </lightning-combobox>
+                            </div>
+
+                            <div class="form-row">
+                                <lightning-textarea label="Description" value={editRecord.Description__c}
+                                    data-field="Description__c" onchange={handleFieldChange}>
+                                </lightning-textarea>
+                            </div>
+
                             <div class="form-row">
                                 <lightning-combobox
-                                    label="Email Field"
-                                    value={editRecord.Email_Field_API_Name__c}
-                                    options={emailFieldOptions}
-                                    data-field="Email_Field_API_Name__c"
-                                    onchange={handleFieldChange}
-                                    placeholder="Select the email field…"
+                                    label="Object"
+                                    value={editRecord.Object_API_Name__c}
+                                    options={objectOptions}
+                                    data-field="Object_API_Name__c"
+                                    onchange={handleObjectChange}
+                                    placeholder="Select an object…"
                                     required>
                                 </lightning-combobox>
                             </div>
 
-                            <div class="form-row">
-                                <lightning-combobox
-                                    label="Name Field"
-                                    value={editRecord.Name_Field_API_Name__c}
-                                    options={nameFieldOptions}
-                                    data-field="Name_Field_API_Name__c"
-                                    onchange={handleFieldChange}
-                                    placeholder="Select the name/label field…">
-                                </lightning-combobox>
+                            <template if:true={editRecord.Object_API_Name__c}>
+                                <div class="form-row">
+                                    <lightning-combobox
+                                        label="Email Field"
+                                        value={editRecord.Email_Field_API_Name__c}
+                                        options={emailFieldOptions}
+                                        data-field="Email_Field_API_Name__c"
+                                        onchange={handleFieldChange}
+                                        placeholder="Select the email field…"
+                                        required>
+                                    </lightning-combobox>
+                                </div>
+
+                                <div class="form-row">
+                                    <lightning-combobox
+                                        label="Name Field"
+                                        value={editRecord.Name_Field_API_Name__c}
+                                        options={nameFieldOptions}
+                                        data-field="Name_Field_API_Name__c"
+                                        onchange={handleFieldChange}
+                                        placeholder="Select the name/label field…"
+                                        required>
+                                    </lightning-combobox>
+                                </div>
+                            </template>
+                        </div>
+
+                        <!-- Section 2: Filter -->
+                        <template if:true={editRecord.Object_API_Name__c}>
+                            <div class="form-section">
+                                <p class="form-section-title">Filter</p>
+
+                                <template if:true={hasAvailableFields}>
+                                    <div class="field-chips-wrap">
+                                        <p class="field-chips-label">Insert field:</p>
+                                        <div class="field-chips">
+                                            <template for:each={availableFields} for:item="f">
+                                                <button key={f.apiName} class="field-chip" data-field={f.apiName} onclick={handleInsertField}>{f.label}</button>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <div class="form-row">
+                                    <label class="soql-label">SOQL Filter (WHERE clause)</label>
+                                    <textarea
+                                        class="soql-textarea"
+                                        onchange={handleSoqlChange}
+                                        onblur={handleSoqlBlur}
+                                        onmouseup={handleSoqlCursorSave}
+                                        onkeyup={handleSoqlCursorSave}
+                                        placeholder="e.g. MailingState = 'ON' AND HasOptedOutOfEmail = false"
+                                        rows="4">
+                                    </textarea>
+                                    <p class="field-hint">Leave blank to include all records. Do not include the WHERE keyword.</p>
+                                </div>
                             </div>
 
-                            <div class="form-row">
-                                <lightning-textarea
-                                    label="SOQL Filter (WHERE clause)"
-                                    value={editRecord.SOQL_Filter__c}
-                                    data-field="SOQL_Filter__c"
-                                    onchange={handleFieldChange}
-                                    placeholder="e.g. MailingState = 'ON' AND HasOptedOutOfEmail = false">
-                                </lightning-textarea>
-                                <p class="field-hint">Leave blank to include all records. Do not include the WHERE keyword.</p>
+                            <!-- Section 3: Preview -->
+                            <div class="form-section">
+                                <div class="form-section-header">
+                                    <p class="form-section-title">Preview</p>
+                                    <button class="btn-sm-teal" onclick={handleRunPreview} disabled={isPreviewLoading}>
+                                        {previewButtonLabel}
+                                    </button>
+                                </div>
+
+                                <template if:true={isPreviewLoading}>
+                                    <div class="preview-loading">
+                                        <lightning-spinner alternative-text="Loading preview" size="small"></lightning-spinner>
+                                    </div>
+                                </template>
+
+                                <template if:true={hasPreviewData}>
+                                    <div class="preview-count-badge">{previewData.totalCount} record(s) match</div>
+                                    <template if:true={hasPreviewRecords}>
+                                        <table class="slds-table slds-table_cell-buffer slds-table_bordered preview-table">
+                                            <thead>
+                                                <tr class="slds-line-height_reset">
+                                                    <th scope="col"><span class="slds-truncate">NAME</span></th>
+                                                    <th scope="col"><span class="slds-truncate">EMAIL</span></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <template for:each={previewData.sampleRecords} for:item="row">
+                                                    <tr key={row.email} class="slds-hint-parent">
+                                                        <td>{row.name}</td>
+                                                        <td>{row.email}</td>
+                                                    </tr>
+                                                </template>
+                                            </tbody>
+                                        </table>
+                                        <template if:true={hasMoreThanSample}>
+                                            <p class="field-hint">Showing first 10 of {previewData.totalCount} records.</p>
+                                        </template>
+                                    </template>
+                                    <template if:false={hasPreviewRecords}>
+                                        <p class="field-hint preview-hint">No matching records found.</p>
+                                    </template>
+                                </template>
+
+                                <template if:false={hasPreviewData}>
+                                    <template if:false={isPreviewLoading}>
+                                        <p class="field-hint preview-hint">Click "Run Preview" to see matching records.</p>
+                                    </template>
+                                </template>
                             </div>
                         </template>
 
-                        <div class="form-row">
-                            <lightning-textarea label="Description" value={editRecord.Description__c}
-                                data-field="Description__c" onchange={handleFieldChange}>
-                            </lightning-textarea>
-                        </div>
-
-                        <div class="form-row">
-                            <lightning-combobox label="Status" value={editRecord.Status__c}
-                                options={statusOptions} data-field="Status__c" onchange={handleFieldChange}>
-                            </lightning-combobox>
-                        </div>
                     </div>
                     <footer class="modal-footer">
                         <button class="btn-cancel" onclick={handleCancel}>Cancel</button>
@@ -163,7 +236,6 @@
                             <td>
                                 <span class="action-links">
                                     <button class="action-link edit-link" data-segid={seg.Id} onclick={handleEdit}>Edit</button>
-                                    <button class="action-link preview-link" data-segid={seg.Id} onclick={handlePreviewRow}>Preview</button>
                                     <button class="action-link delete-link" data-segid={seg.Id} onclick={handleDeleteRow}>Delete</button>
                                 </span>
                             </td>
