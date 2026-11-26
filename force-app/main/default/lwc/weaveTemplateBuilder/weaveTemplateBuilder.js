@@ -541,6 +541,8 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
   get sidebarNavClassSegments() { return 'sidebar-nav-btn' + (this.sidebarView === 'segments' ? ' sidebar-nav-btn_active' : ''); }
   get isSchedulerView()  { return this.sidebarView === 'scheduler'; }
   get sidebarNavClassScheduler() { return 'sidebar-nav-btn' + (this.sidebarView === 'scheduler' ? ' sidebar-nav-btn_active' : ''); }
+  get isResourcesView()  { return this.sidebarView === 'resources'; }
+  get sidebarNavClassResources() { return 'sidebar-nav-btn' + (this.sidebarView === 'resources' ? ' sidebar-nav-btn_active' : ''); }
 
   get schedulerIsActive() { return !!(this.schedulerStatus && this.schedulerStatus.isActive); }
   get schedulerStatusLabel() { return this.schedulerIsActive ? 'Active' : 'Inactive'; }

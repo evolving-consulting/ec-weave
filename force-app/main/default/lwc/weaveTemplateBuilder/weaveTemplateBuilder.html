@@ -58,6 +58,14 @@
           </svg>
           Scheduler
         </button>
+        <button class={sidebarNavClassResources} data-view="resources" onclick={handleSidebarNav}>
+          <svg class="nav-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 4h5.5c.8 0 1.5.3 2 .8L13 6.5H16a1 1 0 011 1V15a1 1 0 01-1 1H4a1 1 0 01-1-1V5a1 1 0 011-1z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+            <line x1="6" y1="10" x2="14" y2="10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+            <line x1="6" y1="13" x2="11" y2="13" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.5"/>
+          </svg>
+          Resources
+        </button>
       </nav>
 
       <div class="sidebar-footer">
@@ -1568,6 +1576,86 @@
               <span>The scheduler runs <strong>WeaveScheduledEmailExecutor</strong>, which processes all <strong>Pending</strong> scheduled sends. Individual one-time sends scheduled from the template editor each have their own job and are unaffected by this setting.</span>
             </div>
           </template>
+        </div>
+      </template>
+
+      <!-- ── RESOURCES VIEW ──────────────────────────────────────────────── -->
+      <template if:true={isResourcesView}>
+        <div class="library">
+          <div class="page-header">
+            <div class="page-header-left">
+              <p class="page-eyebrow">WEAVE</p>
+              <h1 class="page-title">Resources</h1>
+            </div>
+          </div>
+
+          <p class="resources-intro">Everything you need to get the most out of Weave — stay up to date with the latest changes, learn through guided training, or connect with our support team.</p>
+
+          <div class="resources-grid">
+
+            <!-- Stay Current -->
+            <div class="resource-card">
+              <div class="resource-card__icon">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="28" height="28">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z" fill="currentColor"/>
+                </svg>
+              </div>
+              <p class="resource-card__eyebrow">STAY CURRENT</p>
+              <h3 class="resource-card__title">What's New</h3>
+              <p class="resource-card__body">Follow Weave's latest releases, feature additions, and improvements — all in one place.</p>
+              <ul class="resource-card__list">
+                <li>Release notes for every version</li>
+                <li>New feature announcements</li>
+                <li>Bug fixes and performance improvements</li>
+              </ul>
+              <div class="resource-card__actions">
+                <a class="btn-resource" href="#" target="_blank" rel="noopener noreferrer">View Updates</a>
+              </div>
+            </div>
+
+            <!-- Learn Weave -->
+            <div class="resource-card resource-card_featured">
+              <div class="resource-card__icon">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="28" height="28">
+                  <path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z" fill="currentColor"/>
+                </svg>
+              </div>
+              <p class="resource-card__eyebrow">LEARN WEAVE</p>
+              <h3 class="resource-card__title">Training</h3>
+              <p class="resource-card__body">Step-by-step guides and walkthroughs to help your team build, send, and manage Weave communications with confidence.</p>
+              <ul class="resource-card__list">
+                <li>Getting started with templates</li>
+                <li>Connecting Salesforce data fields</li>
+                <li>Segment setup and best practices</li>
+                <li>Scheduler and automation guides</li>
+              </ul>
+              <div class="resource-card__actions">
+                <a class="btn-resource btn-resource_primary" href="#" target="_blank" rel="noopener noreferrer">Open Training Hub</a>
+              </div>
+            </div>
+
+            <!-- Get Help -->
+            <div class="resource-card">
+              <div class="resource-card__icon">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="28" height="28">
+                  <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" fill="currentColor"/>
+                </svg>
+              </div>
+              <p class="resource-card__eyebrow">GET HELP</p>
+              <h3 class="resource-card__title">Contact Us</h3>
+              <p class="resource-card__body">Connect with the Weave community or reach our team for dedicated, hands-on support.</p>
+              <ul class="resource-card__list">
+                <li>Ask questions and share tips with the community</li>
+                <li>Template, configuration, and data questions</li>
+                <li>Browse support plans for dedicated help</li>
+              </ul>
+              <div class="resource-card__actions">
+                <a class="btn-resource" href="#" target="_blank" rel="noopener noreferrer">Join our Slack Community</a>
+                <a class="btn-resource-link" href="#" target="_blank" rel="noopener noreferrer">View Support Plans</a>
+              </div>
+            </div>
+
+          </div>
         </div>
       </template>
 
