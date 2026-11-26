@@ -9,9 +9,10 @@ public with sharing class WeavePdfService {
             ? WeaveEmailTemplateRenderer.renderCanvas(templateId, recordId)
             : WeaveEmailTemplateRenderer.renderEmail(templateId, recordId);
 
+        String pageSizeProp = resolvePageSizeProperty(templateId);
         Blob pdfBlob = Test.isRunningTest()
             ? Blob.valueOf('PDF_TEST')
-            : Blob.toPdf(wrapForPdf(rendered.htmlBody, rendered.subject, isCanvas));
+            : Blob.toPdf(wrapForPdf(rendered.htmlBody, rendered.subject, isCanvas, pageSizeProp));
 
         ContentVersion cv = new ContentVersion();
         cv.Title = sanitizeTitle(rendered.subject);
@@ -39,9 +40,10 @@ public with sharing class WeavePdfService {
             htmlParts.add(rendered.htmlBody != null ? rendered.htmlBody : '');
         }
 
+        String pageSizeProp = templateIds.isEmpty() ? '' : resolvePageSizeProperty(templateIds[0]);
         Blob pdfBlob = Test.isRunningTest()
             ? Blob.valueOf('PDF_TEST')
-            : Blob.toPdf(wrapForPdf(String.join(htmlParts, '\n'), title));
+            : Blob.toPdf(wrapForPdf(String.join(htmlParts, '\n'), title, false, pageSizeProp));
 
         ContentVersion cv = new ContentVersion();
         cv.Title = sanitizeTitle(title);
@@ -97,9 +99,11 @@ public with sharing class WeavePdfService {
 
         if (htmlParts.isEmpty()) throw new AuraHandledException('No renderable items found in packet.');
 
+        Id firstTemplateId = packet.Packet_Items__r.isEmpty() ? null : packet.Packet_Items__r[0].Template__c;
+        String pageSizeProp = firstTemplateId != null ? resolvePageSizeProperty(firstTemplateId) : '';
         Blob pdfBlob = Test.isRunningTest()
             ? Blob.valueOf('PDF_TEST')
-            : Blob.toPdf(wrapForPdf(String.join(htmlParts, '\n'), title));
+            : Blob.toPdf(wrapForPdf(String.join(htmlParts, '\n'), title, false, pageSizeProp));
 
         ContentVersion cv = new ContentVersion();
         cv.Title = sanitizeTitle(title);
@@ -170,6 +174,27 @@ public with sharing class WeavePdfService {
         return saved[0];
     }
 
+    private static String resolvePageSizeProperty(Id templateId) {
+        try {
+            List<Weave_Template_Config__c> rows = [
+                SELECT Pdf_Page_Size__c, Pdf_Page_Width_In__c, Pdf_Page_Height_In__c
+                FROM Weave_Template_Config__c WHERE Id = :templateId WITH USER_MODE LIMIT 1
+            ];
+            if (rows.isEmpty()) return '';
+            Weave_Template_Config__c t = rows[0];
+            String size = (String) t.get('Pdf_Page_Size__c');
+            if (String.isBlank(size) || size == 'Letter') return '';
+            Decimal w, h;
+            if      (size == 'Legal')  { w = 8.5;   h = 14.0;  }
+            else if (size == 'A4')     { w = 8.27;  h = 11.69; }
+            else if (size == 'A3')     { w = 11.69; h = 16.54; }
+            else if (size == 'A5')     { w = 5.83;  h = 8.27;  }
+            else if (size == 'Custom') { w = t.Pdf_Page_Width_In__c; h = t.Pdf_Page_Height_In__c; }
+            if (w == null || h == null) return '';
+            return 'size:' + w + 'in ' + h + 'in;';
+        } catch (Exception e) { return ''; }
+    }
+
     private static Boolean isDocumentTemplate(Id templateId) {
         try {
             List<Weave_Template_Config__c> t = [
@@ -181,20 +206,24 @@ public with sharing class WeavePdfService {
     }
 
     private static String wrapForPdf(String htmlBody, String title) {
-        return wrapForPdf(htmlBody, title, false);
+        return wrapForPdf(htmlBody, title, false, '');
     }
 
-    // isCanvas=true: canvas/document mode — zero body margins, brand elements use
-    // position:fixed so they appear on every page without pushing canvas content off-page.
     private static String wrapForPdf(String htmlBody, String title, Boolean isCanvas) {
+        return wrapForPdf(htmlBody, title, isCanvas, '');
+    }
+
+    // pageSizeProp: CSS property string like "size:8.5in 14.0in;" or "" for default (Letter)
+    private static String wrapForPdf(String htmlBody, String title, Boolean isCanvas, String pageSizeProp) {
         String safeTitle = title != null ? title.escapeHtml4() : 'Document';
         String safeBody = htmlBody != null ? htmlBody : '';
+        String sizeProp = String.isBlank(pageSizeProp) ? '' : pageSizeProp;
 
         String baseFonts = 'font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#222;';
 
         String css;
         if (isCanvas == true) {
-            css = '@page{margin:0;}'
+            css = '@page{margin:0;' + sizeProp + '}'
                 + 'html,body{margin:0;padding:0;' + baseFonts + '}'
                 // Brand header/footer are fixed so they overlay every PDF page
                 + '.weave-pdf-header{position:fixed;top:0;left:0;right:0;z-index:9999;}'
@@ -205,7 +234,9 @@ public with sharing class WeavePdfService {
                 + 'img{max-width:100%;height:auto;}'
                 + 'a{color:#0070d2;text-decoration:none;}';
         } else {
-            css = 'body{' + baseFonts + 'margin:0;padding:16pt;}'
+            String pageRule = String.isBlank(sizeProp) ? '' : '@page{' + sizeProp + '}';
+            css = pageRule
+                + 'body{' + baseFonts + 'margin:0;padding:16pt;}'
                 // width:100% prevents fixed-pixel tables (e.g. width="756") from overflowing the page
                 // and causing Salesforce's PDF renderer to duplicate content across pages.
                 // td/th borders are intentionally NOT set here — templates control their own cell borders

@@ -116,6 +116,14 @@ const PAGE_SIZE_OPTIONS = [
   { label: 'Letter (8.5 × 11 in)', value: 'Letter' },
   { label: 'A4 (210 × 297 mm)', value: 'A4' }
 ];
+const PDF_PAGE_SIZE_OPTIONS = [
+  { label: 'Letter (8.5 × 11 in)', value: 'Letter' },
+  { label: 'Legal (8.5 × 14 in)', value: 'Legal' },
+  { label: 'A4 (8.27 × 11.69 in)', value: 'A4' },
+  { label: 'A3 (11.69 × 16.54 in)', value: 'A3' },
+  { label: 'A5 (5.83 × 8.27 in)', value: 'A5' },
+  { label: 'Custom', value: 'Custom' }
+];
 const ATTACHMENT_SOURCE_OPTIONS = [
   { label: 'Static File', value: 'Static File' },
   { label: 'Source Record Files', value: 'Source Record Files' },
@@ -141,7 +149,8 @@ function emptyTemplate() {
     queries: [], components: [], recipients: [], actions: [],
     deletedQueryIds: [], deletedComponentIds: [], deletedRecipientIds: [], deletedActionIds: [],
     attachments: [], deletedAttachmentIds: [],
-    canvasPageSize: 'Letter', canvasOrientation: 'Portrait', templateOutputType: 'Email'
+    canvasPageSize: 'Letter', canvasOrientation: 'Portrait', templateOutputType: 'Email',
+    pdfPageSize: 'Letter', pdfPageWidthIn: null, pdfPageHeightIn: null
   };
 }
 
@@ -269,6 +278,7 @@ export default class WeaveTemplateBuilder extends LightningElement {
   outputTypeOptions = OUTPUT_TYPE_OPTIONS;
   scheduleOutputTypeOptions = SCHEDULE_OUTPUT_TYPE_OPTIONS;
   pageSizeOptions = PAGE_SIZE_OPTIONS;
+  pdfPageSizeOptions = PDF_PAGE_SIZE_OPTIONS;
   componentTypeOptions = COMPONENT_TYPE_OPTIONS;
   regionOptions = REGION_OPTIONS;
   actionTypeOptions = ACTION_TYPE_OPTIONS;
@@ -607,6 +617,7 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
   get isFromCurrentUser() { return this.fromEmailType === 'CurrentUser'; }
   get isFromOrgWide() { return this.fromEmailType === 'OrgWide'; }
   get showPageSize() { return this.draftTemplate.templateOutputType === 'Document'; }
+  get showCustomPdfSize() { return this.draftTemplate.pdfPageSize === 'Custom'; }
   get isDocumentTemplate() { return this.draftTemplate.templateOutputType === 'Document'; }
   get isEmailTemplate() { return this.draftTemplate.templateOutputType !== 'Document'; }
 

@@ -28,6 +28,9 @@ public with sharing class WeaveBuilderDTOs {
         @AuraEnabled public String templateOutputType { get; set; }
         @AuraEnabled public String canvasPageSize { get; set; }
         @AuraEnabled public String canvasOrientation { get; set; }
+        @AuraEnabled public String pdfPageSize { get; set; }
+        @AuraEnabled public Decimal pdfPageWidthIn { get; set; }
+        @AuraEnabled public Decimal pdfPageHeightIn { get; set; }
 
         public WeaveBuilderTemplateDTO() {
             this.status = 'Draft';

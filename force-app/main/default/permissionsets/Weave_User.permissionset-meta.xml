@@ -449,6 +449,21 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>false</editable>
+        <field>Weave_Template_Config__c.Pdf_Page_Size__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>Weave_Template_Config__c.Pdf_Page_Width_In__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>Weave_Template_Config__c.Pdf_Page_Height_In__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
         <field>Weave_Template_Config__c.SFMC_Template_ID__c</field>
         <readable>true</readable>
     </fieldPermissions>

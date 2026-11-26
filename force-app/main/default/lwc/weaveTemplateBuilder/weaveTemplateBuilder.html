@@ -311,12 +311,41 @@
                   ></lightning-combobox>
                   <template if:true={showPageSize}>
                     <lightning-combobox
-                      label="Page Size"
+                      label="Canvas Layout Size"
                       value={draftTemplate.canvasPageSize}
                       options={pageSizeOptions}
                       data-field="canvasPageSize"
                       onchange={handleFieldChange}
                     ></lightning-combobox>
+                  </template>
+                  <lightning-combobox
+                    label="PDF Output Page Size"
+                    value={draftTemplate.pdfPageSize}
+                    options={pdfPageSizeOptions}
+                    data-field="pdfPageSize"
+                    onchange={handleFieldChange}
+                  ></lightning-combobox>
+                  <template if:true={showCustomPdfSize}>
+                    <div class="form-row-2">
+                      <lightning-input
+                        type="number"
+                        label="Width (in)"
+                        value={draftTemplate.pdfPageWidthIn}
+                        data-field="pdfPageWidthIn"
+                        step="0.01"
+                        min="1"
+                        onchange={handleFieldChange}
+                      ></lightning-input>
+                      <lightning-input
+                        type="number"
+                        label="Height (in)"
+                        value={draftTemplate.pdfPageHeightIn}
+                        data-field="pdfPageHeightIn"
+                        step="0.01"
+                        min="1"
+                        onchange={handleFieldChange}
+                      ></lightning-input>
+                    </div>
                   </template>
                 </div>
                 <template if:true={isEmailTemplate}>
