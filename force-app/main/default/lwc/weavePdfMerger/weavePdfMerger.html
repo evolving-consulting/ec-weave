@@ -5,71 +5,107 @@
                 <lightning-spinner alternative-text="Generating PDF" size="small"></lightning-spinner>
             </template>
             <template if:true={errorMessage}>
-                <div class="slds-notify slds-notify_alert slds-theme_error" role="alert">
+                <div class="slds-notify slds-notify_alert slds-theme_error slds-m-bottom_small" role="alert">
                     <span>{errorMessage}</span>
                 </div>
             </template>
             <template if:true={successDocumentId}>
-                <div class="slds-notify slds-notify_toast slds-theme_success" role="status">
-                    <span>PDF generated successfully. <a href={downloadUrl} target="_blank">Download</a></span>
+                <div class="slds-notify slds-notify_toast slds-theme_success slds-m-bottom_small" role="status">
+                    <span>PDF generated. <a href={downloadUrl} target="_blank">Download</a></span>
                 </div>
             </template>
 
-            <p class="slds-m-bottom_small slds-text-color_weak">
-                Add templates below to combine into a single PDF packet (cover + quote + terms, etc.).
-            </p>
+            <!-- Tab bar -->
+            <div class="tab-bar slds-m-bottom_medium">
+                <button class={tabAdhocClass} data-tab="adhoc" onclick={handleTabSwitch}>Ad-hoc</button>
+                <button class={tabPacketClass} data-tab="packet" onclick={handleTabSwitch}>Named Packet</button>
+            </div>
 
-            <template for:each={items} for:item="item">
-                <div class="item-row" key={item.key}>
-                    <lightning-input
-                        label="Template ID"
-                        value={item.templateId}
-                        data-key={item.key}
-                        data-field="templateId"
-                        onchange={handleItemChange}
-                        placeholder="Weave_Template_Config__c ID">
-                    </lightning-input>
-                    <lightning-input
-                        label="Record ID"
-                        value={item.recordId}
-                        data-key={item.key}
-                        data-field="recordId"
-                        onchange={handleItemChange}
-                        placeholder="Source record ID">
-                    </lightning-input>
-                    <div class="item-remove">
-                        <lightning-button-icon
-                            icon-name="utility:close"
-                            variant="bare"
+            <!-- Ad-hoc tab -->
+            <template if:true={isAdhocTab}>
+                <p class="slds-m-bottom_small slds-text-color_weak">
+                    Combine templates one-off into a single PDF.
+                </p>
+                <template for:each={items} for:item="item">
+                    <div class="item-row" key={item.key}>
+                        <lightning-input
+                            label="Template ID"
+                            value={item.templateId}
                             data-key={item.key}
-                            onclick={handleRemoveItem}
-                            alternative-text="Remove">
-                        </lightning-button-icon>
+                            data-field="templateId"
+                            onchange={handleItemChange}
+                            placeholder="Weave_Template_Config__c ID">
+                        </lightning-input>
+                        <lightning-input
+                            label="Record ID"
+                            value={item.recordId}
+                            data-key={item.key}
+                            data-field="recordId"
+                            onchange={handleItemChange}
+                            placeholder="Source record ID">
+                        </lightning-input>
+                        <div class="item-remove">
+                            <lightning-button-icon
+                                icon-name="utility:close"
+                                variant="bare"
+                                data-key={item.key}
+                                onclick={handleRemoveItem}
+                                alternative-text="Remove">
+                            </lightning-button-icon>
+                        </div>
                     </div>
+                </template>
+                <div class="slds-m-top_small">
+                    <lightning-button label="Add Template" icon-name="utility:add" onclick={handleAddItem}></lightning-button>
+                </div>
+                <div class="slds-m-top_medium">
+                    <lightning-input label="PDF Title" value={pdfTitle} onchange={handleTitleChange}></lightning-input>
+                </div>
+                <div class="slds-m-top_medium">
+                    <lightning-button
+                        label="Generate PDF Packet"
+                        variant="brand"
+                        icon-name="utility:pdf"
+                        disabled={isLoading}
+                        onclick={handleGenerate}>
+                    </lightning-button>
                 </div>
             </template>
 
-            <div class="slds-m-top_small">
-                <lightning-button label="Add Template" icon-name="utility:add" onclick={handleAddItem}></lightning-button>
-            </div>
-
-            <div class="slds-m-top_medium">
-                <lightning-input
-                    label="PDF Title"
-                    value={pdfTitle}
-                    onchange={handleTitleChange}>
-                </lightning-input>
-            </div>
-
-            <div class="slds-m-top_medium">
-                <lightning-button
-                    label="Generate PDF Packet"
-                    variant="brand"
-                    icon-name="utility:pdf"
-                    disabled={isLoading}
-                    onclick={handleGenerate}>
-                </lightning-button>
-            </div>
+            <!-- Named Packet tab -->
+            <template if:true={isPacketTab}>
+                <template if:true={noPackets}>
+                    <p class="slds-text-color_weak">No packets found. Create a packet in the Weave Template Builder first.</p>
+                </template>
+                <template if:false={noPackets}>
+                    <div class="slds-m-bottom_medium">
+                        <lightning-combobox
+                            label="Packet"
+                            placeholder="Select a packet…"
+                            value={selectedPacketId}
+                            options={packetOptions}
+                            onchange={handlePacketChange}>
+                        </lightning-combobox>
+                    </div>
+                    <div class="slds-m-bottom_medium">
+                        <lightning-input
+                            label="Source Record ID"
+                            value={packetRecordId}
+                            placeholder="Salesforce record ID"
+                            onchange={handlePacketRecordIdChange}>
+                        </lightning-input>
+                    </div>
+                    <div class="slds-m-top_medium">
+                        <lightning-button
+                            label="Generate Packet PDF"
+                            variant="brand"
+                            icon-name="utility:pdf"
+                            disabled={isLoading}
+                            onclick={handleGeneratePacket}>
+                        </lightning-button>
+                    </div>
+                </template>
+            </template>
         </div>
     </lightning-card>
 </template>

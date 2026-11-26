@@ -1,8 +1,30 @@
+.tab-bar {
+    display: flex;
+    gap: 8px;
+}
+
+.tab-btn {
+    padding: 5px 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 20px;
+    background: transparent;
+    color: #6b7280;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.tab-btn_active {
+    background: #1f5f5b;
+    border-color: #1f5f5b;
+    color: #fff;
+    font-weight: 600;
+}
+
 .item-row {
     display: flex;
-    gap: 0.5rem;
+    gap: 8px;
     align-items: flex-end;
-    margin-bottom: 0.5rem;
+    margin-bottom: 8px;
 }
 
 .item-row lightning-input {
@@ -10,5 +32,5 @@
 }
 
 .item-remove {
-    padding-bottom: 0.25rem;
+    padding-bottom: 4px;
 }

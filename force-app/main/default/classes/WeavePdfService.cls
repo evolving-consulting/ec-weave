@@ -53,6 +53,104 @@ public with sharing class WeavePdfService {
         return saved[0];
     }
 
+    public static ContentVersion generatePacketPdf(Id packetId, Id sourceRecordId) {
+        if (packetId == null) throw new AuraHandledException('Packet Id is required.');
+        if (sourceRecordId == null) throw new AuraHandledException('Source Record Id is required.');
+
+        List<Weave_Document_Packet__c> packets = [
+            SELECT Id, Name, Title_Template__c,
+                (SELECT Id, Template__c, Display_Order__c, Record_Source__c,
+                        Static_Record_Id__c, Parent_Lookup_Field__c,
+                        Template__r.Parent_Object_API_Name__c
+                 FROM Packet_Items__r ORDER BY Display_Order__c ASC NULLS LAST)
+            FROM Weave_Document_Packet__c
+            WHERE Id = :packetId WITH USER_MODE LIMIT 1
+        ];
+        if (packets.isEmpty()) throw new AuraHandledException('Packet not found.');
+        Weave_Document_Packet__c packet = packets[0];
+
+        // Resolve merge tags in the title against the source record
+        String title = String.isBlank(packet.Title_Template__c) ? packet.Name : packet.Title_Template__c;
+        if (title.contains('{{')) {
+            SObject src = resolveSourceRecord(sourceRecordId, title);
+            if (src != null) {
+                GenericMergeFieldResolver.MergeContext ctx = new GenericMergeFieldResolver.MergeContext();
+                ctx.parentRecord = src;
+                title = GenericMergeFieldResolver.resolveTemplate(title, ctx);
+            }
+        }
+
+        List<String> htmlParts = new List<String>();
+        for (Weave_Packet_Item__c item : packet.Packet_Items__r) {
+            if (item.Template__c == null) continue;
+            Id itemRecordId = resolveItemRecord(item, sourceRecordId);
+            if (itemRecordId == null) continue;
+
+            Boolean isCanvas = isDocumentTemplate(item.Template__c);
+            WeaveEmailTemplateRenderer.RenderedEmailDTO rendered = isCanvas
+                ? WeaveEmailTemplateRenderer.renderCanvas(item.Template__c, itemRecordId)
+                : WeaveEmailTemplateRenderer.renderEmail(item.Template__c, itemRecordId);
+
+            if (!htmlParts.isEmpty()) htmlParts.add('<div style="page-break-before:always;"></div>');
+            htmlParts.add(rendered.htmlBody != null ? rendered.htmlBody : '');
+        }
+
+        if (htmlParts.isEmpty()) throw new AuraHandledException('No renderable items found in packet.');
+
+        Blob pdfBlob = Test.isRunningTest()
+            ? Blob.valueOf('PDF_TEST')
+            : Blob.toPdf(wrapForPdf(String.join(htmlParts, '\n'), title));
+
+        ContentVersion cv = new ContentVersion();
+        cv.Title = sanitizeTitle(title);
+        cv.PathOnClient = sanitizeFileName(title) + '.pdf';
+        cv.VersionData = pdfBlob;
+        cv.FirstPublishLocationId = sourceRecordId;
+        insert as user cv;
+
+        List<ContentVersion> saved = [SELECT Id, ContentDocumentId FROM ContentVersion WHERE Id = :cv.Id WITH USER_MODE LIMIT 1];
+        return saved[0];
+    }
+
+    private static Id resolveItemRecord(Weave_Packet_Item__c item, Id sourceRecordId) {
+        String src = item.Record_Source__c;
+        if (src == 'Static Record') {
+            return String.isNotBlank(item.Static_Record_Id__c) ? (Id) item.Static_Record_Id__c : null;
+        }
+        if (src == 'Parent Lookup Field' && String.isNotBlank(item.Parent_Lookup_Field__c)) {
+            String objApi = item.Template__r.Parent_Object_API_Name__c;
+            if (String.isBlank(objApi)) return sourceRecordId;
+            try {
+                String q = 'SELECT ' + String.escapeSingleQuotes(item.Parent_Lookup_Field__c)
+                    + ' FROM ' + String.escapeSingleQuotes(objApi)
+                    + ' WHERE Id = :sourceRecordId WITH USER_MODE LIMIT 1';
+                List<SObject> rows = Database.query(q);
+                if (!rows.isEmpty()) {
+                    Object val = rows[0].get(item.Parent_Lookup_Field__c);
+                    return val != null ? (Id) val : null;
+                }
+            } catch (Exception e) { return null; }
+        }
+        return sourceRecordId;
+    }
+
+    private static SObject resolveSourceRecord(Id recordId, String template) {
+        String objectType;
+        try { objectType = recordId.getSObjectType().getDescribe().getName(); } catch (Exception e) { return null; }
+        // Extract field API names from {{FieldName}} placeholders
+        Set<String> fields = new Set<String>{ 'Id', 'Name' };
+        Pattern p = Pattern.compile('\\{\\{([A-Za-z_][A-Za-z0-9_.]*(?:__[cr])?)\\}\\}');
+        Matcher m = p.matcher(template);
+        while (m.find()) { fields.add(m.group(1).split('\\.')[0]); }
+        try {
+            String q = 'SELECT ' + String.join(new List<String>(fields), ',')
+                + ' FROM ' + String.escapeSingleQuotes(objectType)
+                + ' WHERE Id = :recordId WITH USER_MODE LIMIT 1';
+            List<SObject> rows = Database.query(q);
+            return rows.isEmpty() ? null : rows[0];
+        } catch (Exception e) { return null; }
+    }
+
     public static ContentVersion previewPdf(String htmlBody, String title) {
         if (String.isBlank(htmlBody)) throw new AuraHandledException('HTML content is required.');
         if (String.isBlank(title)) title = 'Preview';

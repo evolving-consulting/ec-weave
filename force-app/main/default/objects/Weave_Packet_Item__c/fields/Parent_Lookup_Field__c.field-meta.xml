@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Parent_Lookup_Field__c</fullName>
+    <description>API name of a lookup field on the source record that points to the record this template should render against. Used when Record Source = Parent Lookup Field.</description>
+    <label>Parent Lookup Field</label>
+    <length>80</length>
+    <required>false</required>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Weave_Document_Packet__c</fullName>
+    <label>Weave Document Packet</label>
+    <referenceTo>Weave_Document_Packet__c</referenceTo>
+    <relationshipLabel>Packet Items</relationshipLabel>
+    <relationshipName>Packet_Items</relationshipName>
+    <reparentableMasterDetail>false</reparentableMasterDetail>
+    <type>MasterDetail</type>
+    <writeRequiresMasterRead>false</writeRequiresMasterRead>
+</CustomField>
