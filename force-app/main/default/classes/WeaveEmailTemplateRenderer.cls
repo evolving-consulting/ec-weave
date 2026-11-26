@@ -85,7 +85,7 @@ public with sharing class WeaveEmailTemplateRenderer {
         return [
             SELECT Id, Name, Component_Type__c, Region__c, Display_Order__c,
                 Linked_Query__c, Linked_Query__r.SOQL_Query__c, Linked_Query__r.Parent_Lookup_Field__c,
-                Config_JSON__c, HTML_Output__c,
+                Config_JSON__c, HTML_Output__c, Visibility_Condition__c,
                 Canvas_Mode__c, Canvas_X__c, Canvas_Y__c, Canvas_W__c, Canvas_H__c, Canvas_Page__c
             FROM Weave_Template_Component__c
             WHERE Weave_Template_Config__c = :templateId
@@ -131,13 +131,18 @@ public with sharing class WeaveEmailTemplateRenderer {
         GenericMergeFieldResolver.MergeContext context,
         List<Weave_Template_Query__c> queries
     ) {
+        // Component-level visibility: skip entirely when condition evaluates to false
+        if (String.isNotBlank(c.Visibility_Condition__c)) {
+            if (!GenericMergeFieldResolver.evaluateCondition(c.Visibility_Condition__c.trim(), context)) return '';
+        }
         if (c.Component_Type__c == 'Related Table') {
-            return renderRelatedTableComponent(c, parentRecord, parentObjectApiName, recordId);
+            return renderRelatedTableComponent(c, parentRecord, parentObjectApiName, recordId, context);
         }
         // All other types: resolve merge tags in HTML_Output, pre-processing any
         // {{Section.queryApiName}}<table>...</table> inline section patterns first
         if (String.isBlank(c.HTML_Output__c)) return '';
         String html = processInlineSections(c.HTML_Output__c, recordId, queries, parentObjectApiName);
+        html = GenericMergeFieldResolver.resolveConditionals(html, context);
         return GenericMergeFieldResolver.resolveTemplate(html, context);
     }
 
@@ -145,7 +150,8 @@ public with sharing class WeaveEmailTemplateRenderer {
         Weave_Template_Component__c c,
         SObject parentRecord,
         String parentObjectApiName,
-        Id recordId
+        Id recordId,
+        GenericMergeFieldResolver.MergeContext parentContext
     ) {
         if (c.Linked_Query__c == null) return '';
         String storedSoql = c.Linked_Query__r.SOQL_Query__c;
@@ -227,7 +233,8 @@ public with sharing class WeaveEmailTemplateRenderer {
                     }
                 }
             }
-            tableHtml += GenericMergeFieldResolver.resolveTemplate(rowTemplate, childContext);
+            String resolvedRow = GenericMergeFieldResolver.resolveConditionals(rowTemplate, childContext);
+            tableHtml += GenericMergeFieldResolver.resolveTemplate(resolvedRow, childContext);
         }
         tableHtml += tableSuffix;
         return tableHtml;

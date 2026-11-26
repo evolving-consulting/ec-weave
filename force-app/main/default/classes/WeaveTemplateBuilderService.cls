@@ -338,7 +338,7 @@ public with sharing class WeaveTemplateBuilderService {
             // Clone components
             List<Weave_Template_Component__c> srcComponents = [
                 SELECT Id, Name, Component_Type__c, Region__c, Display_Order__c,
-                    Linked_Query__c, Config_JSON__c, HTML_Output__c,
+                    Linked_Query__c, Config_JSON__c, HTML_Output__c, Visibility_Condition__c,
                     Canvas_Mode__c, Canvas_X__c, Canvas_Y__c, Canvas_W__c, Canvas_H__c, Canvas_Page__c
                 FROM Weave_Template_Component__c WHERE Weave_Template_Config__c = :templateId WITH USER_MODE
                 ORDER BY Region__c ASC, Display_Order__c ASC NULLS LAST
@@ -358,6 +358,7 @@ public with sharing class WeaveTemplateBuilderService {
                         Linked_Query__c = c.Linked_Query__c != null ? queryIdMap.get(c.Linked_Query__c) : null,
                         Config_JSON__c = c.Config_JSON__c,
                         HTML_Output__c = c.HTML_Output__c,
+                        Visibility_Condition__c = c.Visibility_Condition__c,
                         Canvas_Mode__c = c.Canvas_Mode__c,
                         Canvas_X__c = c.Canvas_X__c,
                         Canvas_Y__c = c.Canvas_Y__c,
@@ -535,6 +536,7 @@ public with sharing class WeaveTemplateBuilderService {
                 Linked_Query__c = c.linkedQueryId,
                 Config_JSON__c = c.configJson,
                 HTML_Output__c = c.htmlOutput,
+                Visibility_Condition__c = c.visibilityCondition,
                 Canvas_Mode__c = c.canvasMode != null ? c.canvasMode : false,
                 Canvas_X__c = c.canvasX,
                 Canvas_Y__c = c.canvasY,
@@ -673,7 +675,7 @@ public with sharing class WeaveTemplateBuilderService {
         List<WeaveBuilderDTOs.WeaveBuilderComponentDTO> dtos = new List<WeaveBuilderDTOs.WeaveBuilderComponentDTO>();
         for (Weave_Template_Component__c c : [
             SELECT Id, Name, Component_Type__c, Region__c, Display_Order__c,
-                Linked_Query__c, Linked_Query__r.Name, Config_JSON__c, HTML_Output__c,
+                Linked_Query__c, Linked_Query__r.Name, Config_JSON__c, HTML_Output__c, Visibility_Condition__c,
                 Canvas_Mode__c, Canvas_X__c, Canvas_Y__c, Canvas_W__c, Canvas_H__c, Canvas_Page__c
             FROM Weave_Template_Component__c
             WHERE Weave_Template_Config__c = :templateId
@@ -696,6 +698,7 @@ public with sharing class WeaveTemplateBuilderService {
             dto.canvasW = c.Canvas_W__c;
             dto.canvasH = c.Canvas_H__c;
             dto.canvasPage = c.Canvas_Page__c != null ? c.Canvas_Page__c.intValue() : null;
+            dto.visibilityCondition = c.Visibility_Condition__c;
             dtos.add(dto);
         }
         return dtos;

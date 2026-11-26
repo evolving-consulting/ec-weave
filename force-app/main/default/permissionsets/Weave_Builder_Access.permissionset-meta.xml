@@ -221,6 +221,11 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
+        <field>Weave_Template_Component__c.Visibility_Condition__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
         <field>Weave_Template_Component__c.Linked_Query__c</field>
         <readable>true</readable>
     </fieldPermissions>

@@ -1622,6 +1622,19 @@
                 </div>
               </template>
 
+              <!-- Visibility condition (all component types) -->
+              <div class="comp-edit-section">
+                <lightning-input
+                  label="Show when (optional)"
+                  value={editingComponent.visibilityCondition}
+                  data-field="visibilityCondition"
+                  onchange={handleComponentFieldChange}
+                  placeholder="e.g. StageName == 'Closed Won' or Status__c != 'Inactive'"
+                  maxlength="255"
+                ></lightning-input>
+                <p class="comp-edit-hint">Leave blank to always show. Supports field comparisons like <code>Status__c == &apos;Active&apos;</code>, numeric comparisons like <code>Amount &gt; 1000</code>, or just a field name to show when it has a value.</p>
+              </div>
+
             </div>
 
             <!-- Right column: merge tag browser (only for content types) -->

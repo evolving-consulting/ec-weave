@@ -135,6 +135,7 @@ public with sharing class WeaveBuilderDTOs {
         @AuraEnabled public Decimal canvasW { get; set; }
         @AuraEnabled public Decimal canvasH { get; set; }
         @AuraEnabled public Integer canvasPage { get; set; }
+        @AuraEnabled public String visibilityCondition { get; set; }
     }
 
     public class WeaveBuilderRecipientDTO {
