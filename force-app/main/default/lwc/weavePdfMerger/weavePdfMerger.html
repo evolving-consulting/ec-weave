@@ -13,6 +13,52 @@
                 <div class="slds-notify slds-notify_toast slds-theme_success slds-m-bottom_small" role="status">
                     <span>PDF generated. <a href={downloadUrl} target="_blank">Download</a></span>
                 </div>
+
+                <!-- Share panel -->
+                <div class="share-panel slds-m-bottom_medium">
+                    <p class="share-eyebrow">Public Link</p>
+                    <template if:false={hasShareUrl}>
+                        <div class="share-row">
+                            <lightning-input
+                                type="number"
+                                label="Expires in (days)"
+                                value={shareExpiryDays}
+                                min="0"
+                                placeholder="0 = never"
+                                onchange={handleExpiryDaysChange}
+                                class="share-expiry-input">
+                            </lightning-input>
+                            <lightning-button
+                                label="Create Link"
+                                icon-name="utility:link"
+                                disabled={isSharing}
+                                onclick={handleCreateShare}>
+                            </lightning-button>
+                        </div>
+                    </template>
+                    <template if:true={hasShareUrl}>
+                        <div class="share-url-row">
+                            <input type="text" class="share-url-field" value={shareUrl} readonly />
+                            <lightning-button-icon
+                                icon-name="utility:copy"
+                                alternative-text="Copy link"
+                                onclick={handleCopyLink}
+                                title="Copy link">
+                            </lightning-button-icon>
+                            <lightning-button-icon
+                                icon-name="utility:delete"
+                                alternative-text="Revoke link"
+                                onclick={handleRevokeShare}
+                                variant="bare"
+                                class="revoke-btn"
+                                title="Revoke">
+                            </lightning-button-icon>
+                        </div>
+                        <template if:true={shareExpiry}>
+                            <p class="share-hint">Expires {shareExpiry}</p>
+                        </template>
+                    </template>
+                </div>
             </template>
 
             <!-- Tab bar -->

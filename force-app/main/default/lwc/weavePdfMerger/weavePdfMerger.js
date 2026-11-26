@@ -2,6 +2,8 @@ import { LightningElement, api, track } from 'lwc';
 import generateCombinedPdf from '@salesforce/apex/WeavePdfController.generateCombinedPdf';
 import getPackets from '@salesforce/apex/WeavePacketController.getPackets';
 import generatePacket from '@salesforce/apex/WeavePacketController.generatePacket';
+import createPublicLink from '@salesforce/apex/WeavePdfController.createPublicLink';
+import revokePublicLink from '@salesforce/apex/WeavePdfController.revokePublicLink';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 
 export default class WeavePdfMerger extends LightningElement {
@@ -22,6 +24,15 @@ export default class WeavePdfMerger extends LightningElement {
     @track isLoading = false;
     @track errorMessage = '';
     @track successDocumentId = '';
+    @track successContentVersionId = '';
+
+    // Share state
+    @track shareUrl = '';
+    @track shareDownloadUrl = '';
+    @track shareDistributionId = '';
+    @track shareExpiryDays = 0;
+    @track isSharing = false;
+    @track shareExpiry = '';
 
     itemCounter = 1;
 
@@ -32,6 +43,9 @@ export default class WeavePdfMerger extends LightningElement {
             ? '/sfc/servlet.shepherd/document/download/' + this.successDocumentId
             : '#';
     }
+
+    get hasShareUrl() { return !!this.shareUrl; }
+    get showSharePanel() { return !!this.successDocumentId; }
 
     get tabAdhocClass() {
         return this.activeTab === 'adhoc' ? 'tab-btn tab-btn_active' : 'tab-btn';
@@ -68,9 +82,19 @@ export default class WeavePdfMerger extends LightningElement {
         this.activeTab = event.currentTarget.dataset.tab;
         this.errorMessage = '';
         this.successDocumentId = '';
+        this.successContentVersionId = '';
+        this._clearShare();
         if (this.activeTab === 'packet' && !this.packetsLoaded) {
             this.loadPackets();
         }
+    }
+
+    _clearShare() {
+        this.shareUrl = '';
+        this.shareDownloadUrl = '';
+        this.shareDistributionId = '';
+        this.shareExpiryDays = 0;
+        this.shareExpiry = '';
     }
 
     loadPackets() {
@@ -111,6 +135,8 @@ export default class WeavePdfMerger extends LightningElement {
     handleGenerate() {
         this.errorMessage = '';
         this.successDocumentId = '';
+        this.successContentVersionId = '';
+        this._clearShare();
         const validItems = this.items.filter(i => i.templateId && i.recordId);
         if (validItems.length === 0) {
             this.errorMessage = 'At least one template with a record ID is required.';
@@ -122,8 +148,10 @@ export default class WeavePdfMerger extends LightningElement {
             recordIds: validItems.map(i => i.recordId),
             title: this.pdfTitle
         })
-            .then(contentDocumentId => {
-                this.successDocumentId = contentDocumentId;
+            .then(result => {
+                // result is ContentDocumentId — we need ContentVersionId for sharing
+                this.successDocumentId = result;
+                this.successContentVersionId = null; // resolved lazily via share button
                 this.dispatchEvent(new ShowToastEvent({ title: 'Success', message: 'PDF packet generated.', variant: 'success' }));
             })
             .catch(err => { this.errorMessage = err.body?.message || 'Unable to generate PDF.'; })
@@ -138,6 +166,7 @@ export default class WeavePdfMerger extends LightningElement {
     handleGeneratePacket() {
         this.errorMessage = '';
         this.successDocumentId = '';
+        this._clearShare();
         if (!this.selectedPacketId) {
             this.errorMessage = 'Select a packet before generating.';
             return;
@@ -154,5 +183,49 @@ export default class WeavePdfMerger extends LightningElement {
             })
             .catch(err => { this.errorMessage = err.body?.message || 'Unable to generate packet PDF.'; })
             .finally(() => { this.isLoading = false; });
+    }
+
+    // ── Share ─────────────────────────────────────────────────────────────────
+
+    handleExpiryDaysChange(event) {
+        this.shareExpiryDays = parseInt(event.detail.value, 10) || 0;
+    }
+
+    handleCreateShare() {
+        this.isSharing = true;
+        this.errorMessage = '';
+        createPublicLink({ contentDocumentId: this.successDocumentId, expirationDays: this.shareExpiryDays })
+            .then(result => {
+                this.shareUrl          = result.publicUrl;
+                this.shareDownloadUrl  = result.downloadUrl;
+                this.shareDistributionId = result.distributionId;
+                this.shareExpiry       = result.expiryDate
+                    ? new Date(result.expiryDate).toLocaleDateString()
+                    : '';
+            })
+            .catch(err => { this.errorMessage = err.body?.message || 'Unable to create public link.'; })
+            .finally(() => { this.isSharing = false; });
+    }
+
+    handleCopyLink() {
+        navigator.clipboard.writeText(this.shareUrl)
+            .then(() => {
+                this.dispatchEvent(new ShowToastEvent({ title: 'Copied', message: 'Link copied to clipboard.', variant: 'success' }));
+            })
+            .catch(() => {
+                this.dispatchEvent(new ShowToastEvent({ title: 'Copy failed', message: 'Please copy the link manually.', variant: 'warning' }));
+            });
+    }
+
+    handleRevokeShare() {
+        if (!this.shareDistributionId) return;
+        this.isSharing = true;
+        revokePublicLink({ contentDistributionId: this.shareDistributionId })
+            .then(() => {
+                this._clearShare();
+                this.dispatchEvent(new ShowToastEvent({ title: 'Revoked', message: 'Public link removed.', variant: 'success' }));
+            })
+            .catch(err => { this.errorMessage = err.body?.message || 'Unable to revoke link.'; })
+            .finally(() => { this.isSharing = false; });
     }
 }
