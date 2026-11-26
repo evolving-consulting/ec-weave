@@ -30,6 +30,7 @@ function recomputeFirstLast(cols) {
 }
 
 let _ctaSeq = 0;
+let _aiCondSeq = 0;
 
 export default class WeaveCanvasDesigner extends LightningElement {
     @api parentFields;
@@ -61,6 +62,17 @@ export default class WeaveCanvasDesigner extends LightningElement {
 
     // CTA panel
     @track showInsertCta = false;
+    // Conditional panel
+    @track showInsertConditional = false;
+    @track condType = 'truthy';
+    @track condFieldPath = '';
+    @track condOperator = '==';
+    @track condValue = '';
+    @track condIfContent = '';
+    @track condElseContent = '';
+    @track showCondIfTagPicker = false;
+    @track showCondElseTagPicker = false;
+    @track condTagSearch = '';
     @track ctaLabel = 'Click Here';
     @track ctaHref = '#';
     @track showCtaTagPicker = false;
@@ -82,6 +94,8 @@ export default class WeaveCanvasDesigner extends LightningElement {
     @track aiParentFieldOptions = [];
     @track aiQueryConfigs = [];
     @track aiCtas = [];
+    @track aiConditionals = [];
+    @track aiCondTagSearch = '';
     @track promptCopied = false;
     @track aiBrandConfig = { primaryColor: '', secondaryColor: '', headerDescription: '', footerDescription: '', logoUrl: '' };
     @track showAiBrandLogoPicker = false;
@@ -154,6 +168,41 @@ export default class WeaveCanvasDesigner extends LightningElement {
     get insertBtnClassImage() { return 'insert-btn' + (this.showInsertImage ? ' insert-btn_active' : ''); }
     get insertBtnClassMerge() { return 'insert-btn' + (this.showInsertMerge ? ' insert-btn_active' : ''); }
     get insertBtnClassCta()   { return 'insert-btn' + (this.showInsertCta ? ' insert-btn_active' : ''); }
+    get insertBtnClassConditional() { return 'insert-btn' + (this.showInsertConditional ? ' insert-btn_active' : ''); }
+
+    get condTypeOptions() {
+        return [
+            { label: 'Truthy — show if field has a value  ({{#Field}})', value: 'truthy' },
+            { label: 'Falsy — show if field is empty  ({{^Field}})', value: 'falsy' },
+            { label: 'Expression — compare field to a value  ({{#IF}})', value: 'expression' }
+        ];
+    }
+
+    get condOperatorOptions() {
+        return [
+            { label: '== (equals)', value: '==' },
+            { label: '!= (not equals)', value: '!=' },
+            { label: '> (greater than)', value: '>' },
+            { label: '< (less than)', value: '<' },
+            { label: '>= (greater or equal)', value: '>=' },
+            { label: '<= (less or equal)', value: '<=' }
+        ];
+    }
+
+    get conditionalFieldOptions() {
+        return this.availableFieldTags.map(t => ({ label: t.label, value: t.label }));
+    }
+
+    get isCondExpression() { return this.condType === 'expression'; }
+    get noCondFieldPath() { return !this.condFieldPath; }
+
+    get filteredCondTags() {
+        const term = (this.condTagSearch || '').toLowerCase();
+        const tags = this.availableFieldTags;
+        if (!term) return tags;
+        return tags.filter(t => t.label.toLowerCase().includes(term));
+    }
+    get hasFilteredCondTags() { return this.filteredCondTags.length > 0; }
 
     // ── Merge tag computed ────────────────────────────────────────────────────
 
@@ -213,11 +262,19 @@ export default class WeaveCanvasDesigner extends LightningElement {
     get isAiStep2() { return this.aiStep === 2; }
     get isAiStep3() { return this.aiStep === 3; }
     get isAiStep4() { return this.aiStep === 4; }
+    get isAiStep5() { return this.aiStep === 5; }
 
     get aiStepClass1() { return 'ai-step-dot' + (this.aiStep === 1 ? ' ai-step-dot_active' : (this.aiStep > 1 ? ' ai-step-dot_done' : '')); }
     get aiStepClass2() { return 'ai-step-dot' + (this.aiStep === 2 ? ' ai-step-dot_active' : (this.aiStep > 2 ? ' ai-step-dot_done' : '')); }
     get aiStepClass3() { return 'ai-step-dot' + (this.aiStep === 3 ? ' ai-step-dot_active' : (this.aiStep > 3 ? ' ai-step-dot_done' : '')); }
-    get aiStepClass4() { return 'ai-step-dot' + (this.aiStep === 4 ? ' ai-step-dot_active' : ''); }
+    get aiStepClass4() { return 'ai-step-dot' + (this.aiStep === 4 ? ' ai-step-dot_active' : (this.aiStep > 4 ? ' ai-step-dot_done' : '')); }
+    get aiStepClass5() { return 'ai-step-dot' + (this.aiStep === 5 ? ' ai-step-dot_active' : ''); }
+
+    get aiCondFilteredTags() {
+        const term = (this.aiCondTagSearch || '').toLowerCase();
+        return this.availableFieldTags.filter(t => !term || t.label.toLowerCase().includes(term));
+    }
+    get hasAiCondFilteredTags() { return this.aiCondFilteredTags.length > 0; }
 
     // ── PDF / output type computed ────────────────────────────────────────────
 
@@ -309,6 +366,28 @@ export default class WeaveCanvasDesigner extends LightningElement {
             }
         }
 
+        let condSection = '';
+        const activeConds = (this.aiConditionals || []).filter(c => c.fieldPath);
+        if (activeConds.length > 0) {
+            condSection = '\n\nCONDITIONAL BLOCKS TO GENERATE:';
+            activeConds.forEach((c, i) => {
+                condSection += `\n\nConditional ${i + 1}`;
+                if (c.description) condSection += `: ${c.description}`;
+                if (c.condType === 'truthy') {
+                    condSection += `\n  Syntax: {{#${c.fieldPath}}}[content when field has value]{{/${c.fieldPath}}}`;
+                } else if (c.condType === 'falsy') {
+                    condSection += `\n  Syntax: {{^${c.fieldPath}}}[content when field is empty]{{/${c.fieldPath}}}`;
+                } else {
+                    const op = c.operator || '==';
+                    const val = c.value || '';
+                    condSection += `\n  Syntax: {{#IF ${c.fieldPath} ${op} '${val}'}}[if-true content]${c.elseContent ? '{{:else}}[else content]' : ''}{{/IF}}`;
+                }
+                if (c.ifContent) condSection += `\n  Content when true: ${c.ifContent}`;
+                if (c.elseContent && c.condType === 'expression') condSection += `\n  Content when false: ${c.elseContent}`;
+            });
+            condSection += '\n\nUse these conditional blocks in the generated HTML exactly as specified above.';
+        }
+
         const subjectLine = subject ? `\nDOCUMENT TITLE: ${subject}\n` : '';
 
         // PDF-specific guardrails injected automatically for Document output type
@@ -366,8 +445,18 @@ WEAVE MERGE TAG SYNTAX:
 • Inside a section, child record fields use no prefix: {{FieldApiName}}
 • Keep merge tags verbatim — do not replace them with sample values
 
+CONDITIONAL SYNTAX (use to show or hide content based on field values):
+• Truthy block — show content only when a field has a value:
+    {{#Parent.FieldApiName}}content here{{/Parent.FieldApiName}}
+• Falsy block — show content only when a field is blank or false:
+    {{^Parent.FieldApiName}}content here{{/Parent.FieldApiName}}
+• Expression block — compare a field to a value, with optional else branch:
+    {{#IF Parent.FieldApiName == 'SomeValue'}}show this{{:else}}show that{{/IF}}
+  Supported operators: == != > < >= <=
+• Rules: Use field paths exactly as listed in AVAILABLE PARENT FIELDS. Conditionals can wrap any HTML. Do NOT nest conditionals inside each other.
+
 AVAILABLE PARENT FIELDS (${objectName}):
-${parentFieldLines}${querySection}${ctaSection}${imageSection}${brandSection}${pdfRules}
+${parentFieldLines}${querySection}${ctaSection}${imageSection}${brandSection}${condSection}${pdfRules}
 
 Generate the complete HTML template now.`;
     }
@@ -529,6 +618,85 @@ Generate the complete HTML template now.`;
         this.handleInsertCtaClose();
     }
 
+    // ── Insert: Conditional Block ─────────────────────────────────────────────
+
+    handleInsertConditionalToggle() {
+        const opening = !this.showInsertConditional;
+        this._closeAllInsertPanels();
+        this.showInsertConditional = opening;
+        if (opening) {
+            this.condType = 'truthy';
+            this.condFieldPath = '';
+            this.condOperator = '==';
+            this.condValue = '';
+            this.condIfContent = '';
+            this.condElseContent = '';
+        }
+    }
+
+    handleInsertConditionalClose() {
+        this.showInsertConditional = false;
+        this.showCondIfTagPicker = false;
+        this.showCondElseTagPicker = false;
+        this.condTagSearch = '';
+    }
+
+    handleConditionalModalBackdropClick() { this.showInsertConditional = false; }
+    handleConditionalModalInnerClick(event) { event.stopPropagation(); }
+
+    handleCondTypeChange(event) { this.condType = event.detail.value; }
+    handleCondFieldChange(event) { this.condFieldPath = event.detail.value; }
+    handleCondOperatorChange(event) { this.condOperator = event.detail.value; }
+    handleCondValueChange(event) { this.condValue = event.detail.value; }
+    handleCondIfContentChange(event) { this.condIfContent = event.detail.value; }
+    handleCondElseContentChange(event) { this.condElseContent = event.detail.value; }
+
+    handleCondIfTagPickerToggle() {
+        this.showCondIfTagPicker = !this.showCondIfTagPicker;
+        this.showCondElseTagPicker = false;
+        this.condTagSearch = '';
+    }
+
+    handleCondElseTagPickerToggle() {
+        this.showCondElseTagPicker = !this.showCondElseTagPicker;
+        this.showCondIfTagPicker = false;
+        this.condTagSearch = '';
+    }
+
+    handleCondTagSearch(event) { this.condTagSearch = event.target.value; }
+
+    handleInsertCondTag(event) {
+        const tag = event.currentTarget.dataset.tag;
+        const target = event.currentTarget.dataset.target;
+        if (target === 'elseContent') {
+            this.condElseContent = (this.condElseContent || '') + tag;
+            this.showCondElseTagPicker = false;
+        } else {
+            this.condIfContent = (this.condIfContent || '') + tag;
+            this.showCondIfTagPicker = false;
+        }
+        this.condTagSearch = '';
+    }
+
+    handleInsertConditionalConfirm() {
+        const field = this.condFieldPath;
+        if (!field) return;
+        const ifContent = this.condIfContent || '';
+        let snippet;
+        if (this.condType === 'truthy') {
+            snippet = `{{#${field}}}${ifContent}{{/${field}}}`;
+        } else if (this.condType === 'falsy') {
+            snippet = `{{^${field}}}${ifContent}{{/${field}}}`;
+        } else {
+            const op = this.condOperator || '==';
+            const val = this.condValue || '';
+            const elseBlock = this.condElseContent ? `{{:else}}${this.condElseContent}` : '';
+            snippet = `{{#IF ${field} ${op} '${val}'}}${ifContent}${elseBlock}{{/IF}}`;
+        }
+        this._appendHtml(snippet);
+        this._closeAllInsertPanels();
+    }
+
     // ── Insert: Merge Tag ─────────────────────────────────────────────────────
 
     handleInsertMergeToggle() {
@@ -634,7 +802,7 @@ Generate the complete HTML template now.`;
     }
 
     handleAiNext() {
-        if (this.aiStep < 4) this.aiStep += 1;
+        if (this.aiStep < 5) this.aiStep += 1;
     }
 
     handleAiBack() {
@@ -700,6 +868,8 @@ Generate the complete HTML template now.`;
             });
 
         this.aiCtas = [];
+        this.aiConditionals = [];
+        this.aiCondTagSearch = '';
         this.aiDescription = '';
 
         // Initialize brand config — colors/logo pre-filled from brandDetails if linked
@@ -865,6 +1035,104 @@ Generate the complete HTML template now.`;
         }
     }
 
+    // ── AI Step 3 — Conditional block handlers ────────────────────────────────
+
+    handleAiCondAdd() {
+        const id = ++_aiCondSeq;
+        this.aiConditionals = [...this.aiConditionals, {
+            id,
+            num: id,
+            description: '',
+            condType: 'truthy',
+            fieldPath: '',
+            operator: '==',
+            value: '',
+            ifContent: '',
+            elseContent: '',
+            showIfPicker: false,
+            showElsePicker: false,
+            isExpression: false
+        }];
+    }
+
+    handleAiCondRemove(event) {
+        const id = Number(event.currentTarget.dataset.id);
+        this.aiConditionals = this.aiConditionals.filter(c => c.id !== id);
+    }
+
+    _updateAiCond(id, patch) {
+        this.aiConditionals = this.aiConditionals.map(c => {
+            if (c.id !== id) return c;
+            const updated = { ...c, ...patch };
+            updated.isExpression = updated.condType === 'expression';
+            return updated;
+        });
+    }
+
+    handleAiCondDescChange(event) {
+        this._updateAiCond(Number(event.currentTarget.dataset.id), { description: event.detail.value });
+    }
+
+    handleAiCondTypeChange(event) {
+        this._updateAiCond(Number(event.currentTarget.dataset.id), { condType: event.detail.value });
+    }
+
+    handleAiCondFieldChange(event) {
+        this._updateAiCond(Number(event.currentTarget.dataset.id), { fieldPath: event.detail.value });
+    }
+
+    handleAiCondOperatorChange(event) {
+        this._updateAiCond(Number(event.currentTarget.dataset.id), { operator: event.detail.value });
+    }
+
+    handleAiCondValueChange(event) {
+        this._updateAiCond(Number(event.currentTarget.dataset.id), { value: event.detail.value });
+    }
+
+    handleAiCondIfContentChange(event) {
+        this._updateAiCond(Number(event.currentTarget.dataset.id), { ifContent: event.detail.value });
+    }
+
+    handleAiCondElseContentChange(event) {
+        this._updateAiCond(Number(event.currentTarget.dataset.id), { elseContent: event.detail.value });
+    }
+
+    handleAiCondIfPickerToggle(event) {
+        const id = Number(event.currentTarget.dataset.id);
+        this.aiConditionals = this.aiConditionals.map(c => ({
+            ...c,
+            showIfPicker: c.id === id ? !c.showIfPicker : false,
+            showElsePicker: false
+        }));
+        this.aiCondTagSearch = '';
+    }
+
+    handleAiCondElsePickerToggle(event) {
+        const id = Number(event.currentTarget.dataset.id);
+        this.aiConditionals = this.aiConditionals.map(c => ({
+            ...c,
+            showElsePicker: c.id === id ? !c.showElsePicker : false,
+            showIfPicker: false
+        }));
+        this.aiCondTagSearch = '';
+    }
+
+    handleAiCondTagSearch(event) {
+        this.aiCondTagSearch = event.target.value;
+    }
+
+    handleInsertAiCondTag(event) {
+        const tag = event.currentTarget.dataset.tag;
+        const id = Number(event.currentTarget.dataset.id);
+        const target = event.currentTarget.dataset.target;
+        this._updateAiCond(id, {
+            [target]: ((this.aiConditionals.find(c => c.id === id) || {})[target] || '') + tag,
+            showIfPicker: false,
+            showElsePicker: false
+        });
+        this.aiCondTagSearch = '';
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     _loadImages() {
@@ -902,6 +1170,10 @@ Generate the complete HTML template now.`;
         this.showInsertQuery = false;
         this.showInsertMerge = false;
         this.showInsertCta = false;
+        this.showInsertConditional = false;
+        this.showCondIfTagPicker = false;
+        this.showCondElseTagPicker = false;
+        this.condTagSearch = '';
         this.insertImageUrl = '';
         this.showManualImageUrl = false;
         this.imgWidth = '';

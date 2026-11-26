@@ -1579,3 +1579,142 @@ lightning-input-rich-text {
     padding: 1px 4px;
     border-radius: 3px;
 }
+
+/* ── Conditional Block Modal ────────────────────────────────────────────── */
+
+.cond-modal {
+    max-width: 560px;
+}
+
+.cond-modal-body {
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    overflow-y: auto;
+}
+
+.cond-expr-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 0.75rem;
+}
+
+.cond-expr-operator {
+    flex: 0 0 160px;
+}
+
+.cond-expr-value {
+    flex: 1;
+}
+
+.cond-content-section {
+    margin-top: 1rem;
+}
+
+.cond-content-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.cond-content-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ec-brand-muted);
+    letter-spacing: 0.03em;
+}
+
+.cond-textarea {
+    --lwc-fontSize3: 12px;
+}
+
+.ai-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 14px 24px;
+    border-top: 1px solid #e5e7eb;
+    flex-shrink: 0;
+}
+
+/* AI Step 3 — Conditional block cards */
+.ai-cond-intro {
+    font-size: 12px;
+    color: var(--ec-brand-muted);
+    margin: 0 0 1rem;
+    line-height: 1.5;
+}
+
+.ai-cond-card {
+    background: #ffffff;
+    border: 1px solid var(--ec-brand-teal-border);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.ai-cond-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+}
+
+.ai-cond-card-num {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ec-brand-teal);
+}
+
+.btn-remove-cond {
+    background: none;
+    border: none;
+    color: var(--ec-brand-muted);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    line-height: 1;
+}
+
+.btn-remove-cond:hover {
+    color: #dc2626;
+    background: #fef2f2;
+}
+
+.cond-type-field-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 0.75rem;
+}
+
+.cond-type-col {
+    flex: 0 0 220px;
+}
+
+.cond-field-col {
+    flex: 1;
+}
+
+.btn-add-cond {
+    display: block;
+    width: 100%;
+    margin-top: 0.5rem;
+    padding: 8px 0;
+    background: none;
+    border: 1px dashed var(--ec-brand-teal-light);
+    border-radius: 8px;
+    color: var(--ec-brand-teal);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+}
+
+.btn-add-cond:hover {
+    background: var(--ec-brand-teal-bg);
+}

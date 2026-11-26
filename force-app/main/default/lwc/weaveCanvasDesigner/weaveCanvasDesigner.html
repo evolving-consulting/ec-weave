@@ -33,6 +33,9 @@
         <button class={insertBtnClassCta} onclick={handleInsertCtaToggle}>
           🌐︎&nbsp;CTA Button
         </button>
+        <button class={insertBtnClassConditional} onclick={handleInsertConditionalToggle}>
+          ⤳&nbsp;Conditional
+        </button>
       </div>
 
       <!-- Insert: Image (file browser) -->
@@ -52,7 +55,7 @@
               <div class="image-file-grid">
                 <template for:each={templateImages} for:item="img">
                   <div key={img.cvId} class="image-file-item">
-                    <div class="image-file-icon">&#x1F5BC;</div>
+                    <div class="image-file-icon">⛶</div>
                     <span class="image-file-name">{img.name}</span>
                     <button class="btn-use-image" data-cvid={img.cvId} onclick={handleSelectTemplateImage}
                       disabled={img.loading}>
@@ -342,11 +345,16 @@
             <div class="ai-step-connector"></div>
             <div class={aiStepClass3}>
               <span class="ai-step-num">3</span>
-              <span class="ai-step-name">Brand</span>
+              <span class="ai-step-name">Conditionals</span>
             </div>
             <div class="ai-step-connector"></div>
             <div class={aiStepClass4}>
               <span class="ai-step-num">4</span>
+              <span class="ai-step-name">Brand</span>
+            </div>
+            <div class="ai-step-connector"></div>
+            <div class={aiStepClass5}>
+              <span class="ai-step-num">5</span>
               <span class="ai-step-name">Review Prompt</span>
             </div>
           </div>
@@ -518,8 +526,148 @@
               </div>
             </template>
 
-            <!-- Step 3: Brand -->
+            <!-- Step 3: Conditionals -->
             <template if:true={isAiStep3}>
+              <div class="ai-section">
+                <div class="ai-section-heading">
+                  <span class="ai-section-label">Conditional Blocks</span>
+                  <span class="ai-optional">(Optional)</span>
+                </div>
+                <p class="ai-cond-intro">Tell the AI which parts of the document should show or hide based on field values. Add one entry per conditional — the prompt will include explicit instructions for each one.</p>
+
+                <template for:each={aiConditionals} for:item="cond">
+                  <div key={cond.id} class="ai-cond-card">
+                    <div class="ai-cond-card-header">
+                      <span class="ai-cond-card-num">Conditional {cond.num}</span>
+                      <button class="btn-remove-cond" data-id={cond.id} onclick={handleAiCondRemove} title="Remove">&#x2715;</button>
+                    </div>
+
+                    <div class="form-row">
+                      <lightning-input
+                        label="Description"
+                        value={cond.description}
+                        placeholder="e.g. Show a special discount section when Stage is Closed Won"
+                        data-id={cond.id}
+                        onchange={handleAiCondDescChange}
+                      ></lightning-input>
+                    </div>
+
+                    <div class="cond-type-field-row">
+                      <div class="cond-type-col">
+                        <lightning-combobox
+                          label="Condition Type"
+                          value={cond.condType}
+                          options={condTypeOptions}
+                          data-id={cond.id}
+                          onchange={handleAiCondTypeChange}
+                        ></lightning-combobox>
+                      </div>
+                      <div class="cond-field-col">
+                        <lightning-combobox
+                          label="Field"
+                          value={cond.fieldPath}
+                          options={conditionalFieldOptions}
+                          placeholder="Choose field..."
+                          data-id={cond.id}
+                          onchange={handleAiCondFieldChange}
+                        ></lightning-combobox>
+                      </div>
+                    </div>
+
+                    <template if:true={cond.isExpression}>
+                      <div class="cond-expr-row">
+                        <div class="cond-expr-operator">
+                          <lightning-combobox
+                            label="Operator"
+                            value={cond.operator}
+                            options={condOperatorOptions}
+                            data-id={cond.id}
+                            onchange={handleAiCondOperatorChange}
+                          ></lightning-combobox>
+                        </div>
+                        <div class="cond-expr-value">
+                          <lightning-input
+                            label="Compare Value"
+                            value={cond.value}
+                            placeholder="e.g. Closed Won"
+                            data-id={cond.id}
+                            onchange={handleAiCondValueChange}
+                          ></lightning-input>
+                        </div>
+                      </div>
+                    </template>
+
+                    <div class="cond-content-section">
+                      <div class="cond-content-header">
+                        <span class="cond-content-label">Content when true</span>
+                        <button class="btn-field-tag" data-id={cond.id} onclick={handleAiCondIfPickerToggle}>&#x23;&nbsp;Tag</button>
+                      </div>
+                      <template if:true={cond.showIfPicker}>
+                        <div class="field-tag-picker">
+                          <input type="search" class="field-tag-search" placeholder="Search tags…"
+                            value={aiCondTagSearch} oninput={handleAiCondTagSearch} />
+                          <template if:true={hasAiCondFilteredTags}>
+                            <div class="field-tag-list">
+                              <template for:each={aiCondFilteredTags} for:item="tag">
+                                <button key={tag.value} class="field-tag-item"
+                                  data-tag={tag.value} data-id={cond.id} data-target="ifContent"
+                                  onclick={handleInsertAiCondTag}>{tag.label}</button>
+                              </template>
+                            </div>
+                          </template>
+                        </div>
+                      </template>
+                      <lightning-textarea
+                        label="" variant="label-hidden"
+                        value={cond.ifContent}
+                        placeholder="HTML or text to show when true… can include merge tags like {{Parent.Name}}"
+                        data-id={cond.id}
+                        onchange={handleAiCondIfContentChange}
+                        class="cond-textarea"
+                      ></lightning-textarea>
+                    </div>
+
+                    <template if:true={cond.isExpression}>
+                      <div class="cond-content-section">
+                        <div class="cond-content-header">
+                          <span class="cond-content-label">Else content (optional)</span>
+                          <button class="btn-field-tag" data-id={cond.id} onclick={handleAiCondElsePickerToggle}>&#x23;&nbsp;Tag</button>
+                        </div>
+                        <template if:true={cond.showElsePicker}>
+                          <div class="field-tag-picker">
+                            <input type="search" class="field-tag-search" placeholder="Search tags…"
+                              value={aiCondTagSearch} oninput={handleAiCondTagSearch} />
+                            <template if:true={hasAiCondFilteredTags}>
+                              <div class="field-tag-list">
+                                <template for:each={aiCondFilteredTags} for:item="tag">
+                                  <button key={tag.value} class="field-tag-item"
+                                    data-tag={tag.value} data-id={cond.id} data-target="elseContent"
+                                    onclick={handleInsertAiCondTag}>{tag.label}</button>
+                                </template>
+                              </div>
+                            </template>
+                          </div>
+                        </template>
+                        <lightning-textarea
+                          label="" variant="label-hidden"
+                          value={cond.elseContent}
+                          placeholder="HTML or text to show when false… (leave blank to omit else branch)"
+                          data-id={cond.id}
+                          onchange={handleAiCondElseContentChange}
+                          class="cond-textarea"
+                        ></lightning-textarea>
+                      </div>
+                    </template>
+
+                  </div>
+                </template>
+
+                <button class="btn-add-cond" onclick={handleAiCondAdd}>+ Add Conditional</button>
+              </div>
+            </template>
+
+            <!-- Step 4: Brand -->
+            <template if:true={isAiStep4}>
               <div class="ai-section">
                 <div class="ai-section-heading">
                   <span class="ai-section-label">Brand</span>
@@ -611,7 +759,7 @@
                           <template for:each={templateImages} for:item="img">
                             <button key={img.cvId} class="ai-brand-logo-item" data-cvid={img.cvId}
                               onclick={handleAiBrandLogoSelect}>
-                              <span class="image-file-icon">&#x1F5BC;</span>
+                              <span class="image-file-icon">⛶</span>
                               <span>{img.name}</span>
                             </button>
                           </template>
@@ -638,8 +786,8 @@
               </div>
             </template>
 
-            <!-- Step 4: Prompt -->
-            <template if:true={isAiStep4}>
+            <!-- Step 5: Prompt -->
+            <template if:true={isAiStep5}>
               <div class="ai-section">
                 <div class="ai-section-heading ai-section-heading_prompt">
                   <span class="ai-section-label">Ready-to-copy prompt</span>
@@ -650,7 +798,7 @@
                 </div>
                 <template if:true={isPdfTemplate}>
                   <div class="pdf-constraints-banner" onclick={handleTogglePdfConstraints}>
-                    <span class="pdf-constraints-badge">&#x1F4C4; PDF constraints applied</span>
+                    <span class="pdf-constraints-badge">⎙ PDF constraints applied</span>
                     <span class="pdf-constraints-chevron">{pdfConstraintsChevron}</span>
                   </div>
                   <template if:true={pdfConstraintsExpanded}>
@@ -666,7 +814,7 @@
                   </template>
                 </template>
                 <div class="pdf-constraints-banner" onclick={handleToggleSfRules}>
-                  <span class="pdf-constraints-badge">&#x1F512; Salesforce HTML rules applied</span>
+                  <span class="pdf-constraints-badge">ꗃ Salesforce HTML rules applied</span>
                   <span class="pdf-constraints-chevron">{sfRulesChevron}</span>
                 </div>
                 <template if:true={sfRulesExpanded}>
@@ -694,19 +842,181 @@
             </template>
             <template if:true={isAiStep2}>
               <button class="btn-cancel" onclick={handleAiBack}>← Back</button>
-              <button class="btn-primary" onclick={handleAiNext}>Next: Brand →</button>
+              <button class="btn-primary" onclick={handleAiNext}>Next: Conditionals →</button>
             </template>
             <template if:true={isAiStep3}>
               <button class="btn-cancel" onclick={handleAiBack}>← Back</button>
-              <button class="btn-primary" onclick={handleAiNext}>Next: Review Prompt →</button>
+              <button class="btn-primary" onclick={handleAiNext}>Next: Brand →</button>
             </template>
             <template if:true={isAiStep4}>
+              <button class="btn-cancel" onclick={handleAiBack}>← Back</button>
+              <button class="btn-primary" onclick={handleAiNext}>Next: Review Prompt →</button>
+            </template>
+            <template if:true={isAiStep5}>
               <button class="btn-cancel" onclick={handleAiBack}>← Back</button>
               <button class={aiCopyBtnClass} onclick={handleCopyPrompt}>
                 <template if:false={promptCopied}>&#x2398;&nbsp;Copy Prompt</template>
                 <template if:true={promptCopied}>&#x2713;&nbsp;Copied!</template>
               </button>
             </template>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- Conditional Block Modal -->
+    <template if:true={showInsertConditional}>
+      <div class="ai-modal-backdrop" onclick={handleConditionalModalBackdropClick}>
+        <div class="ai-modal cond-modal" onclick={handleConditionalModalInnerClick}>
+          <div class="ai-modal-header">
+            <div>
+              <span class="ai-modal-eyebrow">INSERT</span>
+              <p class="ai-modal-title">Conditional Block</p>
+            </div>
+            <button class="edit-panel-close ai-modal-close" onclick={handleInsertConditionalClose}>&#x2715;</button>
+          </div>
+
+          <div class="ai-modal-body cond-modal-body">
+
+            <div class="form-row">
+              <lightning-combobox
+                label="Condition Type"
+                value={condType}
+                options={condTypeOptions}
+                onchange={handleCondTypeChange}
+              ></lightning-combobox>
+            </div>
+
+            <div class="form-row">
+              <lightning-combobox
+                label="Field"
+                value={condFieldPath}
+                options={conditionalFieldOptions}
+                placeholder="Choose a field..."
+                onchange={handleCondFieldChange}
+              ></lightning-combobox>
+              <p class="field-hint">Fields come from your configured queries.</p>
+            </div>
+
+            <template if:true={isCondExpression}>
+              <div class="cond-expr-row">
+                <div class="cond-expr-operator">
+                  <lightning-combobox
+                    label="Operator"
+                    value={condOperator}
+                    options={condOperatorOptions}
+                    onchange={handleCondOperatorChange}
+                  ></lightning-combobox>
+                </div>
+                <div class="cond-expr-value">
+                  <lightning-input
+                    label="Compare Value"
+                    value={condValue}
+                    placeholder="e.g. Closed Won"
+                    onchange={handleCondValueChange}
+                  ></lightning-input>
+                </div>
+              </div>
+              <p class="field-hint" style="margin-top:-0.25rem;">String comparisons are case-sensitive.</p>
+            </template>
+
+            <!-- Content: If True -->
+            <div class="cond-content-section">
+              <div class="cond-content-header">
+                <span class="cond-content-label">Content — shown when condition is true</span>
+                <button class="btn-field-tag" onclick={handleCondIfTagPickerToggle} title="Insert a merge tag">
+                  &#x23;&nbsp;Tag
+                </button>
+              </div>
+              <template if:true={showCondIfTagPicker}>
+                <div class="field-tag-picker">
+                  <input
+                    type="search"
+                    class="field-tag-search"
+                    placeholder="Search tags…"
+                    value={condTagSearch}
+                    oninput={handleCondTagSearch}
+                  />
+                  <template if:true={hasFilteredCondTags}>
+                    <div class="field-tag-list">
+                      <template for:each={filteredCondTags} for:item="tag">
+                        <button
+                          key={tag.value}
+                          class="field-tag-item"
+                          data-tag={tag.value}
+                          data-target="ifContent"
+                          onclick={handleInsertCondTag}
+                        >{tag.label}</button>
+                      </template>
+                    </div>
+                  </template>
+                  <template if:false={hasFilteredCondTags}>
+                    <p class="field-hint">No tags available — add queries with selected fields first.</p>
+                  </template>
+                </div>
+              </template>
+              <lightning-textarea
+                label=""
+                value={condIfContent}
+                placeholder="HTML or merge tags to show when true…  e.g. &lt;strong&gt;{{Parent.Name}}&lt;/strong&gt;"
+                variant="label-hidden"
+                onchange={handleCondIfContentChange}
+                class="cond-textarea"
+              ></lightning-textarea>
+            </div>
+
+            <!-- Content: Else -->
+            <template if:true={isCondExpression}>
+              <div class="cond-content-section">
+                <div class="cond-content-header">
+                  <span class="cond-content-label">Else Content — shown when condition is false (optional)</span>
+                  <button class="btn-field-tag" onclick={handleCondElseTagPickerToggle} title="Insert a merge tag">
+                    &#x23;&nbsp;Tag
+                  </button>
+                </div>
+                <template if:true={showCondElseTagPicker}>
+                  <div class="field-tag-picker">
+                    <input
+                      type="search"
+                      class="field-tag-search"
+                      placeholder="Search tags…"
+                      value={condTagSearch}
+                      oninput={handleCondTagSearch}
+                    />
+                    <template if:true={hasFilteredCondTags}>
+                      <div class="field-tag-list">
+                        <template for:each={filteredCondTags} for:item="tag">
+                          <button
+                            key={tag.value}
+                            class="field-tag-item"
+                            data-tag={tag.value}
+                            data-target="elseContent"
+                            onclick={handleInsertCondTag}
+                          >{tag.label}</button>
+                        </template>
+                      </div>
+                    </template>
+                    <template if:false={hasFilteredCondTags}>
+                      <p class="field-hint">No tags available — add queries with selected fields first.</p>
+                    </template>
+                  </div>
+                </template>
+                <lightning-textarea
+                  label=""
+                  value={condElseContent}
+                  placeholder="HTML or merge tags to show when false… (leave blank to omit else branch)"
+                  variant="label-hidden"
+                  onchange={handleCondElseContentChange}
+                  class="cond-textarea"
+                ></lightning-textarea>
+              </div>
+            </template>
+
+          </div>
+
+          <div class="ai-modal-footer">
+            <button class="btn-cancel" onclick={handleInsertConditionalClose}>Cancel</button>
+            <button class="btn-primary" onclick={handleInsertConditionalConfirm} disabled={noCondFieldPath}>Insert</button>
           </div>
         </div>
       </div>
