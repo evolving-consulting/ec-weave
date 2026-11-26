@@ -556,6 +556,8 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
   }
   get frequencyOptions() {
     return [
+      { label: 'Every 5 minutes',  value: 'every_5_min' },
+      { label: 'Every 10 minutes', value: 'every_10_min' },
       { label: 'Every 15 minutes', value: 'every_15_min' },
       { label: 'Every 30 minutes', value: 'every_30_min' },
       { label: 'Every hour',       value: 'every_hour' },
