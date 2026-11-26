@@ -193,6 +193,7 @@
             <button class={tabClass_files} data-tab="files" onclick={handleTabClick}>Files</button>
             <button class={tabClass_schedules} data-tab="schedules" onclick={handleTabClick}>Scheduled Sends</button>
             <button class={tabClass_datasources} data-tab="datasources" onclick={handleTabClick}>Data Sources</button>
+            <button class={tabClass_signerfields} data-tab="signerfields" onclick={handleTabClick}>Signer Fields</button>
             <button class={tabClass_preview} data-tab="preview" onclick={handleTabClick}>Preview</button>
           </div>
 
@@ -890,6 +891,94 @@
                       </template>
                     </tbody>
                   </table>
+                </template>
+              </template>
+            </div>
+          </template>
+
+          <!-- ── SIGNER FIELDS TAB ──────────────────────────────────────── -->
+          <template if:true={isTab_signerfields}>
+            <div class="tab-panel">
+              <div class="section-header-row">
+                <h3 class="tab-section-title">Signer Form Fields</h3>
+                <button class="btn-new-template" onclick={handleSignerFieldNew}>+ Add Field</button>
+              </div>
+              <p class="field-hint" style="margin-bottom:12px;">Define fields signers fill in during signing (e.g. <code>&#123;&#123;@field:Amount:Buyer&#125;&#125;</code>). Map each to a Salesforce field to write back to the record on completion.</p>
+
+              <template if:true={isSignerFieldLoading}>
+                <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+              </template>
+
+              <!-- Edit Panel -->
+              <template if:true={isEditingSignerField}>
+                <div class="edit-panel">
+                  <div class="edit-panel-header">
+                    <p class="edit-panel-title">SIGNER FIELD</p>
+                    <button class="edit-panel-close" onclick={handleSignerFieldCancel}>&#x2715;</button>
+                  </div>
+                  <div class="form-row">
+                    <lightning-input label="Tag Label (matches {{@field:Label:Role}})" value={draftSignerField.tagLabel} data-field="tagLabel" onchange={handleSignerFieldFieldChange}></lightning-input>
+                  </div>
+                  <div class="form-row">
+                    <lightning-input label="Signer Role" value={draftSignerField.signerRole} placeholder="e.g. Buyer" data-field="signerRole" onchange={handleSignerFieldFieldChange}></lightning-input>
+                  </div>
+                  <div class="form-row">
+                    <lightning-combobox label="Field Type" value={draftSignerField.fieldType} options={signerFieldTypeOptions} data-field="fieldType" onchange={handleSignerFieldFieldChange}></lightning-combobox>
+                  </div>
+                  <div class="form-row">
+                    <lightning-input label="Target Field API Name (write-back)" value={draftSignerField.targetFieldApiName} placeholder="e.g. Amount" data-field="targetFieldApiName" onchange={handleSignerFieldFieldChange}></lightning-input>
+                    <p class="field-hint">Leave blank to collect the value without writing back to Salesforce.</p>
+                  </div>
+                  <div class="form-row">
+                    <lightning-input type="checkbox" label="Required" checked={draftSignerField.required} data-field="required" onchange={handleSignerFieldFieldChange}></lightning-input>
+                  </div>
+                  <div class="form-row">
+                    <lightning-input type="number" label="Display Order" value={draftSignerField.displayOrder} data-field="displayOrder" onchange={handleSignerFieldFieldChange}></lightning-input>
+                  </div>
+                  <div class="form-actions">
+                    <button class="btn-cancel" onclick={handleSignerFieldCancel}>Cancel</button>
+                    <button class="btn-primary" onclick={handleSignerFieldSave} disabled={isSignerFieldLoading}>Save</button>
+                  </div>
+                </div>
+              </template>
+
+              <!-- Field List -->
+              <template if:false={isEditingSignerField}>
+                <template if:true={signerFormFields.length}>
+                  <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                    <thead>
+                      <tr class="slds-line-height_reset">
+                        <th><span class="slds-truncate">TAG LABEL</span></th>
+                        <th><span class="slds-truncate">ROLE</span></th>
+                        <th><span class="slds-truncate">TYPE</span></th>
+                        <th><span class="slds-truncate">TARGET FIELD</span></th>
+                        <th><span class="slds-truncate">REQ.</span></th>
+                        <th><span class="slds-truncate">ACTIONS</span></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <template for:each={signerFormFields} for:item="f">
+                        <tr key={f.Id} class="slds-hint-parent">
+                          <td><code>{f.Tag_Label__c}</code></td>
+                          <td>{f.Signer_Role__c}</td>
+                          <td>{f.Field_Type__c}</td>
+                          <td><span class="field-muted">{f.Target_Field_Api_Name__c}</span></td>
+                          <td>{f.Required__c}</td>
+                          <td>
+                            <span class="action-links">
+                              <button class="action-link edit-link" data-id={f.Id} onclick={handleSignerFieldEdit}>Edit</button>
+                              <button class="action-link delete-link" data-id={f.Id} onclick={handleSignerFieldDelete}>Delete</button>
+                            </span>
+                          </td>
+                        </tr>
+                      </template>
+                    </tbody>
+                  </table>
+                </template>
+                <template if:false={signerFormFields.length}>
+                  <div class="empty-state-mini">
+                    <p>No signer fields configured. Add fields to collect data from signers during the signing flow.</p>
+                  </div>
                 </template>
               </template>
             </div>

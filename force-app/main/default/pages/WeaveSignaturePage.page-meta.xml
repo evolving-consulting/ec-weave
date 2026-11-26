@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ApexPage xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>66.0</apiVersion>
+    <availableInTouch>false</availableInTouch>
+    <confirmationTokenRequired>false</confirmationTokenRequired>
+    <description>Signing page served from Salesforce Sites. Collects electronic signatures for Weave e-signature requests.</description>
+    <label>Weave Signature Page</label>
+</ApexPage>

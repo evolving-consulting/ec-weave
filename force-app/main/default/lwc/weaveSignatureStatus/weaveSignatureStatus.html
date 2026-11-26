@@ -1,0 +1,60 @@
+<template>
+    <lightning-card title="E-Signature Status" icon-name="standard:signature">
+        <div slot="actions" if:true={canCancel}>
+            <button class="cancel-btn" onclick={handleCancel} disabled={isCanceling}>
+                <template if:false={isCanceling}>Cancel Request</template>
+                <template if:true={isCanceling}>Canceling…</template>
+            </button>
+        </div>
+
+        <div class="card-body">
+            <template if:true={isLoading}>
+                <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+            </template>
+
+            <template if:false={isLoading}>
+                <template if:true={noRequests}>
+                    <div class="empty-state">
+                        <p class="empty-title">No signature requests</p>
+                        <p class="empty-sub">Use the PDF composer to send this document for signature.</p>
+                    </div>
+                </template>
+
+                <template if:false={noRequests}>
+                    <template for:each={requests} for:item="req">
+                        <div key={req.Id} class="request-block">
+                            <div class="req-header">
+                                <div>
+                                    <span class="req-name">{req.Name}</span>
+                                    <span class={req.statusClass}>{req.Status__c}</span>
+                                </div>
+                                <span class="req-date">{req.formattedExpiry}</span>
+                            </div>
+
+                            <div class="timeline">
+                                <template for:each={req.signerRows} for:item="signer">
+                                    <div key={signer.Id} class="timeline-row">
+                                        <div class="timeline-dots">
+                                            <div class={signer.dotClass}></div>
+                                            <div class="timeline-line"></div>
+                                        </div>
+                                        <div class="timeline-content">
+                                            <div class="signer-name">{signer.Name}</div>
+                                            <div class="signer-meta">
+                                                <span class="signer-role">{signer.Role__c}</span>
+                                                <span class={signer.statusClass}>{signer.Status__c}</span>
+                                            </div>
+                                            <template if:true={signer.Signed_At__c}>
+                                                <div class="signer-timestamp">Signed {signer.formattedSignedAt}</div>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </template>
+            </template>
+        </div>
+    </lightning-card>
+</template>

@@ -32,6 +32,9 @@ import cloneTemplate from '@salesforce/apex/WeaveTemplateBuilderController.clone
 import getSchedulerStatus from '@salesforce/apex/WeaveTemplateBuilderController.getSchedulerStatus';
 import activateScheduler from '@salesforce/apex/WeaveTemplateBuilderController.activateScheduler';
 import deactivateScheduler from '@salesforce/apex/WeaveTemplateBuilderController.deactivateScheduler';
+import getSignerFormFields from '@salesforce/apex/WeaveSignatureAuraController.getSignerFormFields';
+import upsertSignerFormField from '@salesforce/apex/WeaveSignatureAuraController.upsertSignerFormField';
+import deleteSignerFormField from '@salesforce/apex/WeaveSignatureAuraController.deleteSignerFormField';
 
 const STATUS_OPTIONS = [
   { label: 'Draft', value: 'Draft' },
@@ -234,6 +237,10 @@ export default class WeaveTemplateBuilder extends LightningElement {
   @track templateImages = [];
   @track templateAttachments = [];
   @track isLoadingFiles = false;
+  @track signerFormFields = [];
+  @track isEditingSignerField = false;
+  @track draftSignerField = {};
+  @track isSignerFieldLoading = false;
   @track selectedAttachmentRuleKey = null;
   @track sidebarView = 'templates';
   @track brands = [];
@@ -729,6 +736,15 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
   get tabClass_schedules() { return 'editor-tab' + (this.activeTab === 'schedules'   ? ' editor-tab_active' : ''); }
   get isTab_datasources()    { return this.activeTab === 'datasources'; }
   get tabClass_datasources() { return 'editor-tab' + (this.activeTab === 'datasources' ? ' editor-tab_active' : ''); }
+  get isTab_signerfields()    { return this.activeTab === 'signerfields'; }
+  get tabClass_signerfields() { return 'editor-tab' + (this.activeTab === 'signerfields' ? ' editor-tab_active' : ''); }
+  get signerFieldTypeOptions() {
+    return [
+      { label: 'Text', value: 'Text' }, { label: 'Number', value: 'Number' },
+      { label: 'Currency', value: 'Currency' }, { label: 'Date', value: 'Date' },
+      { label: 'Checkbox', value: 'Checkbox' }, { label: 'Picklist', value: 'Picklist' }
+    ];
+  }
   get allComponentHtml() {
     return (this.draftTemplate.components || []).map(c => c.htmlContent || '').join('\n');
   }
@@ -917,6 +933,68 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
     if (this.activeTab === 'files') this.loadTemplateFiles();
     if (this.activeTab === 'schedules') this.loadScheduledSends();
     if (this.activeTab === 'body') this.loadParentFieldsForMergeTags();
+    if (this.activeTab === 'signerfields') this.loadSignerFormFields();
+  }
+
+  loadSignerFormFields() {
+    if (!this.draftTemplate.id) return;
+    this.isSignerFieldLoading = true;
+    getSignerFormFields({ templateId: this.draftTemplate.id })
+      .then(fields => {
+        this.signerFormFields = (fields || []).map(f => ({
+          ...f, key: f.Id,
+          fieldTypeLabel: f.Field_Type__c || 'Text'
+        }));
+      })
+      .catch(() => {})
+      .finally(() => { this.isSignerFieldLoading = false; });
+  }
+
+  handleSignerFieldNew() {
+    this.draftSignerField = { templateId: this.draftTemplate.id, fieldType: 'Text', required: false };
+    this.isEditingSignerField = true;
+  }
+
+  handleSignerFieldEdit(evt) {
+    const id = evt.currentTarget.dataset.id;
+    const f  = this.signerFormFields.find(x => x.Id === id);
+    if (!f) return;
+    this.draftSignerField = {
+      Id: f.Id, templateId: this.draftTemplate.id,
+      tagLabel: f.Tag_Label__c, signerRole: f.Signer_Role__c,
+      fieldType: f.Field_Type__c, targetFieldApiName: f.Target_Field_Api_Name__c,
+      required: f.Required__c, picklistValues: f.Picklist_Values__c,
+      displayOrder: f.Display_Order__c
+    };
+    this.isEditingSignerField = true;
+  }
+
+  handleSignerFieldFieldChange(evt) {
+    const field = evt.currentTarget.dataset.field;
+    const value = evt.detail ? (evt.detail.checked !== undefined ? evt.detail.checked : evt.detail.value) : evt.target.value;
+    this.draftSignerField = { ...this.draftSignerField, [field]: value };
+  }
+
+  handleSignerFieldSave() {
+    this.isSignerFieldLoading = true;
+    upsertSignerFormField({ fieldJson: JSON.stringify(this.draftSignerField) })
+      .then(() => {
+        this.isEditingSignerField = false;
+        this.loadSignerFormFields();
+      })
+      .catch(err => { this.showError(err?.body?.message || 'Save failed.'); })
+      .finally(() => { this.isSignerFieldLoading = false; });
+  }
+
+  handleSignerFieldCancel() { this.isEditingSignerField = false; }
+
+  handleSignerFieldDelete(evt) {
+    const id = evt.currentTarget.dataset.id;
+    // eslint-disable-next-line no-alert
+    if (!window.confirm('Delete this signer field?')) return;
+    deleteSignerFormField({ fieldId: id })
+      .then(() => { this.loadSignerFormFields(); })
+      .catch(err => { this.showError(err?.body?.message || 'Delete failed.'); });
   }
 
   handleDataSourceConfigChange(event) {
