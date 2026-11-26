@@ -171,7 +171,7 @@ public with sharing class WeaveTemplateBuilderController {
     }
 
     @AuraEnabled
-    public static Id createScheduledSend(Id templateId, String scheduledDateTime, String sendType, Id recordId, String filterClause) {
+    public static Id createScheduledSend(Id templateId, String scheduledDateTime, String sendType, Id recordId, String filterClause, String outputType) {
         if (templateId == null || String.isBlank(scheduledDateTime) || String.isBlank(sendType)) {
             throw new AuraHandledException('Template, scheduled time, and send type are required.');
         }
@@ -183,11 +183,12 @@ public with sharing class WeaveTemplateBuilderController {
             throw new AuraHandledException('Scheduled time must be in the future.');
         }
         Weave_Scheduled_Send__c rec = new Weave_Scheduled_Send__c(
-            Template__c    = templateId,
-            Status__c      = 'Pending',
-            Send_Type__c   = sendType,
-            Scheduled_At__c = scheduledDt,
-            Record_Id__c   = recordId != null ? String.valueOf(recordId) : null,
+            Template__c      = templateId,
+            Status__c        = 'Pending',
+            Send_Type__c     = sendType,
+            Output_Type__c   = String.isBlank(outputType) ? 'Email' : outputType,
+            Scheduled_At__c  = scheduledDt,
+            Record_Id__c     = recordId != null ? String.valueOf(recordId) : null,
             Filter_Clause__c = filterClause
         );
         insert rec;
@@ -206,7 +207,7 @@ public with sharing class WeaveTemplateBuilderController {
     public static List<WeaveBuilderDTOs.WeaveScheduledSendDTO> getScheduledSends(Id templateId) {
         if (templateId == null) return new List<WeaveBuilderDTOs.WeaveScheduledSendDTO>();
         List<Weave_Scheduled_Send__c> rows = [
-            SELECT Id, Name, Status__c, Send_Type__c, Scheduled_At__c,
+            SELECT Id, Name, Status__c, Send_Type__c, Output_Type__c, Scheduled_At__c,
                    Filter_Clause__c, Record_Id__c, Job_Name__c,
                    Records_Targeted__c, Records_Sent__c, Records_Failed__c, Error_Detail__c
             FROM Weave_Scheduled_Send__c
@@ -222,6 +223,7 @@ public with sharing class WeaveTemplateBuilderController {
             dto.name            = r.Name;
             dto.status          = r.Status__c;
             dto.sendType        = r.Send_Type__c;
+            dto.outputType      = r.Output_Type__c;
             dto.scheduledAt     = r.Scheduled_At__c != null ? String.valueOf(r.Scheduled_At__c) : null;
             dto.filterClause    = r.Filter_Clause__c;
             dto.recordId        = r.Record_Id__c;

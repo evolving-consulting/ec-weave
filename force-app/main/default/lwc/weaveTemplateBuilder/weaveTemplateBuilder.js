@@ -107,6 +107,11 @@ const OUTPUT_TYPE_OPTIONS = [
   { label: 'Email', value: 'Email' },
   { label: 'Document (PDF)', value: 'Document' }
 ];
+const SCHEDULE_OUTPUT_TYPE_OPTIONS = [
+  { label: 'Email', value: 'Email' },
+  { label: 'PDF', value: 'PDF' },
+  { label: 'Email + PDF', value: 'Email + PDF' }
+];
 const PAGE_SIZE_OPTIONS = [
   { label: 'Letter (8.5 × 11 in)', value: 'Letter' },
   { label: 'A4 (210 × 297 mm)', value: 'A4' }
@@ -194,6 +199,7 @@ export default class WeaveTemplateBuilder extends LightningElement {
   @track scheduleType = 'Bulk';
   @track scheduleMode = 'once';
   @track scheduleBulkFilter = '';
+  @track scheduleOutputType = 'Email';
   @track isScheduling = false;
   @track recurringDays = [];
   @track recurringTime = '09:00';
@@ -261,6 +267,7 @@ export default class WeaveTemplateBuilder extends LightningElement {
   statusOptions = STATUS_OPTIONS;
   fromEmailTypeOptions = FROM_EMAIL_TYPE_OPTIONS;
   outputTypeOptions = OUTPUT_TYPE_OPTIONS;
+  scheduleOutputTypeOptions = SCHEDULE_OUTPUT_TYPE_OPTIONS;
   pageSizeOptions = PAGE_SIZE_OPTIONS;
   componentTypeOptions = COMPONENT_TYPE_OPTIONS;
   regionOptions = REGION_OPTIONS;
@@ -1684,6 +1691,10 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
     this.scheduleBulkFilter = event.target.value;
   }
 
+  handleScheduleOutputTypeChange(event) {
+    this.scheduleOutputType = event.detail.value;
+  }
+
   handleRecurringDaysChange(event) {
     this.recurringDays = event.detail.value;
   }
@@ -1725,12 +1736,14 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
       scheduledDateTime: scheduledDateTimeStr,
       sendType: 'Bulk',
       recordId: null,
-      filterClause: this.scheduleBulkFilter || null
+      filterClause: this.scheduleBulkFilter || null,
+      outputType: this.scheduleOutputType
     })
       .then(() => {
         this.dispatchEvent(new ShowToastEvent({ title: 'Send scheduled', message: 'Scheduled for ' + scheduledDateTimeStr, variant: 'success' }));
         this.scheduleDate = '';
         this.scheduleBulkFilter = '';
+        this.scheduleOutputType = 'Email';
         this.loadScheduledSends();
       })
       .catch(err => { this.errorMessage = err.body?.message || 'Scheduling failed.'; })

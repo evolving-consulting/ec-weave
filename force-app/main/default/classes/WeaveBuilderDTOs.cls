@@ -241,6 +241,7 @@ public with sharing class WeaveBuilderDTOs {
         @AuraEnabled public String name { get; set; }
         @AuraEnabled public String status { get; set; }
         @AuraEnabled public String sendType { get; set; }
+        @AuraEnabled public String outputType { get; set; }
         @AuraEnabled public String scheduledAt { get; set; }
         @AuraEnabled public String filterClause { get; set; }
         @AuraEnabled public String recordId { get; set; }

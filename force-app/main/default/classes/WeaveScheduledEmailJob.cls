@@ -33,7 +33,7 @@ public with sharing class WeaveScheduledEmailJob implements Schedulable {
 
     private Weave_Scheduled_Send__c loadRecord() {
         List<Weave_Scheduled_Send__c> rows = [
-            SELECT Id, Status__c, Send_Type__c, Template__c, Record_Id__c, Filter_Clause__c,
+            SELECT Id, Status__c, Send_Type__c, Output_Type__c, Template__c, Record_Id__c, Filter_Clause__c,
                    Batch_Size__c, Template__r.Parent_Object_API_Name__c
             FROM Weave_Scheduled_Send__c
             WHERE Id = :scheduledSendId
@@ -57,8 +57,9 @@ public with sharing class WeaveScheduledEmailJob implements Schedulable {
         }
         Integer batchSize = record.Batch_Size__c != null ? record.Batch_Size__c.intValue() : 20;
         updateStatus(record.Id, 'Running', null, null, null, null);
+        String outType = String.isBlank(record.Output_Type__c) ? 'Email' : record.Output_Type__c;
         Database.executeBatch(
-            new WeaveBulkEmailBatch(record.Template__c, record.Id, objectApiName, record.Filter_Clause__c),
+            new WeaveBulkEmailBatch(record.Template__c, record.Id, objectApiName, record.Filter_Clause__c, outType),
             batchSize
         );
     }
