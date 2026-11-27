@@ -7,6 +7,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### 2026-11-27 — Brand-Aware Signing Site & Signature Email Templates
+
+- **Multi-brand signing site** — the Salesforce Site signing page now reflects the brand of the email template used to trigger the request; primary and secondary colors drive `--teal` / `--teal-mid` CSS variables, and the brand logo replaces the Weave lettermark when set
+- **Brand token in signing link** — `WeaveSignatureService` encodes `brandId` as a third segment in the signing token (`signerId:pin:brandId`); backward-compatible with existing 2-part tokens (fall back to Weave defaults)
+- **`WeaveSignatureController`** — decodes brand from token, queries `Weave_Brand__c`, and exposes `brandColor`, `brandColorMid`, `brandLogoUrl`, `brandName`, and `hasBrandLogo` to the VF page
+- **Signature email templates** (`Weave_Signature_Email_Template__c`) — new object for per-brand request and reminder email templates with subject, body, logo URL, brand color, logo height, and footer text overrides; falls back to org-default template then hardcoded defaults
+- **`WeaveSignatureEmailTemplateService`** — service layer for email template CRUD, rendering (subject + HTML body with brand header/footer), and reset-to-default
+- **Signature config** (`Weave_Signature_Config__c`) — new singleton config object for site URL, link expiry, reminders toggle & interval, email verification, and signer email prefill settings
+- **`WeaveSignatureConfigService`** — service for config CRUD and environment validation (site URL configured, active Salesforce Site found)
+- **`weaveSignatureSettings` LWC** — admin settings panel in the Weave Builder for site config (URL, expiry, reminders) and per-brand email template customisation (request / reminder templates, with live edit and reset-to-default)
+- **Permission sets** — `Weave_Signature_Config__c` and `Weave_Signature_Email_Template__c` access granted to `Weave_Builder_Access` (full CRUD) and `Weave_User` (read-only)
+
 ### 2026-11-27 — Signer & Write Back Tab Restructure
 
 - **Tab reorder** — editor tabs now follow the order: Settings → Queries → Files → Signer → Write Back → Body Builder → Recipients → Actions → Preview
