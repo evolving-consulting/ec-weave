@@ -11,6 +11,46 @@
     <description>Grants full access to Weave template builder objects, fields, and the Weave_Manage_Templates custom permission.</description>
     <fieldPermissions>
         <editable>true</editable>
+        <field>Weave_Signature_Form_Field__c.Display_Order__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Weave_Signature_Form_Field__c.Field_Type__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Weave_Signature_Form_Field__c.On_Certificate__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Weave_Signature_Form_Field__c.Picklist_Values__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Weave_Signature_Form_Field__c.Required__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Weave_Signature_Form_Field__c.Signer_Role__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Weave_Signature_Form_Field__c.Target_Field_Api_Name__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Weave_Signature_Form_Field__c.Write_Back__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
         <field>Weave_Scheduled_Send__c.Error_Detail__c</field>
         <readable>true</readable>
     </fieldPermissions>

@@ -891,26 +891,7 @@
                     </div>
                     <lightning-combobox label="Field Type" value={draftSignerField.fieldType} options={signerFieldTypeOptions} data-field="fieldType" onchange={handleSignerFieldFieldChange}></lightning-combobox>
                   </div>
-                  <div class="form-row-2">
-                    <lightning-input label="Signer Role" value={draftSignerField.signerRole} placeholder="e.g. Buyer" data-field="signerRole" onchange={handleSignerFieldFieldChange}></lightning-input>
-                    <lightning-input type="number" label="Display Order" value={draftSignerField.displayOrder} data-field="displayOrder" onchange={handleSignerFieldFieldChange}></lightning-input>
-                  </div>
-                  <div class="form-row">
-                    <template if:true={hasSignerFieldTargetOptions}>
-                      <lightning-combobox
-                        label="Target Field"
-                        value={draftSignerField.targetFieldApiName}
-                        options={signerFieldTargetFieldOptions}
-                        placeholder="-- None (no write-back) --"
-                        data-field="targetFieldApiName"
-                        onchange={handleSignerFieldFieldChange}
-                      ></lightning-combobox>
-                    </template>
-                    <template if:false={hasSignerFieldTargetOptions}>
-                      <lightning-input label="Target Field API Name" value={draftSignerField.targetFieldApiName} placeholder="e.g. Amount" data-field="targetFieldApiName" onchange={handleSignerFieldFieldChange}></lightning-input>
-                    </template>
-                    <p class="field-hint">Write Back: the signer's value will be saved to this field on the source record when signing is complete. Leave blank to collect without writing back.</p>
-                  </div>
+                  <lightning-input type="number" label="Display Order" value={draftSignerField.displayOrder} data-field="displayOrder" onchange={handleSignerFieldFieldChange}></lightning-input>
                   <div class="form-row-2">
                     <div>
                       <lightning-input type="checkbox" label="Required" checked={draftSignerField.required} data-field="required" onchange={handleSignerFieldFieldChange}></lightning-input>
@@ -920,6 +901,25 @@
                       <p class="field-hint">On completion, write the signer's value to the mapped field on the source record.</p>
                     </div>
                   </div>
+                  <template if:true={draftSignerField.writeBack}>
+                  <div class="form-row">
+                    <template if:true={hasSignerFieldTargetOptions}>
+                      <lightning-combobox
+                        label="Target Field *"
+                        value={draftSignerField.targetFieldApiName}
+                        options={signerFieldTargetFieldOptions}
+                        placeholder="Select a field to write back to…"
+                        data-field="targetFieldApiName"
+                        onchange={handleSignerFieldFieldChange}
+                        required
+                      ></lightning-combobox>
+                    </template>
+                    <template if:false={hasSignerFieldTargetOptions}>
+                      <lightning-input label="Target Field API Name *" value={draftSignerField.targetFieldApiName} placeholder="e.g. Amount" data-field="targetFieldApiName" onchange={handleSignerFieldFieldChange} required></lightning-input>
+                    </template>
+                    <p class="field-hint">The signer's value will be saved to this field on the source record when signing is complete.</p>
+                  </div>
+                  </template>
                   <div class="form-row">
                     <lightning-input type="checkbox" label="Show on Certificate" checked={draftSignerField.onCertificate} data-field="onCertificate" onchange={handleSignerFieldFieldChange}></lightning-input>
                     <p class="field-hint">Include this field's value in the Certificate of Completion audit page.</p>
