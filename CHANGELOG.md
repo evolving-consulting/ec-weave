@@ -7,6 +7,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### 2026-11-27 — Signer & Write Back Tab Restructure
+
+- **Tab reorder** — editor tabs now follow the order: Settings → Queries → Files → Signer → Write Back → Body Builder → Recipients → Actions → Preview
+- **Signer tab** — renamed from "Signer Fields"; now contains only Signer Roles & Signing Order (roles table with Sig / Init / Date copy chips and "+ Add Role" action)
+- **Write Back tab** — new dedicated tab for Signer Form Fields; shows the full fields table with inline merge-tag Copy chip per row
+- **Add Field modal** — "+ Add Field" and "Edit" now open a centered modal overlay (Tag Label, Field Type, Signer Role, Display Order, Target Field, Required, Write Back, Show on Certificate) instead of an inline edit panel; closing the modal or clicking the backdrop cancels without saving
+
 ### 2026-11-27 — Multi-Signer Roles & Signing Order
 
 - **Signer Roles config** — admins now define named signer roles and signing order directly in the Template Builder's Signer Fields tab; roles are stored as JSON on `Weave_Template_Config__c.Signer_Roles__c`

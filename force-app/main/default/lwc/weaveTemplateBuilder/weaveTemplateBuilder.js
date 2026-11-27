@@ -241,6 +241,7 @@ export default class WeaveTemplateBuilder extends LightningElement {
   @track signerRolesList = [];
   _roleKeyCounter = 0;
   @track isEditingSignerField = false;
+  @track showSignerFieldModal = false;
   @track draftSignerField = {};
   @track isSignerFieldLoading = false;
   @track selectedAttachmentRuleKey = null;
@@ -744,8 +745,12 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
   get tabClass_schedules() { return 'editor-tab' + (this.activeTab === 'schedules'   ? ' editor-tab_active' : ''); }
   get isTab_datasources()    { return this.activeTab === 'datasources'; }
   get tabClass_datasources() { return 'editor-tab' + (this.activeTab === 'datasources' ? ' editor-tab_active' : ''); }
-  get isTab_signerfields()    { return this.activeTab === 'signerfields'; }
-  get tabClass_signerfields() { return 'editor-tab' + (this.activeTab === 'signerfields' ? ' editor-tab_active' : ''); }
+  get isTab_signer()       { return this.activeTab === 'signer'; }
+  get tabClass_signer()    { return 'editor-tab' + (this.activeTab === 'signer'    ? ' editor-tab_active' : ''); }
+  get isTab_writeback()    { return this.activeTab === 'writeback'; }
+  get tabClass_writeback() { return 'editor-tab' + (this.activeTab === 'writeback' ? ' editor-tab_active' : ''); }
+  get signerFieldModalTitle() { return this.draftSignerField && this.draftSignerField.Id ? 'Edit Signer Field' : 'Add Signer Field'; }
+
   get signerFieldTypeOptions() {
     return [
       { label: 'Text', value: 'Text' }, { label: 'Number', value: 'Number' },
@@ -953,9 +958,11 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
     if (this.activeTab === 'files') this.loadTemplateFiles();
     if (this.activeTab === 'schedules') this.loadScheduledSends();
     if (this.activeTab === 'body') this.loadParentFieldsForMergeTags();
-    if (this.activeTab === 'signerfields') {
+    if (this.activeTab === 'signer') {
+      this._parseSignerRoles();
+    }
+    if (this.activeTab === 'writeback') {
       this.loadSignerFormFields();
-      // Load updateable fields for write-back field picker if not already loaded
       const obj = this.draftTemplate.parentObjectApiName;
       if (obj && !this.updateableFields.length) {
         getUpdateableFieldsForObject({ objectApiName: obj })
@@ -1029,7 +1036,7 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
 
   handleSignerFieldNew() {
     this.draftSignerField = { templateId: this.draftTemplate.id, fieldType: 'Text', required: false, writeBack: false, onCertificate: false };
-    this.isEditingSignerField = true;
+    this.showSignerFieldModal = true;
   }
 
   handleSignerFieldEdit(evt) {
@@ -1043,8 +1050,11 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
       required: f.Required__c, writeBack: f.Write_Back__c, onCertificate: f.On_Certificate__c,
       picklistValues: f.Picklist_Values__c, displayOrder: f.Display_Order__c
     };
-    this.isEditingSignerField = true;
+    this.showSignerFieldModal = true;
   }
+
+  handleSignerFieldModalBackdropClick() { this.showSignerFieldModal = false; }
+  handleSignerFieldModalInnerClick(evt) { evt.stopPropagation(); }
 
   handleSignerFieldFieldChange(evt) {
     const field = evt.currentTarget.dataset.field;
@@ -1056,6 +1066,7 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
     this.isSignerFieldLoading = true;
     upsertSignerFormField({ fieldJson: JSON.stringify(this.draftSignerField) })
       .then(() => {
+        this.showSignerFieldModal = false;
         this.isEditingSignerField = false;
         this.loadSignerFormFields();
       })
@@ -1063,7 +1074,10 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
       .finally(() => { this.isSignerFieldLoading = false; });
   }
 
-  handleSignerFieldCancel() { this.isEditingSignerField = false; }
+  handleSignerFieldCancel() {
+    this.showSignerFieldModal = false;
+    this.isEditingSignerField = false;
+  }
 
   handleSignerFieldDelete(evt) {
     const id = evt.currentTarget.dataset.id;
