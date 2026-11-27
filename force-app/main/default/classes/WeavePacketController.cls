@@ -117,7 +117,7 @@ public with sharing class WeavePacketController {
         rec.Status__c          = String.isBlank(dto.status) ? 'Draft' : dto.status;
         rec.Title_Template__c  = dto.titleTemplate;
         rec.Description__c     = dto.description;
-        upsert rec;
+        upsert as user rec;
 
         if (dto.deletedItemIds != null && !dto.deletedItemIds.isEmpty()) {
             List<Weave_Packet_Item__c> toDelete = [
@@ -125,7 +125,7 @@ public with sharing class WeavePacketController {
                 WHERE Id IN :dto.deletedItemIds AND Weave_Document_Packet__c = :rec.Id
                 WITH USER_MODE
             ];
-            delete toDelete;
+            delete as user toDelete;
         }
 
         if (dto.items != null && !dto.items.isEmpty()) {
@@ -144,7 +144,7 @@ public with sharing class WeavePacketController {
                 toUpsert.add(item);
                 order++;
             }
-            upsert toUpsert;
+            upsert as user toUpsert;
         }
 
         return rec.Id;
@@ -156,7 +156,7 @@ public with sharing class WeavePacketController {
         List<Weave_Document_Packet__c> rows = [
             SELECT Id FROM Weave_Document_Packet__c WHERE Id = :packetId WITH USER_MODE LIMIT 1
         ];
-        if (!rows.isEmpty()) delete rows;
+        if (!rows.isEmpty()) delete as user rows;
     }
 
     // ── Generation ────────────────────────────────────────────────────────────

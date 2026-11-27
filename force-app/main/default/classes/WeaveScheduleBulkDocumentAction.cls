@@ -59,7 +59,7 @@ public with sharing class WeaveScheduleBulkDocumentAction {
                     Scheduled_At__c  = scheduledDt,
                     Filter_Clause__c = req.filterClause
                 );
-                insert rec;
+                insert as user rec;
 
                 String jobName = 'WeaveSend_' + rec.Id + '_' + System.now().getTime();
                 String cronStr = scheduledDt.second() + ' ' + scheduledDt.minute() + ' ' + scheduledDt.hour()
@@ -67,7 +67,7 @@ public with sharing class WeaveScheduleBulkDocumentAction {
                 System.schedule(jobName, cronStr, new WeaveScheduledEmailJob(rec.Id));
 
                 rec.Job_Name__c = jobName;
-                update rec;
+                update as user rec;
 
                 res.scheduledSendId = rec.Id;
             } catch (Exception e) {

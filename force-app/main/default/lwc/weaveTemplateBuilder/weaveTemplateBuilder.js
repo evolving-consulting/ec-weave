@@ -1002,7 +1002,7 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
       const parsed = this.draftTemplate.signerRoles ? JSON.parse(this.draftTemplate.signerRoles) : [];
       this._roleKeyCounter = 0;
       this.signerRolesList = (Array.isArray(parsed) ? parsed : []).map(r => this._roleRow(r.role, r.order));
-    } catch (e) {
+    } catch {
       this.signerRolesList = [];
     }
   }
@@ -1470,7 +1470,7 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
 
   _parseComponentConfig(configJson) {
     if (!configJson) return {};
-    try { return JSON.parse(configJson); } catch (e) { return {}; }
+    try { return JSON.parse(configJson); } catch { return {}; }
   }
 
   get editingComponentColumns() {

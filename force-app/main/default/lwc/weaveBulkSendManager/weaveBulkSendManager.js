@@ -25,7 +25,7 @@ function formatDt(isoStr) {
             month: 'short', day: 'numeric', year: 'numeric',
             hour: 'numeric', minute: '2-digit'
         });
-    } catch(e) { return isoStr; }
+    } catch { return isoStr; }
 }
 
 export default class WeaveBulkSendManager extends LightningElement {

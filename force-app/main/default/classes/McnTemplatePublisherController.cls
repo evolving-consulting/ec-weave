@@ -15,7 +15,12 @@ public with sharing class McnTemplatePublisherController {
     public SfmcTemplateConflictDetector.ConflictResult conflictResult { get; private set; }
 
     public McnTemplatePublisherController() {
-        templateId = ApexPages.currentPage().getParameters().get('id');
+        try {
+            String idParam = ApexPages.currentPage().getParameters().get('id');
+            templateId = String.isNotBlank(idParam) ? (Id) idParam : null;
+        } catch (Exception e) {
+            templateId = null;
+        }
         isSuccess  = false;
         hasError   = false;
         loadTemplate();

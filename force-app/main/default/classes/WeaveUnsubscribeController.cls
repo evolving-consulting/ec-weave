@@ -94,11 +94,14 @@ public without sharing class WeaveUnsubscribeController {
     }
 
     private static SObject queryRecord(Id recId, String objectType) {
-        if (objectType != 'Contact' && objectType != 'Lead') return null;
-        List<SObject> records = Database.query(
-            'SELECT Id, HasOptedOutOfEmail FROM ' + objectType + ' WHERE Id = :recId LIMIT 1'
-        );
-        return records.isEmpty() ? null : records[0];
+        if (objectType == 'Contact') {
+            List<Contact> recs = [SELECT Id, HasOptedOutOfEmail FROM Contact WHERE Id = :recId LIMIT 1];
+            return recs.isEmpty() ? null : recs[0];
+        } else if (objectType == 'Lead') {
+            List<Lead> recs = [SELECT Id, HasOptedOutOfEmail FROM Lead WHERE Id = :recId LIMIT 1];
+            return recs.isEmpty() ? null : recs[0];
+        }
+        return null;
     }
 
     public static String buildToken(Id recordId, Id brandId) {

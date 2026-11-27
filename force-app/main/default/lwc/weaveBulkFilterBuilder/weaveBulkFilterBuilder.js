@@ -74,7 +74,7 @@ export default class WeaveBulkFilterBuilder extends LightningElement {
     handleAddCondition() {
         const key = nextKey();
         const updated = [
-            ...this.conditions.map((c, i) => ({ ...c, showConjunction: true })),
+            ...this.conditions.map((c) => ({ ...c, showConjunction: true })),
             { key, field: '', operator: '=', value: '', conjunction: 'AND',
               operatorOptions: OPERATORS_DEFAULT, showConjunction: false },
         ];

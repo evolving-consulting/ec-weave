@@ -134,7 +134,7 @@ public with sharing class MCNEmailSendService {
         }
 
         // Single bulk insert after all callouts (1 DML)
-        try { insert logsToInsert; } catch (Exception e) { /* non-fatal */ }
+        try { insert logsToInsert; } catch (Exception e) { System.debug(e); }
 
         return results;
     }
@@ -230,7 +230,7 @@ public with sharing class MCNEmailSendService {
                 Error_Message__c   = error
             );
         } catch (Exception e) {
-            // Log failure must not surface to caller
+            System.debug(e);
         }
     }
 

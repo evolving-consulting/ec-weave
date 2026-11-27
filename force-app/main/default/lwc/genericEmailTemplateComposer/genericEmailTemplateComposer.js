@@ -363,7 +363,7 @@ export default class GenericEmailTemplateComposer extends LightningElement {
 
         try {
             this.recordSummary = await getRecordSummary({ recordId });
-        } catch (error) {
+        } catch {
             this.recordSummary = {
                 recordName: recordId,
                 objectLabel: this.objectApiName
@@ -871,7 +871,7 @@ export default class GenericEmailTemplateComposer extends LightningElement {
             } else if (this.isQuickActionMode) {
                 try {
                     this.dispatchEvent(new CloseActionScreenEvent());
-                } catch (closeError) {
+                } catch {
                     // Record page usage does not always have an action modal to close.
                 }
             }
@@ -961,7 +961,7 @@ export default class GenericEmailTemplateComposer extends LightningElement {
         } else if (this.isQuickActionMode) {
             try {
                 this.dispatchEvent(new CloseActionScreenEvent());
-            } catch (closeError) {
+            } catch {
                 this.showToast('Cancelled', 'Email sending was cancelled.', 'info');
             }
         } else {
@@ -1114,9 +1114,11 @@ export default class GenericEmailTemplateComposer extends LightningElement {
         }
 
         const container = document.createElement('div');
+        // eslint-disable-next-line @lwc/lwc/no-inner-html
         container.innerHTML = html;
         this.ensureStandardEmailWrapper(container);
         this.applyStandardEmailTypography(container);
+        // eslint-disable-next-line @lwc/lwc/no-inner-html
         return container.innerHTML;
     }
 

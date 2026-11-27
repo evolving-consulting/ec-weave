@@ -51,7 +51,7 @@ export default class WeaveSignatureSender extends LightningElement {
                 if (sorted.length > 1) this.signingMode = 'Sequential';
                 return;
             }
-        } catch (e) { /* fall through */ }
+        } catch { /* fall through */ }
         this.addSigner();
     }
 

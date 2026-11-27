@@ -17,6 +17,7 @@ public without sharing class WeaveScheduledEmailExecutor implements Schedulable 
             WHERE Status__c = 'Pending'
               AND Scheduled_At__c <= :System.now()
               AND Send_Type__c = 'Individual'
+            WITH USER_MODE
             ORDER BY Scheduled_At__c ASC
             LIMIT 25
         ];
@@ -106,7 +107,9 @@ public without sharing class WeaveScheduledEmailExecutor implements Schedulable 
                 ? (Id) payload.scheduledByUserId
                 : null;
             insert log;
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+            System.debug(ignored);
+        }
     }
 
     private static String htmlToPlainText(String html) {

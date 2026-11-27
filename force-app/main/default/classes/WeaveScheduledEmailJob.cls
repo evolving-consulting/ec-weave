@@ -102,6 +102,6 @@ public with sharing class WeaveScheduledEmailJob implements Schedulable {
         if (sent    != null) upd.Records_Sent__c     = sent;
         if (failed  != null) upd.Records_Failed__c   = failed;
         if (errorDetail != null) upd.Error_Detail__c = errorDetail;
-        try { update upd; } catch (Exception ignored) {}
+        try { update upd; } catch (Exception ignored) { System.debug(ignored); }
     }
 }
