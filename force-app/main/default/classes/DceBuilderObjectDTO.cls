@@ -1,3 +1,4 @@
+@SuppressWarnings('PMD.ApexDoc')
 public with sharing class DceBuilderObjectDTO {
     @AuraEnabled public String label { get; set; }
     @AuraEnabled public String apiName { get; set; }

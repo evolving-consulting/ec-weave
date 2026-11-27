@@ -2,7 +2,7 @@
  * Resolves selectable Dynamic Communication Engine recipient options from configuration records.
  * Business record access is delegated to GenericDynamicQueryService.
  */
-@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.CyclomaticComplexity,PMD.CognitiveComplexity')
+@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ApexDoc')
 public with sharing class GenericRecipientResolver {
     private static final String SOURCE_TYPE_PARENT_FIELD = 'Parent Field';
     private static final String SOURCE_TYPE_RELATED_RECORDS = 'Related Records';

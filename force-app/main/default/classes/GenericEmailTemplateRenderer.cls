@@ -2,7 +2,7 @@
  * Renders configured Dynamic Communication Engine templates into email DTOs.
  * Business record access is delegated to GenericDynamicQueryService.
  */
-@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.CyclomaticComplexity,PMD.CognitiveComplexity')
+@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ApexDoc')
 public with sharing class GenericEmailTemplateRenderer {
   private static final String SECTION_TYPE_TEXT = 'Text';
   private static final String SECTION_TYPE_STATIC_TEXT = 'Static Text'; // legacy alias

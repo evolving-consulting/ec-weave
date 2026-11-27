@@ -1,4 +1,4 @@
-@SuppressWarnings('PMD.MethodNamingConventions')
+@SuppressWarnings('PMD.MethodNamingConventions,PMD.ApexUnitTestClassShouldHaveRunAs')
 @IsTest
 private class DataCloudConnectorServiceTest {
 

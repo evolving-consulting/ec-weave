@@ -1,6 +1,6 @@
 @SuppressWarnings('PMD.MethodNamingConventions')
 @IsTest
-@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces,PMD.ApexUnitTestClassShouldHaveRunAs')
 private class LegacyTemplateAnalyzerTest {
 
     // ── Helpers ───────────────────────────────────────────────────────────────

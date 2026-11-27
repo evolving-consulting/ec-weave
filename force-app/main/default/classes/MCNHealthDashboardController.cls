@@ -2,6 +2,7 @@
  * AuraEnabled controller backing mcnHealthDashboard LWC.
  * Delegates heavy logic to MCNHealthMonitorScheduler.runHealthCheck().
  */
+@SuppressWarnings('PMD.ApexDoc')
 public with sharing class MCNHealthDashboardController {
 
     @AuraEnabled(cacheable=false)

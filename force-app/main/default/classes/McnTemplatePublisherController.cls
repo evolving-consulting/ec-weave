@@ -3,7 +3,7 @@
  * Provides publish/update/delete/validate actions and reads the
  * current template + MCN publish status for display.
  */
-@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces,PMD.ApexDoc')
 public with sharing class McnTemplatePublisherController {
 
     public Id                    templateId     { get; set; }

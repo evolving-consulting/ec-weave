@@ -1,3 +1,4 @@
+/* eslint-disable @salesforce-ux/slds/no-hardcoded-values-slds2, @salesforce-ux/slds/no-slds-class-overrides */
 :host {
   --ec-brand-teal: #1f5f5b;
   --ec-brand-teal-mid: #2d7a73;

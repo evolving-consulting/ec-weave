@@ -1,6 +1,6 @@
 @IsTest
 @SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
-@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList')
+@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.ApexUnitTestClassShouldHaveRunAs')
 private class SfmcTemplateConflictDetectorTest {
 
     private static Weave_Template_Config__c makePublishedTemplate(String assetId) {

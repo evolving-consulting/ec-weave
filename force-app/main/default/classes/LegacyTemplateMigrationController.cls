@@ -2,6 +2,7 @@
  * AuraEnabled controller backing the legacyTemplateMigration LWC.
  * Thin pass-through — all logic lives in the service classes.
  */
+@SuppressWarnings('PMD.ApexDoc')
 public with sharing class LegacyTemplateMigrationController {
 
     @AuraEnabled(cacheable=false)

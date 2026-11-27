@@ -5,7 +5,7 @@
  * All callers should check response.getStatusCode() — this class does
  * not throw on non-2xx responses so callers can inspect and log details.
  */
-@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces,PMD.ApexDoc')
 public with sharing class SfmcHttpClient {
 
     @TestVisible

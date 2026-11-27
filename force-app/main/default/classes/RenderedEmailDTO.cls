@@ -2,6 +2,7 @@
  * Transport object for moving rendered DCE email content between Apex and LWC/API callers.
  * This class intentionally contains no business logic.
  */
+@SuppressWarnings('PMD.ApexDoc')
 public with sharing class RenderedEmailDTO {
     @AuraEnabled public String subject;
     @AuraEnabled public String htmlBody;

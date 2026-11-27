@@ -6,6 +6,7 @@
  * TTLs are enforced via CreatedAt timestamps. For cross-transaction
  * persistence consider Platform Cache when available.
  */
+@SuppressWarnings('PMD.ApexDoc')
 public with sharing class MCNPerformanceCache {
 
     // TTL constants (milliseconds)

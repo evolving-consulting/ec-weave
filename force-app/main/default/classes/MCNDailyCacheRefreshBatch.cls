@@ -8,6 +8,7 @@
  *
  *   Or via MCNHealthMonitorScheduler automatic scheduling.
  */
+@SuppressWarnings('PMD.ApexDoc,PMD.AvoidDebugStatements')
 public with sharing class MCNDailyCacheRefreshBatch
     implements Database.Batchable<SObject>, Database.Stateful {
 

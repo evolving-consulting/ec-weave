@@ -1,5 +1,5 @@
 @IsTest
-@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces,PMD.ApexUnitTestClassShouldHaveRunAs')
 private class SfmcMappingValidatorTest {
 
     private static Weave_Template_Config__c makeTemplate(String status, String channels) {

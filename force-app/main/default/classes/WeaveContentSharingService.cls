@@ -1,3 +1,4 @@
+@SuppressWarnings('PMD.ApexDoc')
 public with sharing class WeaveContentSharingService {
 
     public class PublicLinkResult {

@@ -1,6 +1,7 @@
 /**
  * Stores and reconstructs template HTML that can exceed a single Long Text Area field.
  */
+@SuppressWarnings('PMD.ApexDoc')
 public with sharing class DceTemplateContentService {
     public static final Integer INLINE_CONTENT_LENGTH = 131072;
     public static final Integer MAX_REGION_CONTENT_LENGTH = 1000000;

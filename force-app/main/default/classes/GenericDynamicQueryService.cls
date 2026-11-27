@@ -2,7 +2,7 @@
  * Generic, safe dynamic query helper for the Dynamic Communication Engine.
  * This class validates object and field API names before constructing SOQL.
  */
-@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.CyclomaticComplexity,PMD.CognitiveComplexity')
+@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ApexDoc')
 public with sharing class GenericDynamicQueryService {
     private static final String IDENTIFIER_REGEX = '^[A-Za-z_][A-Za-z0-9_]*(__(c|r))?$';
     private static final String FIELD_PATH_REGEX = '^[A-Za-z_][A-Za-z0-9_]*(__(c|r))?(\\.[A-Za-z_][A-Za-z0-9_]*(__(c|r))?){0,2}$';

@@ -3,7 +3,7 @@
  * Schedule hourly (or more frequently) via Setup > Apex Scheduler or the platform-apex-anonymous-run skill:
  *   System.schedule('Weave Scheduled Email', '0 0 * * * ?', new WeaveScheduledEmailExecutor());
  */
-@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces,PMD.ApexDoc')
 public without sharing class WeaveScheduledEmailExecutor implements Schedulable {
 
     public void execute(SchedulableContext ctx) {

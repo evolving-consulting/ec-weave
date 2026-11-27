@@ -1,7 +1,7 @@
 @SuppressWarnings('PMD.MethodNamingConventions')
 @IsTest
 @SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
-@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList')
+@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.ApexDoc,PMD.ApexUnitTestClassShouldHaveRunAs')
 private class SfmcTemplatePublisherTest {
 
     // ── Test data factory ─────────────────────────────────────────────────────

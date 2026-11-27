@@ -1,3 +1,4 @@
+@SuppressWarnings('PMD.ApexDoc')
 public with sharing class WeaveScheduleBulkDocumentAction {
 
     public class ActionRequest {

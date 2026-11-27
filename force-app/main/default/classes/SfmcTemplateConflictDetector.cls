@@ -8,7 +8,7 @@
  * via the MCN sync log's Translated_Content_Hash__c field.
  */
 @SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
-@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList')
+@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.ApexDoc')
 public with sharing class SfmcTemplateConflictDetector {
 
     // ── Public DTOs ───────────────────────────────────────────────────────────

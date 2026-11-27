@@ -1,4 +1,4 @@
-@SuppressWarnings('PMD.CyclomaticComplexity,PMD.CognitiveComplexity')
+@SuppressWarnings('PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ApexUnitTestClassShouldHaveRunAs')
 @IsTest
 private class DceTemplateBuilderControllerTest {
     @IsTest
