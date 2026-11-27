@@ -1,0 +1,282 @@
+<template>
+    <div class="library">
+
+        <!-- Page header -->
+        <div class="page-header">
+            <div class="page-header-left">
+                <p class="page-eyebrow">WEAVE</p>
+                <h1 class="page-title">Bulk Sends</h1>
+            </div>
+            <div class="page-header-right">
+                <template if:false={isCreating}>
+                    <button class="btn-primary" onclick={handleNew}>+ New Bulk Send</button>
+                </template>
+            </div>
+        </div>
+
+        <!-- Error banner -->
+        <template if:true={errorMessage}>
+            <div class="error-banner">
+                <span>{errorMessage}</span>
+                <button class="error-dismiss" onclick={handleDismissError}>&#x2715;</button>
+            </div>
+        </template>
+
+        <!-- ── CREATE FORM ─────────────────────────────────────────────────── -->
+        <template if:true={isCreating}>
+            <div class="edit-panel">
+                <div class="edit-panel-header">
+                    <p class="edit-panel-title">NEW BULK SEND</p>
+                    <button class="edit-panel-close" onclick={handleCancelCreate}>&#x2715;</button>
+                </div>
+
+                <!-- Step indicator -->
+                <div class="step-indicator">
+                    <span class={stepClass1}>1 · Template</span>
+                    <span class="step-sep">›</span>
+                    <span class={stepClass2}>2 · Filters</span>
+                    <span class="step-sep">›</span>
+                    <span class={stepClass3}>3 · Schedule</span>
+                </div>
+
+                <!-- STEP 1: Template & Output -->
+                <template if:true={isStep1}>
+                    <div class="form-row">
+                        <lightning-combobox
+                            label="Template"
+                            value={form.templateId}
+                            options={templateOptions}
+                            placeholder="Select a template…"
+                            required
+                            onchange={handleTemplateChange}>
+                        </lightning-combobox>
+                    </div>
+                    <template if:true={form.templateId}>
+                        <div class="form-row">
+                            <p class="field-hint">Template Output Type: <strong>{form.outputType}</strong></p>
+                        </div>
+                        <!-- Document templates: choose action -->
+                        <template if:true={isDocumentTemplate}>
+                            <div class="form-row">
+                                <p class="form-section-label">What would you like to do?</p>
+                                <div class="filter-tabs" style="margin-top:6px">
+                                    <button class={docActionTabDocument} data-action="documentOnly" onclick={handleDocumentAction}>Generate Document Only</button>
+                                    <button class={docActionTabEmail} data-action="documentEmail" onclick={handleDocumentAction}>Generate Document &amp; Send Email</button>
+                                </div>
+                            </div>
+                        </template>
+                        <!-- Email template picker: shown for Email+PDF or Document+Email -->
+                        <template if:true={needsEmailTemplate}>
+                            <div class="form-row">
+                                <lightning-combobox
+                                    label="Email Template (for body, subject &amp; recipients)"
+                                    value={form.emailTemplateId}
+                                    options={emailTemplateOptions}
+                                    placeholder="Select an email template…"
+                                    required
+                                    onchange={handleEmailTemplateChange}>
+                                </lightning-combobox>
+                                <p class="field-hint">The generated document will be attached to the email sent by this template.</p>
+                            </div>
+                        </template>
+                    </template>
+                    <div class="form-actions">
+                        <button class="btn-cancel" onclick={handleCancelCreate}>Cancel</button>
+                        <button class="btn-primary" onclick={handleStep1Next} disabled={step1Invalid}>Next →</button>
+                    </div>
+                </template>
+
+                <!-- STEP 2: Filters -->
+                <template if:true={isStep2}>
+                    <template if:true={isLoadingFields}>
+                        <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
+                    </template>
+                    <template if:false={isLoadingFields}>
+                        <div class="form-row">
+                            <p class="form-section-label">Filter records from <strong>{form.objectLabel}</strong></p>
+                        </div>
+                        <c-weave-bulk-filter-builder
+                            fields={objectFields}
+                            onfilterchange={handleFilterChange}>
+                        </c-weave-bulk-filter-builder>
+                        <template if:true={recordCount}>
+                            <p class="record-count-hint">
+                                <strong>{recordCount}</strong> record(s) will be targeted
+                            </p>
+                        </template>
+                    </template>
+                    <div class="form-actions">
+                        <button class="btn-cancel" onclick={handleStepBack}>← Back</button>
+                        <button class="btn-primary" onclick={handleStep2Next}>Next →</button>
+                    </div>
+                </template>
+
+                <!-- STEP 3: Schedule -->
+                <template if:true={isStep3}>
+                    <!-- Schedule Mode toggle -->
+                    <div class="form-row">
+                        <p class="form-section-label">Schedule Mode</p>
+                        <div class="filter-tabs" style="margin-top:6px">
+                            <button class={schedModeTabOnce} data-mode="once" onclick={handleScheduleModeChange}>Send Once</button>
+                            <button class={schedModeTabRecurring} data-mode="recurring" onclick={handleScheduleModeChange}>Recurring</button>
+                        </div>
+                    </div>
+
+                    <!-- ONCE: date + time -->
+                    <template if:true={isScheduleOnce}>
+                        <div class="form-row-2">
+                            <lightning-input type="date" label="Send Date" value={form.scheduleDate} required onchange={handleScheduleDateChange}></lightning-input>
+                            <lightning-input type="time" label="Send Time" value={form.scheduleTime} required onchange={handleScheduleTimeChange}></lightning-input>
+                        </div>
+                    </template>
+
+                    <!-- RECURRING -->
+                    <template if:true={isScheduleRecurring}>
+                        <div class="form-row">
+                            <lightning-checkbox-group
+                                label="Days of the Week"
+                                name="bulkRecurringDays"
+                                options={dayOfWeekOptions}
+                                value={form.recurringDays}
+                                required
+                                onchange={handleRecurringDaysChange}>
+                            </lightning-checkbox-group>
+                        </div>
+                        <div class="form-row-2">
+                            <lightning-input type="time" label="Time" value={form.recurringTime} required onchange={handleRecurringTimeChange}></lightning-input>
+                            <lightning-input type="date" label="Start Date" value={form.recurringStartDate} required onchange={handleRecurringStartDateChange}></lightning-input>
+                        </div>
+                        <div class="form-row">
+                            <lightning-radio-group
+                                label="Ends"
+                                name="bulkRecurringEndType"
+                                options={recurringEndTypeOptions}
+                                value={form.recurringEndType}
+                                onchange={handleRecurringEndTypeChange}>
+                            </lightning-radio-group>
+                        </div>
+                        <template if:true={isRecurringEndByDate}>
+                            <div class="form-row">
+                                <lightning-input type="date" label="End Date" value={form.recurringEndDate} required onchange={handleRecurringEndDateChange}></lightning-input>
+                            </div>
+                        </template>
+                        <template if:true={isRecurringEndByMaxSends}>
+                            <div class="form-row">
+                                <lightning-input type="number" label="Stop After (sends)" value={form.recurringMaxSends} min="1" max="1000" required onchange={handleRecurringMaxSendsChange}></lightning-input>
+                            </div>
+                        </template>
+                    </template>
+
+                    <div class="form-row">
+                        <lightning-input type="number" label="Batch Size" value={form.batchSize} min="1" max="200" onchange={handleBatchSizeChange}></lightning-input>
+                        <p class="field-hint">Records processed per batch. Default: 20.</p>
+                    </div>
+
+                    <!-- Review summary -->
+                    <div class="review-summary">
+                        <p class="review-row"><span class="review-label">Template</span><span>{form.templateName}</span></p>
+                        <p class="review-row"><span class="review-label">Output</span><span>{form.outputType}</span></p>
+                        <template if:true={form.emailTemplateName}>
+                            <p class="review-row"><span class="review-label">Email Template</span><span>{form.emailTemplateName}</span></p>
+                        </template>
+                        <p class="review-row"><span class="review-label">Schedule</span><span>{scheduleModeSummary}</span></p>
+                        <p class="review-row"><span class="review-label">Records</span>
+                            <span><template if:true={recordCount}>{recordCount}</template><template if:false={recordCount}>–</template></span>
+                        </p>
+                        <p class="review-row"><span class="review-label">Filters</span>
+                            <span><template if:true={hasFilterConditions}>{filterConditionCount} condition(s)</template><template if:false={hasFilterConditions}>None (all records)</template></span>
+                        </p>
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="btn-cancel" onclick={handleStepBack}>← Back</button>
+                        <button class="btn-primary" onclick={handleSave} disabled={isSaving}>
+                            <template if:false={isSaving}>Schedule</template>
+                            <template if:true={isSaving}>Scheduling…</template>
+                        </button>
+                    </div>
+                </template>
+            </div>
+        </template>
+
+        <!-- ── TABLE ──────────────────────────────────────────────────────── -->
+        <template if:false={isCreating}>
+            <!-- Filter row -->
+            <div class="filter-row">
+                <div class="filter-tabs">
+                    <button class={filterTabAll}     data-status="All"     onclick={handleStatusFilter}>All</button>
+                    <button class={filterTabPending}  data-status="Pending" onclick={handleStatusFilter}>Pending</button>
+                    <button class={filterTabRunning}  data-status="Running" onclick={handleStatusFilter}>Running</button>
+                    <button class={filterTabSent}     data-status="Sent"    onclick={handleStatusFilter}>Sent</button>
+                    <button class={filterTabFailed}   data-status="Failed"  onclick={handleStatusFilter}>Failed</button>
+                </div>
+                <lightning-input type="search" placeholder="Search…" value={searchTerm}
+                    onchange={handleSearch} variant="label-hidden">
+                </lightning-input>
+            </div>
+
+            <template if:true={isLoading}>
+                <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+            </template>
+
+            <template if:false={isLoading}>
+                <template if:true={hasRows}>
+                    <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                        <thead>
+                            <tr class="slds-line-height_reset">
+                                <th scope="col"><span class="slds-truncate">TEMPLATE</span></th>
+                                <th scope="col"><span class="slds-truncate">OUTPUT</span></th>
+                                <th scope="col"><span class="slds-truncate">SCHEDULED</span></th>
+                                <th scope="col"><span class="slds-truncate">RECORDS</span></th>
+                                <th scope="col"><span class="slds-truncate">STATUS</span></th>
+                                <th scope="col"><span class="slds-truncate">ACTIONS</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template for:each={filteredRows} for:item="row">
+                                <tr key={row.id} class="slds-hint-parent">
+                                    <td><span class="row-name">{row.templateName}</span></td>
+                                    <td><span>{row.outputType}</span></td>
+                                    <td><span>{row.scheduledAtFormatted}</span></td>
+                                    <td>
+                                        <span>
+                                            <template if:true={row.recordsTargeted}>
+                                                {row.recordsSent}/{row.recordsTargeted}
+                                            </template>
+                                            <template if:false={row.recordsTargeted}>–</template>
+                                        </span>
+                                    </td>
+                                    <td><span class={row.statusClass}>{row.status}</span></td>
+                                    <td>
+                                        <span class="action-links">
+                                            <template if:true={row.canCancel}>
+                                                <button class="action-link delete-link"
+                                                    data-id={row.id} onclick={handleCancel}>Cancel</button>
+                                            </template>
+                                        </span>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </template>
+
+                <template if:false={hasRows}>
+                    <div class="empty-state">
+                        <svg class="empty-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="8" y="12" width="32" height="4" rx="2" fill="#1f5f5b" opacity="0.8"/>
+                            <rect x="8" y="22" width="22" height="4" rx="2" fill="#1f5f5b" opacity="0.5"/>
+                            <rect x="8" y="32" width="14" height="4" rx="2" fill="#1f5f5b" opacity="0.3"/>
+                            <circle cx="38" cy="36" r="8" fill="#1f5f5b" opacity="0.9"/>
+                            <path d="M35 36l2 2 4-4" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <p class="empty-title">No bulk sends yet</p>
+                        <p class="empty-body">Create a bulk send to process a batch of records with a template.</p>
+                        <button class="btn-primary" onclick={handleNew}>+ New Bulk Send</button>
+                    </div>
+                </template>
+            </template>
+        </template>
+
+    </div>
+</template>

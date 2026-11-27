@@ -118,14 +118,67 @@
       <!-- Filter (WHERE clause) -->
       <div class="qed-section">
         <p class="qed-label">Filter (WHERE clause)</p>
-        <input
-          type="text"
-          class="qed-search"
-          placeholder="e.g. IsPrimary__c = true OR Status__c = 'Active'"
-          value={filterClause}
-          onchange={handleFilterChange}
-        />
-        <p class="qed-hint">Optional conditions appended after WHERE. Leave blank for no filter.</p>
+
+        <!-- Structured filter condition rows -->
+        <template for:each={filterRowsDisplay} for:item="frow">
+          <div key={frow.id} class="qed-filter-row">
+            <template if:true={frow.isFirst}>
+              <span class="qed-filter-where-badge">WHERE</span>
+            </template>
+            <template if:false={frow.isFirst}>
+              <lightning-combobox
+                label=""
+                value={frow.connector}
+                options={filterConnectorOptions}
+                data-idx={frow.id}
+                class="qed-filter-connector"
+                onchange={handleFilterRowConnectorChange}
+              ></lightning-combobox>
+            </template>
+            <lightning-combobox
+              label=""
+              value={frow.field}
+              options={filterFieldOptions}
+              placeholder="Field…"
+              data-idx={frow.id}
+              class="qed-filter-field"
+              onchange={handleFilterRowFieldChange}
+            ></lightning-combobox>
+            <lightning-combobox
+              label=""
+              value={frow.operator}
+              options={filterOperatorOptions}
+              data-idx={frow.id}
+              class="qed-filter-op"
+              onchange={handleFilterRowOperatorChange}
+            ></lightning-combobox>
+            <template if:false={frow.isNullOp}>
+              <input
+                type="text"
+                class="qed-filter-value"
+                placeholder="value"
+                value={frow.value}
+                data-idx={frow.id}
+                onchange={handleFilterRowValueChange}
+              />
+            </template>
+            <button class="qed-sort-remove" data-idx={frow.id} onclick={handleFilterRowRemove}>×</button>
+          </div>
+        </template>
+
+        <button class="qed-sort-add" onclick={handleFilterRowAdd}>+ Add condition</button>
+
+        <!-- Manual text fallback when no rows -->
+        <template if:false={hasFilterRows}>
+          <input
+            type="text"
+            class="qed-search"
+            placeholder="e.g. IsPrimary__c = true OR Status__c = 'Active'"
+            value={filterClause}
+            onchange={handleFilterChange}
+          />
+          <p class="qed-hint">Optional conditions appended after WHERE. Leave blank for no filter.</p>
+        </template>
       </div>
 
       <!-- Sort + Limit -->

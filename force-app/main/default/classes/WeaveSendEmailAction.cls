@@ -63,7 +63,7 @@ public with sharing class WeaveSendEmailAction {
             }
             if (tmpl.Template_Output_Type__c == 'Document') {
                 result.success = false;
-                result.errorMessage = 'Template is configured for Document PDF output only. Use the Generate Weave PDF action instead.';
+                result.errorMessage = 'Template is configured for Document output only. Use the Generate Weave PDF action instead.';
                 return result;
             }
 

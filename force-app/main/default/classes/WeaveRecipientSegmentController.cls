@@ -1,5 +1,15 @@
 public with sharing class WeaveRecipientSegmentController {
 
+    public class SegmentPreviewResult {
+        @AuraEnabled public Integer totalCount;
+        @AuraEnabled public List<SegmentPreviewRow> sampleRecords;
+    }
+
+    public class SegmentPreviewRow {
+        @AuraEnabled public String name;
+        @AuraEnabled public String email;
+    }
+
     @AuraEnabled
     public static List<Weave_Recipient_Segment__c> getSegments() {
         try {
@@ -51,6 +61,59 @@ public with sharing class WeaveRecipientSegmentController {
             throw e;
         } catch (Exception e) {
             throw new AuraHandledException('Unable to preview segment.');
+        }
+    }
+
+    @AuraEnabled
+    @SuppressWarnings('PMD.ApexSOQLInjection')
+    public static SegmentPreviewResult previewSegmentByData(
+        String objectApiName, String emailField, String nameField, String soqlFilter
+    ) {
+        try {
+            if (String.isBlank(objectApiName)) throw new AuraHandledException('Object is required.');
+            if (String.isBlank(emailField)) throw new AuraHandledException('Email field is required.');
+            GenericDynamicQueryService.assertValidObject(objectApiName);
+            GenericDynamicQueryService.assertValidField(objectApiName, emailField);
+
+            String countSoql = 'SELECT COUNT() FROM ' + objectApiName;
+            if (String.isNotBlank(soqlFilter)) countSoql += ' WHERE (' + soqlFilter + ')';
+            countSoql += ' WITH USER_MODE';
+            Integer total = Database.countQuery(countSoql);
+
+            Set<String> selectFields = new Set<String>{ 'Id', emailField };
+            if (String.isNotBlank(nameField)) {
+                GenericDynamicQueryService.assertValidField(objectApiName, nameField);
+                selectFields.add(nameField);
+            }
+            String selectSoql = 'SELECT ' + String.join(new List<String>(selectFields), ', ')
+                + ' FROM ' + objectApiName;
+            if (String.isNotBlank(soqlFilter)) selectSoql += ' WHERE (' + soqlFilter + ')';
+            selectSoql += ' WITH USER_MODE ORDER BY ' + emailField + ' ASC NULLS LAST LIMIT 10';
+
+            List<SObject> records = Database.query(selectSoql);
+            List<SegmentPreviewRow> rows = new List<SegmentPreviewRow>();
+            for (SObject rec : records) {
+                SegmentPreviewRow row = new SegmentPreviewRow();
+                Object emailVal = rec.get(emailField);
+                row.email = emailVal != null ? String.valueOf(emailVal) : '';
+                row.name = row.email;
+                if (String.isNotBlank(nameField)) {
+                    Object nameVal = rec.get(nameField);
+                    if (nameVal != null && String.isNotBlank(String.valueOf(nameVal))) {
+                        row.name = String.valueOf(nameVal);
+                    }
+                }
+                rows.add(row);
+            }
+
+            SegmentPreviewResult result = new SegmentPreviewResult();
+            result.totalCount = total;
+            result.sampleRecords = rows;
+            return result;
+        } catch (AuraHandledException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AuraHandledException('Unable to preview segment: ' + e.getMessage());
         }
     }
 

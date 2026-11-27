@@ -6,6 +6,7 @@ public with sharing class WeaveBulkEmailBatch
     private final String objectApiName;
     private final String filterClause;
     private final String outputType;
+    private final Id emailTemplateId;
 
     private Integer targeted = 0;
     private Integer sent     = 0;
@@ -14,16 +15,22 @@ public with sharing class WeaveBulkEmailBatch
 
     public WeaveBulkEmailBatch(Id templateId, Id scheduledSendId,
                                String objectApiName, String filterClause) {
-        this(templateId, scheduledSendId, objectApiName, filterClause, 'Email');
+        this(templateId, scheduledSendId, objectApiName, filterClause, 'Email', null);
     }
 
     public WeaveBulkEmailBatch(Id templateId, Id scheduledSendId,
                                String objectApiName, String filterClause, String outputType) {
-        this.templateId       = templateId;
-        this.scheduledSendId  = scheduledSendId;
-        this.objectApiName    = objectApiName;
-        this.filterClause     = filterClause;
-        this.outputType       = String.isBlank(outputType) ? 'Email' : outputType;
+        this(templateId, scheduledSendId, objectApiName, filterClause, outputType, null);
+    }
+
+    public WeaveBulkEmailBatch(Id templateId, Id scheduledSendId,
+                               String objectApiName, String filterClause, String outputType, Id emailTemplateId) {
+        this.templateId      = templateId;
+        this.scheduledSendId = scheduledSendId;
+        this.objectApiName   = objectApiName;
+        this.filterClause    = filterClause;
+        this.outputType      = String.isBlank(outputType) ? 'Email' : outputType;
+        this.emailTemplateId = emailTemplateId;
     }
 
     @SuppressWarnings('PMD.ApexSOQLInjection')
@@ -56,11 +63,41 @@ public with sharing class WeaveBulkEmailBatch
 
         for (SObject record : scope) {
             try {
-                if (outputType == 'Email' || outputType == 'Both') {
-                    WeaveScheduledEmailJob.sendToRecord(templateId, record.Id);
-                }
-                if (outputType == 'PDF' || outputType == 'Both') {
-                    WeavePdfService.generatePdf(templateId, record.Id);
+                if (outputType == 'Email + PDF' && emailTemplateId != null) {
+                    ContentVersion cv = WeavePdfService.generatePdf(templateId, record.Id);
+                    WeaveEmailTemplateRenderer.RenderedEmailDTO rendered =
+                        WeaveEmailTemplateRenderer.renderEmail(emailTemplateId, record.Id, false);
+                    List<RecipientOptionDTO> options =
+                        WeaveRecipientResolver.getRecipientOptions(emailTemplateId, record.Id);
+                    List<RecipientInputDTO> toList  = new List<RecipientInputDTO>();
+                    List<RecipientInputDTO> ccList  = new List<RecipientInputDTO>();
+                    List<RecipientInputDTO> bccList = new List<RecipientInputDTO>();
+                    for (RecipientOptionDTO opt : options) {
+                        if (opt.sourceType == 'Manual' || String.isBlank(opt.email)) continue;
+                        if (opt.required != true && opt.selected != true) continue;
+                        RecipientInputDTO r = new RecipientInputDTO(opt.name, opt.email, opt.recipientType);
+                        String rt = opt.recipientType != null ? opt.recipientType.toUpperCase() : 'TO';
+                        if (rt == 'CC') ccList.add(r);
+                        else if (rt == 'BCC') bccList.add(r);
+                        else toList.add(r);
+                    }
+                    GenericEmailSendRequest req = new GenericEmailSendRequest();
+                    req.templateId           = emailTemplateId;
+                    req.recordId             = record.Id;
+                    req.subject              = rendered.subject;
+                    req.htmlBody             = rendered.htmlBody;
+                    req.toRecipients         = toList;
+                    req.ccRecipients         = ccList;
+                    req.bccRecipients        = bccList;
+                    req.attachmentContentDocumentIds = new List<Id>{ cv.ContentDocumentId };
+                    WeaveEmailSendService.sendEmail(req);
+                } else {
+                    if (outputType == 'Email' || outputType == 'Both') {
+                        WeaveScheduledEmailJob.sendToRecord(templateId, record.Id);
+                    }
+                    if (outputType == 'PDF' || outputType == 'Both') {
+                        WeavePdfService.generatePdf(templateId, record.Id);
+                    }
                 }
                 sent++;
             } catch (Exception e) {

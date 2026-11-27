@@ -108,7 +108,7 @@ public with sharing class WeaveSignatureService {
         Weave_Signature_Request__c req = reqs[0];
 
         List<Weave_Signature_Placement__c> placements = [
-            SELECT Id, Type__c, Role__c, Page__c, X_In__c, Y_In__c, W_In__c, H_In__c, Collected_Value__c, Signer__c
+            SELECT Id, Type__c, Role__c, Field_Label__c, Page__c, X_In__c, Y_In__c, W_In__c, H_In__c, Collected_Value__c, Signer__c
             FROM Weave_Signature_Placement__c WHERE Signature_Request__c = :requestId WITH USER_MODE
         ];
         List<Weave_Signer__c> signers = [
@@ -129,18 +129,26 @@ public with sharing class WeaveSignatureService {
             renderedHtml = rendered.htmlBody != null ? rendered.htmlBody : '';
         }
 
-        // Inject collected signatures
+        // Resolve {{#Signers}} block with actual signer data before injecting signatures
+        renderedHtml = WeaveEmailTemplateRenderer.resolveSignerBlock(renderedHtml, signers);
+
+        // Inject collected signatures/dates
         for (Weave_Signature_Placement__c pl : placements) {
             if (String.isBlank(pl.Collected_Value__c)) continue;
-            String roleAttr = 'data-sig-role="' + escAttr(pl.Role__c) + '"';
+            String roleType = pl.Role__c + ':' + pl.Type__c;
+            String tag      = '{{@' + pl.Role__c + ':' + pl.Type__c
+                + (String.isNotBlank(pl.Field_Label__c) ? ':' + pl.Field_Label__c : '') + '}}';
             if (pl.Type__c == 'Full' || pl.Type__c == 'Initials') {
                 Decimal w = pl.W_In__c != null ? pl.W_In__c : 2.5;
                 Decimal h = pl.H_In__c != null ? pl.H_In__c : 0.75;
-                String img = '<img src="' + pl.Collected_Value__c + '" style="width:' + w + 'in;height:' + h + 'in;" alt="Signature"/>';
-                renderedHtml = renderedHtml.replace('<div ' + roleAttr, img + '<!-- ');
-            } else if (pl.Type__c == 'Date') {
-                String dateVal = pl.Collected_Value__c;
-                renderedHtml = renderedHtml.replace('<div ' + roleAttr, '<div style="border-bottom:1px solid #333;" ' + roleAttr);
+                String img = '<img src="' + pl.Collected_Value__c + '" style="width:' + w + 'in;height:' + h + 'in;display:block;" alt="Signature"/>';
+                renderedHtml = renderedHtml.replace(tag, img);
+            } else if (pl.Type__c == 'Date' || pl.Type__c == 'DatePick') {
+                renderedHtml = renderedHtml.replace(tag,
+                    '<span style="border-bottom:1px solid #333;padding:0 8px;">' + esc(pl.Collected_Value__c) + '</span>');
+            } else if (pl.Type__c == 'Field') {
+                renderedHtml = renderedHtml.replace(tag,
+                    '<span style="font-weight:600;">' + esc(pl.Collected_Value__c) + '</span>');
             }
         }
 
@@ -290,39 +298,42 @@ public with sharing class WeaveSignatureService {
             html = r.htmlBody != null ? r.htmlBody : '';
         } catch (Exception e) { return new List<Weave_Signature_Placement__c>(); }
 
+        // Strip {{#Signers}}...{{/Signers}} blocks before scanning for placement tags
+        html = html.replaceAll('(?s)\\{\\{#Signers\\}\\}.*?\\{\\{/Signers\\}\\}', '');
+
         Map<String, Weave_Signer__c> byRole = new Map<String, Weave_Signer__c>();
         for (Weave_Signer__c s : signers) {
             if (String.isNotBlank(s.Role__c)) byRole.put(s.Role__c.toLowerCase(), s);
         }
 
-        // Pattern: {{@Role}}, {{@initials:Role}}, {{@date:Role}}, {{@field:Label:Role[:type]}}
-        Pattern p = Pattern.compile('\\{\\{@(?:(initials|date|field):)?([^:}\\n]+)(?::([^:}\\n]*))?(?::([^}\\n]*))?\\}\\}');
+        // Unified tag syntax: {{@Role:Full|Initials|Date|DatePick|Field[:Label]}}
+        Pattern p = Pattern.compile('\\{\\{@([A-Za-z][A-Za-z0-9_]*):(Full|Initials|Date|DatePick|Field)(?::([^}\\n]+))?\\}\\}');
         Matcher m = p.matcher(html);
+
+        // Track unique role+type combos to deduplicate (same tag repeated = multiple placements OK,
+        // but we only need one Signer lookup per combo)
         List<Weave_Signature_Placement__c> results = new List<Weave_Signature_Placement__c>();
         while (m.find()) {
-            String modifier     = m.group(1);
-            String roleOrLabel  = m.group(2);
-            String roleForField = m.group(3);
-            String plType = 'Full';
-            String role   = roleOrLabel;
-
-            if      ('initials'.equalsIgnoreCase(modifier)) { plType = 'Initials'; }
-            else if ('date'.equalsIgnoreCase(modifier))     { plType = 'Date'; }
-            else if ('field'.equalsIgnoreCase(modifier))    { plType = 'Field'; role = roleForField; }
+            String role       = m.group(1);  // e.g. Buyer, Loan_Officer
+            String plType     = m.group(2);  // Full | Initials | Date | DatePick | Field
+            String fieldLabel = m.group(3);  // only present for Field type
 
             if (String.isBlank(role)) continue;
+            if (plType == 'Field' && String.isBlank(fieldLabel)) continue;
+
             Weave_Signer__c signer = byRole.get(role.toLowerCase());
 
             results.add(new Weave_Signature_Placement__c(
                 Signature_Request__c = requestId,
-                Signer__c   = signer != null ? signer.Id : null,
-                Type__c     = plType,
-                Role__c     = role,
-                Page__c     = 1,
-                X_In__c     = 1.0,
-                Y_In__c     = 9.0,
-                W_In__c     = plType == 'Initials' ? 1.0 : 2.5,
-                H_In__c     = plType == 'Date' ? 0.3 : 0.75
+                Signer__c            = signer != null ? signer.Id : null,
+                Type__c              = plType,
+                Role__c              = role,
+                Field_Label__c       = plType == 'Field' ? fieldLabel.trim() : null,
+                Page__c              = 1,
+                X_In__c              = 1.0,
+                Y_In__c              = 9.0,
+                W_In__c              = plType == 'Initials' ? 1.0 : 2.5,
+                H_In__c              = (plType == 'Date' || plType == 'DatePick') ? 0.3 : 0.75
             ));
         }
         return results;

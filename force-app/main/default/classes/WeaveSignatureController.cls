@@ -93,13 +93,20 @@ global without sharing class WeaveSignatureController {
     }
 
     private void loadPlacements(Id requestId, Id templateId) {
+        // Deduplicate by role+type so the signer draws once per unique combo
+        // (same tag repeated in doc = multiple DB records but one input widget)
+        Set<String> seen = new Set<String>();
         List<Map<String,Object>> pls = new List<Map<String,Object>>();
         for (Weave_Signature_Placement__c pl : [
-            SELECT Id, Type__c, Role__c, W_In__c, H_In__c
+            SELECT Id, Type__c, Role__c, Field_Label__c, W_In__c, H_In__c
             FROM Weave_Signature_Placement__c
             WHERE Signature_Request__c = :requestId
             AND Signer__c = :signerId
+            AND Type__c IN ('Full','Initials','Date','DatePick')
         ]) {
+            String key = pl.Role__c.toLowerCase() + ':' + pl.Type__c.toLowerCase();
+            if (seen.contains(key)) continue;
+            seen.add(key);
             pls.add(new Map<String,Object>{
                 'id'    => pl.Id,
                 'type'  => pl.Type__c,
@@ -110,22 +117,24 @@ global without sharing class WeaveSignatureController {
         }
         placementsJson = JSON.serialize(pls);
 
-        // Form fields for this signer's role
+        // Form fields (Field-type placements) for this signer's role
         if (templateId != null && String.isNotBlank(signerRole)) {
             List<Map<String,Object>> ffs = new List<Map<String,Object>>();
             for (Weave_Signature_Form_Field__c f : [
-                SELECT Id, Tag_Label__c, Field_Type__c, Required__c, Picklist_Values__c, Display_Order__c
+                SELECT Id, Tag_Label__c, Field_Type__c, Required__c, Picklist_Values__c,
+                       Display_Order__c, On_Certificate__c
                 FROM Weave_Signature_Form_Field__c
                 WHERE Weave_Template_Config__c = :templateId
                 AND Signer_Role__c = :signerRole
                 ORDER BY Display_Order__c ASC NULLS LAST
             ]) {
                 ffs.add(new Map<String,Object>{
-                    'label'     => f.Tag_Label__c,
-                    'type'      => f.Field_Type__c,
-                    'required'  => f.Required__c,
-                    'options'   => f.Picklist_Values__c,
-                    'order'     => f.Display_Order__c
+                    'label'         => f.Tag_Label__c,
+                    'type'          => f.Field_Type__c,
+                    'required'      => f.Required__c,
+                    'options'       => f.Picklist_Values__c,
+                    'onCertificate' => f.On_Certificate__c,
+                    'order'         => f.Display_Order__c
                 });
             }
             formFieldsJson = JSON.serialize(ffs);
@@ -153,22 +162,27 @@ global without sharing class WeaveSignatureController {
             Map<String,Object> formValues = (Map<String,Object>) JSON.deserializeUntyped(formValuesJson);
 
             List<Weave_Signature_Placement__c> placements = [
-                SELECT Id, Type__c, Role__c, Signer__c
+                SELECT Id, Type__c, Role__c, Field_Label__c, Signer__c
                 FROM Weave_Signature_Placement__c
                 WHERE Signature_Request__c = :signer.Signature_Request__c
                 AND Signer__c = :sigId
             ];
             List<Weave_Signature_Placement__c> toUpdate = new List<Weave_Signature_Placement__c>();
             for (Weave_Signature_Placement__c pl : placements) {
-                String roleKey = pl.Role__c != null ? pl.Role__c.toLowerCase() : '';
-                if ((pl.Type__c == 'Full' || pl.Type__c == 'Initials') && sigs.containsKey(roleKey)) {
-                    pl.Collected_Value__c = (String) sigs.get(roleKey);
+                // Key convention: role:type for drawn signatures, fieldLabel for field inputs
+                String roleTypeKey  = pl.Role__c.toLowerCase() + ':' + pl.Type__c.toLowerCase();
+                String fieldLblKey  = String.isNotBlank(pl.Field_Label__c) ? pl.Field_Label__c.toLowerCase() : '';
+                if ((pl.Type__c == 'Full' || pl.Type__c == 'Initials') && sigs.containsKey(roleTypeKey)) {
+                    pl.Collected_Value__c = (String) sigs.get(roleTypeKey);
                     toUpdate.add(pl);
-                } else if (pl.Type__c == 'Field' && formValues.containsKey(roleKey)) {
-                    pl.Collected_Value__c = (String) formValues.get(roleKey);
+                } else if (pl.Type__c == 'DatePick' && sigs.containsKey(roleTypeKey)) {
+                    pl.Collected_Value__c = (String) sigs.get(roleTypeKey);
                     toUpdate.add(pl);
                 } else if (pl.Type__c == 'Date') {
-                    pl.Collected_Value__c = String.valueOf(DateTime.now());
+                    pl.Collected_Value__c = DateTime.now().format('MMM d, yyyy h:mm a z');
+                    toUpdate.add(pl);
+                } else if (pl.Type__c == 'Field' && String.isNotBlank(fieldLblKey) && formValues.containsKey(fieldLblKey)) {
+                    pl.Collected_Value__c = (String) formValues.get(fieldLblKey);
                     toUpdate.add(pl);
                 }
             }

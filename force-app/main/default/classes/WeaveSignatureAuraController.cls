@@ -76,15 +76,37 @@ public with sharing class WeaveSignatureAuraController {
     }
 
     @AuraEnabled(cacheable=false)
-    public static List<Weave_Signature_Form_Field__c> getSignerFormFields(String templateId) {
+    public static List<Map<String,Object>> getSignerFormFields(String templateId) {
         try {
-            return [
+            List<Weave_Signature_Form_Field__c> recs = [
                 SELECT Id, Tag_Label__c, Signer_Role__c, Field_Type__c,
-                       Target_Field_Api_Name__c, Required__c, Picklist_Values__c, Display_Order__c
+                       Target_Field_Api_Name__c, Required__c, Picklist_Values__c,
+                       Display_Order__c, Write_Back__c, On_Certificate__c
                 FROM Weave_Signature_Form_Field__c
                 WHERE Weave_Template_Config__c = :templateId
                 WITH USER_MODE ORDER BY Display_Order__c ASC NULLS LAST
             ];
+            List<Map<String,Object>> result = new List<Map<String,Object>>();
+            for (Weave_Signature_Form_Field__c f : recs) {
+                // Compute the unified merge tag: {{@Role:Field:Label}}
+                String role  = String.isNotBlank(f.Signer_Role__c) ? f.Signer_Role__c.trim() : 'Signer';
+                String label = String.isNotBlank(f.Tag_Label__c)   ? f.Tag_Label__c.trim()   : 'Field';
+                String tag   = '{{@' + role + ':Field:' + label + '}}';
+                Map<String,Object> row = new Map<String,Object>();
+                row.put('Id',                    f.Id);
+                row.put('Tag_Label__c',          f.Tag_Label__c);
+                row.put('Signer_Role__c',        f.Signer_Role__c);
+                row.put('Field_Type__c',         f.Field_Type__c);
+                row.put('Target_Field_Api_Name__c', f.Target_Field_Api_Name__c);
+                row.put('Required__c',           f.Required__c);
+                row.put('Picklist_Values__c',    f.Picklist_Values__c);
+                row.put('Display_Order__c',      f.Display_Order__c);
+                row.put('Write_Back__c',         f.Write_Back__c);
+                row.put('On_Certificate__c',     f.On_Certificate__c);
+                row.put('mergeTag',              tag);
+                result.add(row);
+            }
+            return result;
         } catch (Exception e) {
             throw new AuraHandledException(e.getMessage());
         }
@@ -102,6 +124,8 @@ public with sharing class WeaveSignatureAuraController {
             f.Field_Type__c              = (String)  raw.get('fieldType');
             f.Target_Field_Api_Name__c   = (String)  raw.get('targetFieldApiName');
             f.Required__c                = raw.containsKey('required') && (Boolean) raw.get('required');
+            f.Write_Back__c              = raw.containsKey('writeBack') && (Boolean) raw.get('writeBack');
+            f.On_Certificate__c          = raw.containsKey('onCertificate') && (Boolean) raw.get('onCertificate');
             f.Picklist_Values__c         = (String)  raw.get('picklistValues');
             if (raw.containsKey('displayOrder') && raw.get('displayOrder') != null) {
                 f.Display_Order__c = Decimal.valueOf(String.valueOf(raw.get('displayOrder')));
@@ -112,6 +136,15 @@ public with sharing class WeaveSignatureAuraController {
         } catch (Exception e) {
             throw new AuraHandledException(e.getMessage());
         }
+    }
+
+    @AuraEnabled(cacheable=true)
+    public static String getTemplateSignerRoles(String templateId) {
+        List<Weave_Template_Config__c> rows = [
+            SELECT Signer_Roles__c FROM Weave_Template_Config__c
+            WHERE Id = :templateId WITH USER_MODE LIMIT 1
+        ];
+        return rows.isEmpty() ? null : rows[0].Signer_Roles__c;
     }
 
     @AuraEnabled

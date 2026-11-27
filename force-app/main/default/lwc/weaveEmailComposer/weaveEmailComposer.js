@@ -232,7 +232,7 @@ export default class WeaveEmailComposer extends LightningElement {
 
     get templateOptions() {
         return this.templates.map((template) => ({
-            label: template.name,
+            label: template.name + (template.status && template.status !== 'Active' ? ' [' + template.status + ']' : ''),
             value: template.id
         }));
     }

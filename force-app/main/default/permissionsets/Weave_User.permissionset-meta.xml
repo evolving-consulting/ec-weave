@@ -143,6 +143,16 @@
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
+        <editable>false</editable>
+        <field>Weave_Scheduled_Send__c.Filter_Conditions__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>Weave_Scheduled_Send__c.Email_Template__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
         <editable>true</editable>
         <field>Weave_Scheduled_Send__c.Output_Type__c</field>
         <readable>true</readable>
@@ -435,6 +445,16 @@
     <fieldPermissions>
         <editable>false</editable>
         <field>Weave_Template_Config__c.Template_Output_Type__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>Weave_Template_Config__c.Document_Format__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>Weave_Template_Config__c.Signer_Roles__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>

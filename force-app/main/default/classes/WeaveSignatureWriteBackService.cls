@@ -9,9 +9,11 @@ public with sharing class WeaveSignatureWriteBackService {
         if (sourceRecordId == null || templateId == null) return '';
 
         List<Weave_Signature_Form_Field__c> configs = [
-            SELECT Tag_Label__c, Target_Field_Api_Name__c, Field_Type__c
+            SELECT Tag_Label__c, Target_Field_Api_Name__c, Field_Type__c, Write_Back__c
             FROM Weave_Signature_Form_Field__c
-            WHERE Weave_Template_Config__c = :templateId WITH USER_MODE
+            WHERE Weave_Template_Config__c = :templateId
+            AND Write_Back__c = true
+            WITH USER_MODE
         ];
         if (configs.isEmpty()) return '';
 
@@ -30,7 +32,8 @@ public with sharing class WeaveSignatureWriteBackService {
 
         for (Weave_Signature_Placement__c pl : placements) {
             if (pl.Type__c != 'Field' || String.isBlank(pl.Collected_Value__c)) continue;
-            String lbl     = pl.Role__c != null ? pl.Role__c.toLowerCase() : '';
+            // Field_Label__c holds the label part of {{@Role:Field:Label}}
+            String lbl      = String.isNotBlank(pl.Field_Label__c) ? pl.Field_Label__c.toLowerCase() : '';
             String fieldApi = labelToApi.get(lbl);
             if (String.isBlank(fieldApi)) continue;
 

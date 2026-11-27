@@ -9,12 +9,34 @@ const SORT_DIRECTION_OPTIONS = [
 ];
 
 // Lookup relationships to skip — they're redundant or noise in the field picker
+// Note: Owner, CreatedBy, LastModifiedBy are intentionally included so users can traverse them
 const SYSTEM_RELATIONSHIP_NAMES = new Set([
-  'Owner', 'CreatedBy', 'LastModifiedBy', 'RecordType', 'Master',
-  'UserRole', 'Profile', 'Currency'
+  'RecordType', 'Master', 'UserRole', 'Profile', 'Currency'
 ]);
 
+const FILTER_OPERATOR_OPTIONS = [
+  { label: 'equals (=)', value: '=' },
+  { label: 'not equals (!=)', value: '!=' },
+  { label: 'less than (<)', value: '<' },
+  { label: 'less than or equal (<=)', value: '<=' },
+  { label: 'greater than (>)', value: '>' },
+  { label: 'greater than or equal (>=)', value: '>=' },
+  { label: 'LIKE', value: 'LIKE' },
+  { label: 'IN', value: 'IN' },
+  { label: 'NOT IN', value: 'NOT IN' },
+  { label: 'IS NULL', value: 'IS NULL' },
+  { label: 'IS NOT NULL', value: 'IS NOT NULL' },
+];
+
+const FILTER_CONNECTOR_OPTIONS = [
+  { label: 'AND', value: 'AND' },
+  { label: 'OR', value: 'OR' },
+];
+
+const NULL_OPS = new Set(['IS NULL', 'IS NOT NULL']);
+
 let _sortRowSeq = 0;
+let _filterRowSeq = 0;
 
 export default class WeaveBuilderQueryEditor extends LightningElement {
   @api relatedObjectOptions = [];
@@ -31,9 +53,12 @@ export default class WeaveBuilderQueryEditor extends LightningElement {
   @track sortRows = [];
   @track queryLimit = 50;
   @track filterClause = '';
+  @track filterRows = [];
   @track isLoadingFields = false;
 
   sortDirectionOptions = SORT_DIRECTION_OPTIONS;
+  filterOperatorOptions = FILTER_OPERATOR_OPTIONS;
+  filterConnectorOptions = FILTER_CONNECTOR_OPTIONS;
 
   @api
   get query() { return this._query; }
@@ -90,12 +115,49 @@ export default class WeaveBuilderQueryEditor extends LightningElement {
   get hasSelectedFields() { return this.selectedFields.length > 0; }
   get hasUnselectedFields() { return this.unselectedFilteredFields.length > 0; }
   get hasRelatedFieldGroups() { return this.filteredRelatedFieldGroups.length > 0; }
+  get hasFilterRows() { return this.filterRows.length > 0; }
+
+  get filterFieldOptions() {
+    const opts = this.availableFields.map(f => ({
+      label: f.label + ' (' + f.apiName + ')',
+      value: f.apiName
+    }));
+    this.relatedFieldGroups.forEach(g => {
+      g.fields.forEach(f => {
+        opts.push({ label: g.groupLabel + ': ' + f.label, value: f.apiName });
+      });
+    });
+    return opts;
+  }
+
+  get filterRowsDisplay() {
+    return this.filterRows.map((r, i) => ({
+      ...r,
+      isFirst: i === 0,
+      isNullOp: NULL_OPS.has(r.operator)
+    }));
+  }
+
+  get filterWhereClause() {
+    if (this.filterRows.length > 0) {
+      return this.filterRows
+        .filter(r => r.field && r.operator)
+        .map((r, i) => {
+          const prefix = i === 0 ? '' : (r.connector || 'AND') + ' ';
+          if (NULL_OPS.has(r.operator)) return prefix + r.field + ' ' + r.operator;
+          return prefix + r.field + ' ' + r.operator + ' ' + r.value;
+        })
+        .join(' ');
+    }
+    return this.filterClause ? this.filterClause.trim() : '';
+  }
 
   get generatedSoql() {
     const selectedFields = this.selectedFields.map(f => f.apiName);
     if (!this._query.soqlObject || selectedFields.length === 0) return '';
     let soql = `SELECT ${selectedFields.join(', ')} FROM ${this._query.soqlObject}`;
-    if (this.filterClause && this.filterClause.trim()) soql += ` WHERE ${this.filterClause.trim()}`;
+    const where = this.filterWhereClause;
+    if (where) soql += ` WHERE ${where}`;
     const activeSortRows = (this.sortRows || []).filter(r => r.field);
     if (activeSortRows.length > 0) {
       soql += ' ORDER BY ' + activeSortRows.map(r => `${r.field} ${r.dir}`).join(', ');
@@ -238,6 +300,8 @@ export default class WeaveBuilderQueryEditor extends LightningElement {
     this.relatedFieldGroups = [];
     this.fieldSearchTerm = '';
     this.sortRows = [];
+    this.filterRows = [];
+    this.filterClause = '';
     this.loadFields(objectApiName, []);
   }
 
@@ -292,6 +356,40 @@ export default class WeaveBuilderQueryEditor extends LightningElement {
 
   handleFilterChange(event) {
     this.filterClause = event.target.value;
+    this.emitChange();
+  }
+
+  handleFilterRowAdd() {
+    this.filterRows = [...this.filterRows, { id: ++_filterRowSeq, connector: 'AND', field: '', operator: '=', value: '' }];
+  }
+
+  handleFilterRowRemove(event) {
+    const idx = parseInt(event.currentTarget.dataset.idx, 10);
+    this.filterRows = this.filterRows.filter(r => r.id !== idx);
+    this.emitChange();
+  }
+
+  handleFilterRowFieldChange(event) {
+    const idx = parseInt(event.currentTarget.dataset.idx, 10);
+    this.filterRows = this.filterRows.map(r => r.id === idx ? { ...r, field: event.detail.value } : r);
+    this.emitChange();
+  }
+
+  handleFilterRowOperatorChange(event) {
+    const idx = parseInt(event.currentTarget.dataset.idx, 10);
+    this.filterRows = this.filterRows.map(r => r.id === idx ? { ...r, operator: event.detail.value } : r);
+    this.emitChange();
+  }
+
+  handleFilterRowValueChange(event) {
+    const idx = parseInt(event.currentTarget.dataset.idx, 10);
+    this.filterRows = this.filterRows.map(r => r.id === idx ? { ...r, value: event.target.value } : r);
+    this.emitChange();
+  }
+
+  handleFilterRowConnectorChange(event) {
+    const idx = parseInt(event.currentTarget.dataset.idx, 10);
+    this.filterRows = this.filterRows.map(r => r.id === idx ? { ...r, connector: event.detail.value } : r);
     this.emitChange();
   }
 
