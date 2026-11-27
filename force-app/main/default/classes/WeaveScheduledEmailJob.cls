@@ -10,6 +10,15 @@ public with sharing class WeaveScheduledEmailJob implements Schedulable {
         Weave_Scheduled_Send__c record = loadRecord();
         if (record == null || record.Status__c == 'Cancelled') return;
 
+        List<Weave_Template_Config__c> templates = [
+            SELECT Status__c FROM Weave_Template_Config__c
+            WHERE Id = :record.Template__c WITH USER_MODE LIMIT 1
+        ];
+        if (templates.isEmpty() || templates[0].Status__c != 'Active') {
+            updateStatus(record.Id, 'Failed', 0, 0, 0, 'Template is inactive. Please contact your administrator.');
+            return;
+        }
+
         try {
             updateStatus(record.Id, 'Running', null, null, null, null);
             if (record.Send_Type__c == 'Bulk') {
@@ -24,7 +33,7 @@ public with sharing class WeaveScheduledEmailJob implements Schedulable {
 
     private Weave_Scheduled_Send__c loadRecord() {
         List<Weave_Scheduled_Send__c> rows = [
-            SELECT Id, Status__c, Send_Type__c, Template__c, Record_Id__c, Filter_Clause__c,
+            SELECT Id, Status__c, Send_Type__c, Output_Type__c, Template__c, Record_Id__c, Filter_Clause__c,
                    Batch_Size__c, Template__r.Parent_Object_API_Name__c
             FROM Weave_Scheduled_Send__c
             WHERE Id = :scheduledSendId
@@ -48,8 +57,9 @@ public with sharing class WeaveScheduledEmailJob implements Schedulable {
         }
         Integer batchSize = record.Batch_Size__c != null ? record.Batch_Size__c.intValue() : 20;
         updateStatus(record.Id, 'Running', null, null, null, null);
+        String outType = String.isBlank(record.Output_Type__c) ? 'Email' : record.Output_Type__c;
         Database.executeBatch(
-            new WeaveBulkEmailBatch(record.Template__c, record.Id, objectApiName, record.Filter_Clause__c),
+            new WeaveBulkEmailBatch(record.Template__c, record.Id, objectApiName, record.Filter_Clause__c, outType),
             batchSize
         );
     }

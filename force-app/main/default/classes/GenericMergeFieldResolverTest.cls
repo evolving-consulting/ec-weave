@@ -66,7 +66,7 @@ private class GenericMergeFieldResolverTest {
     );
     System.assertEquals(
       '10%',
-      GenericMergeFieldResolver.formatValue(0.10, 'Percent')
+      GenericMergeFieldResolver.formatValue(10.0, 'Percent')
     );
     System.assert(
       !GenericMergeFieldResolver.formatValue(

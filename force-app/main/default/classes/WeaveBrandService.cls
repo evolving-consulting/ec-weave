@@ -33,7 +33,7 @@ public with sharing class WeaveBrandService {
                 Unsubscribe_URL__c, Unsubscribe_Label__c,
                 Header_HTML__c, Header_Editor_Mode__c,
                 Footer_HTML__c, Footer_Editor_Mode__c,
-                Description__c
+                Description__c, Contact_Email__c, Contact_Phone__c
             FROM Weave_Brand__c
             WHERE Id = :brandId
             WITH USER_MODE
@@ -85,7 +85,9 @@ public with sharing class WeaveBrandService {
             Header_Editor_Mode__c = String.isBlank(dto.headerEditorMode) ? 'Visual' : dto.headerEditorMode,
             Footer_HTML__c = dto.footerHtml,
             Footer_Editor_Mode__c = String.isBlank(dto.footerEditorMode) ? 'Visual' : dto.footerEditorMode,
-            Description__c = dto.description
+            Description__c = dto.description,
+            Contact_Email__c = dto.contactEmail,
+            Contact_Phone__c = dto.contactPhone
         );
         upsert as user brand;
         return loadBrand(brand.Id);
@@ -241,6 +243,8 @@ public with sharing class WeaveBrandService {
         dto.footerHtml = brand.Footer_HTML__c;
         dto.footerEditorMode = String.isBlank(brand.Footer_Editor_Mode__c) ? 'Visual' : brand.Footer_Editor_Mode__c;
         dto.description = brand.Description__c;
+        dto.contactEmail = brand.Contact_Email__c;
+        dto.contactPhone = brand.Contact_Phone__c;
         return dto;
     }
 

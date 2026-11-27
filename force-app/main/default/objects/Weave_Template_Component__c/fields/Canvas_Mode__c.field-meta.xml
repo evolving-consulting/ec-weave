@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Canvas_Mode__c</fullName>
+    <description>When true, this component is a canvas (document) component with absolute position. When false, it is a standard email flow component.</description>
+    <label>Canvas Mode</label>
+    <required>false</required>
+    <type>Checkbox</type>
+    <defaultValue>false</defaultValue>
+</CustomField>

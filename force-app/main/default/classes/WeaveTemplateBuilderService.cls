@@ -176,7 +176,8 @@ public with sharing class WeaveTemplateBuilderService {
         List<Weave_Template_Config__c> templates = [
             SELECT Id, Name, API_Name__c, Status__c, Parent_Object_API_Name__c, Subject_Template__c, Subject_Variant_B__c,
                 Default_From_Email__c, Description__c, Allow_User_Edit_Before_Send__c, Store_Email_History__c,
-                Brand__c, Brand__r.Name
+                Brand__c, Brand__r.Name, Template_Output_Type__c, Canvas_Page_Size__c, Canvas_Orientation__c,
+                Pdf_Page_Size__c, Pdf_Page_Width_In__c, Pdf_Page_Height_In__c
             FROM Weave_Template_Config__c
             WHERE Id = :templateId
             WITH USER_MODE
@@ -217,7 +218,13 @@ public with sharing class WeaveTemplateBuilderService {
                 Description__c = dto.description,
                 Allow_User_Edit_Before_Send__c = dto.allowUserEditBeforeSend == true,
                 Store_Email_History__c = dto.storeEmailHistory == true,
-                Brand__c = dto.brandId
+                Brand__c = dto.brandId,
+                Template_Output_Type__c = dto.templateOutputType,
+                Canvas_Page_Size__c = dto.canvasPageSize,
+                Canvas_Orientation__c = dto.canvasOrientation,
+                Pdf_Page_Size__c = dto.pdfPageSize,
+                Pdf_Page_Width_In__c = dto.pdfPageWidthIn,
+                Pdf_Page_Height_In__c = dto.pdfPageHeightIn
             );
             upsert as user template;
             dto.id = template.Id;
@@ -256,10 +263,231 @@ public with sharing class WeaveTemplateBuilderService {
         }
     }
 
+    public static Id cloneTemplate(Id templateId, String newName, String newApiName, String newOutputType) {
+        WeaveTemplateSecurityService.assertCanManageTemplates();
+        if (templateId == null) throw new AuraHandledException('Source template is required.');
+        if (String.isBlank(newName)) throw new AuraHandledException('New template name is required.');
+        if (String.isBlank(newApiName)) throw new AuraHandledException('New API name is required.');
+
+        List<Weave_Template_Config__c> sources = [
+            SELECT Id, Name, API_Name__c, Status__c, Parent_Object_API_Name__c,
+                Subject_Template__c, Subject_Variant_B__c, Default_From_Email__c,
+                Description__c, Allow_User_Edit_Before_Send__c, Store_Email_History__c,
+                Brand__c, Template_Output_Type__c, Canvas_Page_Size__c, Canvas_Orientation__c,
+                Pdf_Page_Size__c, Pdf_Page_Width_In__c, Pdf_Page_Height_In__c
+            FROM Weave_Template_Config__c WHERE Id = :templateId WITH USER_MODE LIMIT 1
+        ];
+        if (sources.isEmpty()) throw new AuraHandledException('Source template not found.');
+        Weave_Template_Config__c src = sources[0];
+
+        Boolean isDocument = newOutputType == 'Document';
+
+        Savepoint sp = Database.setSavepoint();
+        try {
+            Weave_Template_Config__c clone = new Weave_Template_Config__c(
+                Name = newName,
+                API_Name__c = newApiName,
+                Status__c = 'Draft',
+                Parent_Object_API_Name__c = src.Parent_Object_API_Name__c,
+                Subject_Template__c = isDocument ? null : src.Subject_Template__c,
+                Subject_Variant_B__c = isDocument ? null : src.Subject_Variant_B__c,
+                Default_From_Email__c = isDocument ? null : src.Default_From_Email__c,
+                Description__c = src.Description__c,
+                Allow_User_Edit_Before_Send__c = isDocument ? false : src.Allow_User_Edit_Before_Send__c,
+                Store_Email_History__c = isDocument ? false : src.Store_Email_History__c,
+                Brand__c = src.Brand__c,
+                Template_Output_Type__c = String.isBlank(newOutputType) ? src.Template_Output_Type__c : newOutputType,
+                Canvas_Page_Size__c = src.Canvas_Page_Size__c,
+                Canvas_Orientation__c = src.Canvas_Orientation__c,
+                Pdf_Page_Size__c = src.Pdf_Page_Size__c,
+                Pdf_Page_Width_In__c = src.Pdf_Page_Width_In__c,
+                Pdf_Page_Height_In__c = src.Pdf_Page_Height_In__c
+            );
+            insert as user clone;
+            Id newId = clone.Id;
+
+            // Clone queries first; build old→new ID map for component/attachment remapping
+            Map<Id, Id> queryIdMap = new Map<Id, Id>();
+            List<Weave_Template_Query__c> srcQueries = [
+                SELECT Id, Name, Query_API_Name__c, SOQL_Query__c, Parent_Lookup_Field__c, Relationship_Type__c, Parent_Query__c
+                FROM Weave_Template_Query__c WHERE Weave_Template_Config__c = :templateId WITH USER_MODE
+            ];
+            if (!srcQueries.isEmpty()) {
+                List<Weave_Template_Query__c> newQueries = new List<Weave_Template_Query__c>();
+                for (Weave_Template_Query__c q : srcQueries) {
+                    newQueries.add(new Weave_Template_Query__c(
+                        Name = q.Name,
+                        Query_API_Name__c = q.Query_API_Name__c,
+                        Weave_Template_Config__c = newId,
+                        SOQL_Query__c = q.SOQL_Query__c,
+                        Parent_Lookup_Field__c = q.Parent_Lookup_Field__c,
+                        Relationship_Type__c = q.Relationship_Type__c
+                    ));
+                }
+                insert as user newQueries;
+                for (Integer i = 0; i < srcQueries.size(); i++) {
+                    queryIdMap.put(srcQueries[i].Id, newQueries[i].Id);
+                }
+                // Pass 2: clone Parent_Query__c FK using old→new Id map
+                List<Weave_Template_Query__c> childUpdates = new List<Weave_Template_Query__c>();
+                for (Integer i = 0; i < srcQueries.size(); i++) {
+                    if (srcQueries[i].Parent_Query__c != null) {
+                        Id newParentId = queryIdMap.get(srcQueries[i].Parent_Query__c);
+                        if (newParentId != null) {
+                            childUpdates.add(new Weave_Template_Query__c(
+                                Id = newQueries[i].Id, Parent_Query__c = newParentId
+                            ));
+                        }
+                    }
+                }
+                if (!childUpdates.isEmpty()) update as user childUpdates;
+            }
+
+            // Clone components
+            List<Weave_Template_Component__c> srcComponents = [
+                SELECT Id, Name, Component_Type__c, Region__c, Display_Order__c,
+                    Linked_Query__c, Config_JSON__c, HTML_Output__c, Visibility_Condition__c,
+                    Canvas_Mode__c, Canvas_X__c, Canvas_Y__c, Canvas_W__c, Canvas_H__c, Canvas_Page__c
+                FROM Weave_Template_Component__c WHERE Weave_Template_Config__c = :templateId WITH USER_MODE
+                ORDER BY Region__c ASC, Display_Order__c ASC NULLS LAST
+            ];
+            if (!srcComponents.isEmpty()) {
+                List<Weave_Template_Component__c> newComponents = new List<Weave_Template_Component__c>();
+                for (Weave_Template_Component__c c : srcComponents) {
+                    if (c.Component_Type__c == 'Text' || c.Component_Type__c == 'HTML Block') {
+                        DceHtmlPolicy.assertSafeTemplateHtml(c.HTML_Output__c, c.Component_Type__c);
+                    }
+                    newComponents.add(new Weave_Template_Component__c(
+                        Name = c.Name,
+                        Weave_Template_Config__c = newId,
+                        Component_Type__c = c.Component_Type__c,
+                        Region__c = c.Region__c,
+                        Display_Order__c = c.Display_Order__c,
+                        Linked_Query__c = c.Linked_Query__c != null ? queryIdMap.get(c.Linked_Query__c) : null,
+                        Config_JSON__c = c.Config_JSON__c,
+                        HTML_Output__c = c.HTML_Output__c,
+                        Visibility_Condition__c = c.Visibility_Condition__c,
+                        Canvas_Mode__c = c.Canvas_Mode__c,
+                        Canvas_X__c = c.Canvas_X__c,
+                        Canvas_Y__c = c.Canvas_Y__c,
+                        Canvas_W__c = c.Canvas_W__c,
+                        Canvas_H__c = c.Canvas_H__c,
+                        Canvas_Page__c = c.Canvas_Page__c
+                    ));
+                }
+                insert as user newComponents;
+            }
+
+            // Clone recipients
+            List<Weave_Template_Recipient__c> srcRecipients = [
+                SELECT Id, Name, Active__c, Display_Order__c, Recipient_Type__c, Recipient_Source_Type__c,
+                    Source_Object_API_Name__c, Parent_Lookup_Field_API_Name__c, Name_Field_API_Name__c,
+                    Email_Field_API_Name__c, Filter_Logic__c, Default_Selected__c, Allow_Multiple__c,
+                    Required__c, Segment_Id__c
+                FROM Weave_Template_Recipient__c WHERE Weave_Template_Config__c = :templateId WITH USER_MODE
+                ORDER BY Display_Order__c ASC NULLS LAST
+            ];
+            if (!srcRecipients.isEmpty()) {
+                List<Weave_Template_Recipient__c> newRecipients = new List<Weave_Template_Recipient__c>();
+                for (Weave_Template_Recipient__c r : srcRecipients) {
+                    newRecipients.add(new Weave_Template_Recipient__c(
+                        Name = r.Name,
+                        Weave_Template_Config__c = newId,
+                        Active__c = r.Active__c,
+                        Display_Order__c = r.Display_Order__c,
+                        Recipient_Type__c = r.Recipient_Type__c,
+                        Recipient_Source_Type__c = r.Recipient_Source_Type__c,
+                        Source_Object_API_Name__c = r.Source_Object_API_Name__c,
+                        Parent_Lookup_Field_API_Name__c = r.Parent_Lookup_Field_API_Name__c,
+                        Name_Field_API_Name__c = r.Name_Field_API_Name__c,
+                        Email_Field_API_Name__c = r.Email_Field_API_Name__c,
+                        Filter_Logic__c = r.Filter_Logic__c,
+                        Default_Selected__c = r.Default_Selected__c,
+                        Allow_Multiple__c = r.Allow_Multiple__c,
+                        Required__c = r.Required__c,
+                        Segment_Id__c = r.Segment_Id__c
+                    ));
+                }
+                insert as user newRecipients;
+            }
+
+            // Clone actions
+            List<Weave_Template_Action__c> srcActions = [
+                SELECT Id, Name, Active__c, Run_Order__c, Action_Type__c,
+                    Field_API_Name__c, Value_Type__c, Value__c,
+                    Task_Subject__c, Assigned_To_Type__c, Assigned_User_Id__c,
+                    Due_Date_Strategy__c, Days_After_Send__c, Task_Status__c,
+                    Task_Priority__c, Task_Description__c
+                FROM Weave_Template_Action__c WHERE Weave_Template_Config__c = :templateId WITH USER_MODE
+                ORDER BY Run_Order__c ASC NULLS LAST
+            ];
+            if (!srcActions.isEmpty()) {
+                List<Weave_Template_Action__c> newActions = new List<Weave_Template_Action__c>();
+                for (Weave_Template_Action__c a : srcActions) {
+                    newActions.add(new Weave_Template_Action__c(
+                        Name = a.Name,
+                        Weave_Template_Config__c = newId,
+                        Active__c = a.Active__c,
+                        Run_Order__c = a.Run_Order__c,
+                        Action_Type__c = a.Action_Type__c,
+                        Field_API_Name__c = a.Field_API_Name__c,
+                        Value_Type__c = a.Value_Type__c,
+                        Value__c = a.Value__c,
+                        Task_Subject__c = a.Task_Subject__c,
+                        Assigned_To_Type__c = a.Assigned_To_Type__c,
+                        Assigned_User_Id__c = a.Assigned_User_Id__c,
+                        Due_Date_Strategy__c = a.Due_Date_Strategy__c,
+                        Days_After_Send__c = a.Days_After_Send__c,
+                        Task_Status__c = a.Task_Status__c,
+                        Task_Priority__c = a.Task_Priority__c,
+                        Task_Description__c = a.Task_Description__c
+                    ));
+                }
+                insert as user newActions;
+            }
+
+            // Clone attachments (Static File references carry over as-is; query links remapped)
+            List<Weave_Template_Attachment__c> srcAttachments = [
+                SELECT Id, Active__c, Display_Order__c, Attachment_Source__c,
+                    Static_Content_Document_Id__c, Linked_Query__c,
+                    File_Title_Filter__c, Max_Attachments__c
+                FROM Weave_Template_Attachment__c WHERE Weave_Template_Config__c = :templateId WITH USER_MODE
+                ORDER BY Display_Order__c ASC NULLS LAST
+            ];
+            if (!srcAttachments.isEmpty()) {
+                List<Weave_Template_Attachment__c> newAttachments = new List<Weave_Template_Attachment__c>();
+                Integer order = 0;
+                for (Weave_Template_Attachment__c a : srcAttachments) {
+                    newAttachments.add(new Weave_Template_Attachment__c(
+                        Name = 'Attachment ' + (++order),
+                        Weave_Template_Config__c = newId,
+                        Active__c = a.Active__c,
+                        Display_Order__c = a.Display_Order__c,
+                        Attachment_Source__c = a.Attachment_Source__c,
+                        Static_Content_Document_Id__c = a.Static_Content_Document_Id__c,
+                        Linked_Query__c = a.Linked_Query__c != null ? queryIdMap.get(a.Linked_Query__c) : null,
+                        File_Title_Filter__c = a.File_Title_Filter__c,
+                        Max_Attachments__c = a.Max_Attachments__c
+                    ));
+                }
+                insert as user newAttachments;
+            }
+
+            return newId;
+        } catch (AuraHandledException e) {
+            Database.rollback(sp);
+            throw e;
+        } catch (Exception e) {
+            Database.rollback(sp);
+            throw new AuraHandledException('Clone failed: ' + e.getMessage());
+        }
+    }
+
     // ── Private save helpers ──────────────────────────────────────────────────
 
     private static void saveQueries(WeaveBuilderDTOs.WeaveBuilderTemplateDTO dto, Id templateId) {
         if (dto.queries == null || dto.queries.isEmpty()) return;
+        // Pass 1: upsert all records with Parent_Query__c omitted to get Ids for new rows
         List<Weave_Template_Query__c> records = new List<Weave_Template_Query__c>();
         for (WeaveBuilderDTOs.WeaveBuilderQueryDTO q : dto.queries) {
             String queryApiName = q.id == null ? generateApiName(q.name) : q.queryApiName;
@@ -274,10 +502,28 @@ public with sharing class WeaveTemplateBuilderService {
             ));
         }
         upsert as user records;
+        // Back-fill Ids and build localKey → Salesforce Id map
+        Map<String, Id> localKeyToId = new Map<String, Id>();
         for (Integer i = 0; i < dto.queries.size(); i++) {
             if (dto.queries[i].id == null) {
                 dto.queries[i].id = records[i].Id;
             }
+            if (String.isNotBlank(dto.queries[i].localKey)) {
+                localKeyToId.put(dto.queries[i].localKey, dto.queries[i].id);
+            }
+        }
+        // Pass 2: update Parent_Query__c for child queries
+        List<Weave_Template_Query__c> childUpdates = new List<Weave_Template_Query__c>();
+        for (Integer i = 0; i < dto.queries.size(); i++) {
+            WeaveBuilderDTOs.WeaveBuilderQueryDTO q = dto.queries[i];
+            if (String.isBlank(q.parentQueryLocalKey) && q.parentQueryId == null) continue;
+            Id parentId = String.isNotBlank(q.parentQueryLocalKey) ? localKeyToId.get(q.parentQueryLocalKey) : null;
+            if (parentId == null) parentId = q.parentQueryId;
+            if (parentId == null) continue;
+            childUpdates.add(new Weave_Template_Query__c(Id = records[i].Id, Parent_Query__c = parentId));
+        }
+        if (!childUpdates.isEmpty()) {
+            update as user childUpdates;
         }
     }
 
@@ -297,7 +543,14 @@ public with sharing class WeaveTemplateBuilderService {
                 Display_Order__c = c.displayOrder,
                 Linked_Query__c = c.linkedQueryId,
                 Config_JSON__c = c.configJson,
-                HTML_Output__c = c.htmlOutput
+                HTML_Output__c = c.htmlOutput,
+                Visibility_Condition__c = c.visibilityCondition,
+                Canvas_Mode__c = c.canvasMode != null ? c.canvasMode : false,
+                Canvas_X__c = c.canvasX,
+                Canvas_Y__c = c.canvasY,
+                Canvas_W__c = c.canvasW,
+                Canvas_H__c = c.canvasH,
+                Canvas_Page__c = c.canvasPage
             ));
         }
         upsert as user records;
@@ -326,6 +579,7 @@ public with sharing class WeaveTemplateBuilderService {
                 Parent_Lookup_Field_API_Name__c = r.parentLookupFieldApiName,
                 Name_Field_API_Name__c = r.nameFieldApiName,
                 Email_Field_API_Name__c = r.emailFieldApiName,
+                Segment_Id__c = r.segmentId,
                 Filter_Logic__c = r.filterLogic,
                 Default_Selected__c = r.defaultSelected != false,
                 Allow_Multiple__c = r.allowMultiple != false,
@@ -390,6 +644,12 @@ public with sharing class WeaveTemplateBuilderService {
         dto.subjectVariantB = template.Subject_Variant_B__c;
         dto.brandId = template.Brand__c;
         dto.brandName = template.Brand__c != null ? template.Brand__r.Name : null;
+        dto.templateOutputType = template.Template_Output_Type__c;
+        dto.canvasPageSize = template.Canvas_Page_Size__c;
+        dto.canvasOrientation = template.Canvas_Orientation__c;
+        dto.pdfPageSize = template.Pdf_Page_Size__c;
+        dto.pdfPageWidthIn = template.Pdf_Page_Width_In__c;
+        dto.pdfPageHeightIn = template.Pdf_Page_Height_In__c;
         dto.queries = loadQueries(template.Id);
         dto.components = loadComponents(template.Id);
         dto.recipients = loadRecipients(template.Id, template.Parent_Object_API_Name__c);
@@ -401,7 +661,8 @@ public with sharing class WeaveTemplateBuilderService {
     private static List<WeaveBuilderDTOs.WeaveBuilderQueryDTO> loadQueries(Id templateId) {
         List<WeaveBuilderDTOs.WeaveBuilderQueryDTO> dtos = new List<WeaveBuilderDTOs.WeaveBuilderQueryDTO>();
         for (Weave_Template_Query__c q : [
-            SELECT Id, Name, Query_API_Name__c, SOQL_Query__c, Parent_Lookup_Field__c, Relationship_Type__c
+            SELECT Id, Name, Query_API_Name__c, SOQL_Query__c, Parent_Lookup_Field__c, Relationship_Type__c,
+                   Parent_Query__c, Parent_Query__r.Query_API_Name__c
             FROM Weave_Template_Query__c
             WHERE Weave_Template_Config__c = :templateId
             WITH USER_MODE
@@ -414,6 +675,8 @@ public with sharing class WeaveTemplateBuilderService {
             dto.soqlQuery = q.SOQL_Query__c;
             dto.parentLookupField = q.Parent_Lookup_Field__c;
             dto.relationshipType = String.isBlank(q.Relationship_Type__c) ? 'down' : q.Relationship_Type__c;
+            dto.parentQueryId = q.Parent_Query__c;
+            dto.parentQueryLocalKey = q.Parent_Query__c != null ? q.Parent_Query__r.Query_API_Name__c : null;
             dtos.add(dto);
         }
         return dtos;
@@ -423,7 +686,8 @@ public with sharing class WeaveTemplateBuilderService {
         List<WeaveBuilderDTOs.WeaveBuilderComponentDTO> dtos = new List<WeaveBuilderDTOs.WeaveBuilderComponentDTO>();
         for (Weave_Template_Component__c c : [
             SELECT Id, Name, Component_Type__c, Region__c, Display_Order__c,
-                Linked_Query__c, Linked_Query__r.Name, Config_JSON__c, HTML_Output__c
+                Linked_Query__c, Linked_Query__r.Name, Config_JSON__c, HTML_Output__c, Visibility_Condition__c,
+                Canvas_Mode__c, Canvas_X__c, Canvas_Y__c, Canvas_W__c, Canvas_H__c, Canvas_Page__c
             FROM Weave_Template_Component__c
             WHERE Weave_Template_Config__c = :templateId
             WITH USER_MODE
@@ -439,6 +703,13 @@ public with sharing class WeaveTemplateBuilderService {
             dto.linkedQueryName = c.Linked_Query__c != null ? c.Linked_Query__r.Name : null;
             dto.configJson = c.Config_JSON__c;
             dto.htmlOutput = c.HTML_Output__c;
+            dto.canvasMode = c.Canvas_Mode__c;
+            dto.canvasX = c.Canvas_X__c;
+            dto.canvasY = c.Canvas_Y__c;
+            dto.canvasW = c.Canvas_W__c;
+            dto.canvasH = c.Canvas_H__c;
+            dto.canvasPage = c.Canvas_Page__c != null ? c.Canvas_Page__c.intValue() : null;
+            dto.visibilityCondition = c.Visibility_Condition__c;
             dtos.add(dto);
         }
         return dtos;
@@ -449,7 +720,8 @@ public with sharing class WeaveTemplateBuilderService {
         for (Weave_Template_Recipient__c r : [
             SELECT Id, Name, Active__c, Display_Order__c, Recipient_Type__c, Recipient_Source_Type__c,
                 Source_Object_API_Name__c, Parent_Lookup_Field_API_Name__c, Name_Field_API_Name__c,
-                Email_Field_API_Name__c, Filter_Logic__c, Default_Selected__c, Allow_Multiple__c, Required__c
+                Email_Field_API_Name__c, Filter_Logic__c, Default_Selected__c, Allow_Multiple__c, Required__c,
+                Segment_Id__c
             FROM Weave_Template_Recipient__c
             WHERE Weave_Template_Config__c = :templateId
             WITH USER_MODE
@@ -475,6 +747,7 @@ public with sharing class WeaveTemplateBuilderService {
             dto.defaultSelected = r.Default_Selected__c;
             dto.allowMultiple = r.Allow_Multiple__c;
             dto.required = r.Required__c;
+            dto.segmentId = r.Segment_Id__c;
             dtos.add(dto);
         }
         return dtos;
@@ -582,6 +855,9 @@ public with sharing class WeaveTemplateBuilderService {
             if (String.isBlank(r.emailFieldApiName)) {
                 throw new AuraHandledException('Email field is required for Related Records recipients.');
             }
+        }
+        if (r.recipientSourceType == 'Dynamic Segment' && String.isBlank(r.segmentId)) {
+            throw new AuraHandledException('A segment must be selected for Dynamic Segment recipients.');
         }
     }
 

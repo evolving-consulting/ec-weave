@@ -10,9 +10,10 @@ public with sharing class WeaveEmailTemplateController {
             List<GenericEmailTemplateDTO> templates = new List<GenericEmailTemplateDTO>();
             for (Weave_Template_Config__c template : [
                 SELECT Id, Name, Description__c, Subject_Template__c, Parent_Object_API_Name__c,
-                    Allow_User_Edit_Before_Send__c, Store_Email_History__c
+                    Allow_User_Edit_Before_Send__c, Store_Email_History__c, Template_Output_Type__c
                 FROM Weave_Template_Config__c
                 WHERE Status__c = 'Active' AND Parent_Object_API_Name__c = :parentObjectApiName
+                    AND Template_Output_Type__c != 'Document'
                 WITH USER_MODE ORDER BY Name ASC
             ]) {
                 templates.add(toTemplateDTO(template));
@@ -32,7 +33,7 @@ public with sharing class WeaveEmailTemplateController {
             assertTemplateConfigReadable();
             List<Weave_Template_Config__c> templates = [
                 SELECT Id, Name, Description__c, Subject_Template__c, Parent_Object_API_Name__c,
-                    Allow_User_Edit_Before_Send__c, Store_Email_History__c
+                    Allow_User_Edit_Before_Send__c, Store_Email_History__c, Template_Output_Type__c
                 FROM Weave_Template_Config__c WHERE Id = :templateId WITH USER_MODE LIMIT 1
             ];
             if (templates.isEmpty()) throw new AuraHandledException('Template not found.');
@@ -101,6 +102,57 @@ public with sharing class WeaveEmailTemplateController {
         }
     }
 
+    @AuraEnabled
+    public static Id scheduleRecurringEmail(GenericEmailSendRequest request, String recurringConfigJson) {
+        try {
+            if (request == null) throw new AuraHandledException('Send request is required.');
+            if (String.isBlank(recurringConfigJson)) throw new AuraHandledException('Recurring configuration is required.');
+
+            WeaveRecurringEmailJob.RecurringConfig config = WeaveRecurringEmailJob.parseConfig(recurringConfigJson);
+            if (config == null) throw new AuraHandledException('Invalid recurring configuration format.');
+            if (config.daysOfWeek == null || config.daysOfWeek.isEmpty()) {
+                throw new AuraHandledException('At least one day of the week is required.');
+            }
+            if (String.isBlank(config.startDate)) throw new AuraHandledException('Start date is required.');
+
+            Boolean isBulk = (request.recordId == null);
+
+            Datetime firstOccurrence = WeaveRecurringEmailJob.getFirstOccurrence(config);
+            if (firstOccurrence == null) {
+                throw new AuraHandledException('No upcoming occurrence found for the selected days and start date. Ensure the first send is at least 5 minutes in the future.');
+            }
+
+            if (!Weave_Scheduled_Send__c.SObjectType.getDescribe(SObjectDescribeOptions.DEFERRED).isCreateable()) {
+                throw new AuraHandledException('You do not have permission to schedule email sends.');
+            }
+
+            String subjectTrunc = request.subject != null
+                ? (request.subject.length() > 240 ? request.subject.substring(0, 240) : request.subject)
+                : 'Email';
+
+            Weave_Scheduled_Send__c scheduledSend = new Weave_Scheduled_Send__c(
+                Template__c          = request.templateId,
+                Record_Id__c         = isBulk ? null : String.valueOf(request.recordId),
+                Filter_Clause__c     = isBulk ? config.filterClause : null,
+                Scheduled_At__c      = firstOccurrence,
+                Status__c            = 'Pending',
+                Send_Type__c         = 'Recurring',
+                Job_Name__c          = (isBulk ? 'Recurring (Bulk): ' : 'Recurring: ') + subjectTrunc,
+                Recurring_Config__c  = recurringConfigJson
+            );
+            insert as user scheduledSend;
+
+            String cron = WeaveRecurringEmailJob.buildCron(firstOccurrence);
+            System.schedule('WeaveRecurring-' + scheduledSend.Id, cron, new WeaveRecurringEmailJob(scheduledSend.Id));
+
+            return scheduledSend.Id;
+        } catch (AuraHandledException handledException) {
+            throw handledException;
+        } catch (Exception unexpectedException) {
+            throw new AuraHandledException('Unable to create recurring schedule. Please contact your administrator.');
+        }
+    }
+
     @AuraEnabled(cacheable=true)
     public static Map<String, String> getRecordSummary(Id recordId) {
         if (recordId == null) throw new AuraHandledException('Record Id is required.');
@@ -135,6 +187,31 @@ public with sharing class WeaveEmailTemplateController {
         }
     }
 
+    @AuraEnabled(cacheable=true)
+    public static List<Weave_Recipient_Segment__c> getActiveSegments(String objectApiName) {
+        return WeaveRecipientSegmentController.getActiveSegments(objectApiName);
+    }
+
+    @AuraEnabled
+    public static Integer previewSegmentCount(Id segmentId) {
+        return WeaveRecipientSegmentController.previewSegmentCount(segmentId);
+    }
+
+    @AuraEnabled
+    public static List<RecipientOptionDTO> resolveSegmentRecipients(Id segmentId) {
+        return WeaveRecipientSegmentController.resolveSegmentRecipients(segmentId);
+    }
+
+    @AuraEnabled
+    public static String generatePdf(Id templateId, Id recordId) {
+        return WeavePdfController.generatePdf(templateId, recordId);
+    }
+
+    @AuraEnabled
+    public static String generateCombinedPdf(List<Id> templateIds, List<Id> recordIds, String title) {
+        return WeavePdfController.generateCombinedPdf(templateIds, recordIds, title);
+    }
+
     private static GenericEmailTemplateDTO toTemplateDTO(Weave_Template_Config__c template) {
         GenericEmailTemplateDTO dto = new GenericEmailTemplateDTO();
         dto.id = template.Id;
@@ -144,6 +221,7 @@ public with sharing class WeaveEmailTemplateController {
         dto.parentObjectApiName = template.Parent_Object_API_Name__c;
         dto.allowUserEditBeforeSend = template.Allow_User_Edit_Before_Send__c;
         dto.storeEmailHistory = template.Store_Email_History__c;
+        dto.templateOutputType = template.Template_Output_Type__c;
         return dto;
     }
 

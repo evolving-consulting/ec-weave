@@ -13,8 +13,10 @@ import getTemplateFiles from '@salesforce/apex/WeaveTemplateBuilderController.ge
 import createPublicImageLink from '@salesforce/apex/WeaveTemplateBuilderController.createPublicImageLink';
 import deleteTemplateFile from '@salesforce/apex/WeaveTemplateBuilderController.deleteTemplateFile';
 import previewTemplate from '@salesforce/apex/WeaveTemplateBuilderController.previewTemplate';
+import previewTemplatePdf from '@salesforce/apex/WeaveTemplateBuilderController.previewTemplatePdf';
 import sendTestEmail from '@salesforce/apex/WeaveTemplateBuilderController.sendTestEmail';
 import createScheduledSend from '@salesforce/apex/WeaveTemplateBuilderController.createScheduledSend';
+import scheduleRecurringEmail from '@salesforce/apex/WeaveEmailTemplateController.scheduleRecurringEmail';
 import getScheduledSends from '@salesforce/apex/WeaveTemplateBuilderController.getScheduledSends';
 import cancelScheduledSend from '@salesforce/apex/WeaveTemplateBuilderController.cancelScheduledSend';
 import sendScheduledSendNow from '@salesforce/apex/WeaveTemplateBuilderController.sendScheduledSendNow';
@@ -25,6 +27,14 @@ import deleteBrand from '@salesforce/apex/WeaveTemplateBuilderController.deleteB
 import getBrandFiles from '@salesforce/apex/WeaveTemplateBuilderController.getBrandFiles';
 import createBrandPublicImageLink from '@salesforce/apex/WeaveTemplateBuilderController.createBrandPublicImageLink';
 import deleteBrandFile from '@salesforce/apex/WeaveTemplateBuilderController.deleteBrandFile';
+import getActiveSegments from '@salesforce/apex/WeaveTemplateBuilderController.getActiveSegments';
+import cloneTemplate from '@salesforce/apex/WeaveTemplateBuilderController.cloneTemplate';
+import getSchedulerStatus from '@salesforce/apex/WeaveTemplateBuilderController.getSchedulerStatus';
+import activateScheduler from '@salesforce/apex/WeaveTemplateBuilderController.activateScheduler';
+import deactivateScheduler from '@salesforce/apex/WeaveTemplateBuilderController.deactivateScheduler';
+import getSignerFormFields from '@salesforce/apex/WeaveSignatureAuraController.getSignerFormFields';
+import upsertSignerFormField from '@salesforce/apex/WeaveSignatureAuraController.upsertSignerFormField';
+import deleteSignerFormField from '@salesforce/apex/WeaveSignatureAuraController.deleteSignerFormField';
 
 const STATUS_OPTIONS = [
   { label: 'Draft', value: 'Draft' },
@@ -57,7 +67,8 @@ const RECIPIENT_TYPE_OPTIONS = [
 const RECIPIENT_SOURCE_OPTIONS = [
   { label: 'Parent Field', value: 'Parent Field' },
   { label: 'Related Records (from query)', value: 'Related Records' },
-  { label: 'Manual (static email)', value: 'Manual' }
+  { label: 'Manual (static email)', value: 'Manual' },
+  { label: 'Dynamic Segment', value: 'Dynamic Segment' }
 ];
 const VALUE_TYPE_OPTIONS = [
   { label: 'Static Text', value: 'Static' },
@@ -95,6 +106,27 @@ const FROM_EMAIL_TYPE_OPTIONS = [
   { label: 'Current User', value: 'CurrentUser' },
   { label: 'Org Wide Email', value: 'OrgWide' }
 ];
+const OUTPUT_TYPE_OPTIONS = [
+  { label: 'Email', value: 'Email' },
+  { label: 'Document (PDF)', value: 'Document' }
+];
+const SCHEDULE_OUTPUT_TYPE_OPTIONS = [
+  { label: 'Email', value: 'Email' },
+  { label: 'PDF', value: 'PDF' },
+  { label: 'Email + PDF', value: 'Email + PDF' }
+];
+const PAGE_SIZE_OPTIONS = [
+  { label: 'Letter (8.5 × 11 in)', value: 'Letter' },
+  { label: 'A4 (210 × 297 mm)', value: 'A4' }
+];
+const PDF_PAGE_SIZE_OPTIONS = [
+  { label: 'Letter (8.5 × 11 in)', value: 'Letter' },
+  { label: 'Legal (8.5 × 14 in)', value: 'Legal' },
+  { label: 'A4 (8.27 × 11.69 in)', value: 'A4' },
+  { label: 'A3 (11.69 × 16.54 in)', value: 'A3' },
+  { label: 'A5 (5.83 × 8.27 in)', value: 'A5' },
+  { label: 'Custom', value: 'Custom' }
+];
 const ATTACHMENT_SOURCE_OPTIONS = [
   { label: 'Static File', value: 'Static File' },
   { label: 'Source Record Files', value: 'Source Record Files' },
@@ -119,7 +151,9 @@ function emptyTemplate() {
     brandId: null, brandName: null,
     queries: [], components: [], recipients: [], actions: [],
     deletedQueryIds: [], deletedComponentIds: [], deletedRecipientIds: [], deletedActionIds: [],
-    attachments: [], deletedAttachmentIds: []
+    attachments: [], deletedAttachmentIds: [],
+    canvasPageSize: 'Letter', canvasOrientation: 'Portrait', templateOutputType: 'Email',
+    pdfPageSize: 'Letter', pdfPageWidthIn: null, pdfPageHeightIn: null
   };
 }
 
@@ -169,11 +203,22 @@ export default class WeaveTemplateBuilder extends LightningElement {
   @track previewSubject = '';
   @track previewHtml = '';
   @track previewIsLoading = false;
+  @track isPreviewingPdf = false;
   @track isSendingTest = false;
   @track scheduleDateTime = '';
-  @track scheduleType = 'Individual';
+  @track scheduleDate = '';
+  @track scheduleTime = '09:00';
+  @track scheduleType = 'Bulk';
+  @track scheduleMode = 'once';
   @track scheduleBulkFilter = '';
+  @track scheduleOutputType = 'Email';
   @track isScheduling = false;
+  @track recurringDays = [];
+  @track recurringTime = '09:00';
+  @track recurringStartDate = '';
+  @track recurringEndType = 'noEnd';
+  @track recurringEndDate = '';
+  @track recurringMaxSends = '';
   @track scheduledSends = [];
   @track isLoadingSchedules = false;
   @track libraryFilter = 'all';
@@ -192,6 +237,10 @@ export default class WeaveTemplateBuilder extends LightningElement {
   @track templateImages = [];
   @track templateAttachments = [];
   @track isLoadingFiles = false;
+  @track signerFormFields = [];
+  @track isEditingSignerField = false;
+  @track draftSignerField = {};
+  @track isSignerFieldLoading = false;
   @track selectedAttachmentRuleKey = null;
   @track sidebarView = 'templates';
   @track brands = [];
@@ -209,9 +258,34 @@ export default class WeaveTemplateBuilder extends LightningElement {
   @track insertedTag = null;
   @track headerRteKey = 1;
   @track footerRteKey = 1;
+  @track availableSegments = [];
+  @track showCloneModal = false;
+  @track cloneSourceId = null;
+  @track cloneName = '';
+  @track cloneApiName = '';
+  @track cloneOutputType = 'Email';
+  @track isCloning = false;
+  @track schedulerStatus = null;
+  @track isLoadingScheduler = false;
+  @track selectedFrequency = 'every_hour';
+  @track isTogglingScheduler = false;
+
+  // Brand AI Prompt Builder
+  @track showBrandAiModal = false;
+  @track brandAiStep = 1;
+  @track brandAiHeaderDesc = '';
+  @track brandAiFooterDesc = '';
+  @track brandAiImages = []; // { id, title, publicUrl, imgTag, width, include }
+  @track brandPromptCopied = false;
+  @track brandSfRulesExpanded = false;
+  _brandCopyTimer = null;
 
   statusOptions = STATUS_OPTIONS;
   fromEmailTypeOptions = FROM_EMAIL_TYPE_OPTIONS;
+  outputTypeOptions = OUTPUT_TYPE_OPTIONS;
+  scheduleOutputTypeOptions = SCHEDULE_OUTPUT_TYPE_OPTIONS;
+  pageSizeOptions = PAGE_SIZE_OPTIONS;
+  pdfPageSizeOptions = PDF_PAGE_SIZE_OPTIONS;
   componentTypeOptions = COMPONENT_TYPE_OPTIONS;
   regionOptions = REGION_OPTIONS;
   actionTypeOptions = ACTION_TYPE_OPTIONS;
@@ -228,6 +302,7 @@ export default class WeaveTemplateBuilder extends LightningElement {
 
   loadData() {
     this.isLoading = true;
+    this.errorMessage = null;
     Promise.all([
       getTemplates(),
       getAvailableObjects(),
@@ -289,6 +364,23 @@ export default class WeaveTemplateBuilder extends LightningElement {
   get templateHasBrand() { return !!this.draftTemplate.brandId; }
   get selectedBrandName() { return this.draftTemplate.brandName || ''; }
 
+  get templateBrandDetails() {
+    if (!this.draftTemplate.brandId) return null;
+    // Use draftBrand if it matches the template's selected brand; otherwise return name only
+    const bd = this.draftBrand;
+    if (bd && bd.id === this.draftTemplate.brandId) {
+      return {
+        displayName: bd.displayName || '',
+        logoUrl: bd.logoUrl || '',
+        primaryColor: bd.primaryColor || '',
+        secondaryColor: bd.secondaryColor || '',
+        headerHtml: bd.headerHtml || '',
+        footerHtml: bd.footerHtml || ''
+      };
+    }
+    return { displayName: this.draftTemplate.brandName || '' };
+  }
+
   get brandHeaderEditorIsRich() { return this.brandHeaderEditorMode === 'Visual'; }
   get brandHeaderEditorIsHtml() { return this.brandHeaderEditorMode === 'HTML Source'; }
   get brandFooterEditorIsRich() { return this.brandFooterEditorMode === 'Visual'; }
@@ -300,12 +392,12 @@ export default class WeaveTemplateBuilder extends LightningElement {
 
   get brandStaticTags() {
     return [
-      { key: 'PrimaryColor',    label: '{{Brand.PrimaryColor}}',    tag: '{{Brand.PrimaryColor}}'    },
-      { key: 'SecondaryColor',  label: '{{Brand.SecondaryColor}}',  tag: '{{Brand.SecondaryColor}}'  },
       { key: 'LogoUrl',         label: '{{Brand.LogoUrl}}',         tag: '{{Brand.LogoUrl}}'         },
       { key: 'DisplayName',     label: '{{Brand.DisplayName}}',     tag: '{{Brand.DisplayName}}'     },
       { key: 'PhysicalAddress', label: '{{Brand.PhysicalAddress}}', tag: '{{Brand.PhysicalAddress}}' },
-      { key: 'UnsubscribeLink', label: '{{Brand.UnsubscribeLink}}', tag: '{{Brand.UnsubscribeLink}}' }
+      { key: 'UnsubscribeLink', label: '{{Brand.UnsubscribeLink}}', tag: '{{Brand.UnsubscribeLink}}' },
+      { key: 'ContactEmail',    label: '{{Brand.ContactEmail}}',    tag: '{{Brand.ContactEmail}}'    },
+      { key: 'ContactPhone',    label: '{{Brand.ContactPhone}}',    tag: '{{Brand.ContactPhone}}'    }
     ];
   }
 
@@ -323,9 +415,154 @@ export default class WeaveTemplateBuilder extends LightningElement {
   get isBrandTab_contact()  { return this.brandActiveTab === 'contact'; }
   get isBrandTab_assets()   { return this.brandActiveTab === 'assets'; }
   get isBrandTab_content()  { return this.brandActiveTab === 'content'; }
+  // Brand AI step classes
+  get brandAiStepClass1() { return 'ai-step-dot' + (this.brandAiStep === 1 ? ' ai-step-dot_active' : (this.brandAiStep > 1 ? ' ai-step-dot_done' : '')); }
+  get brandAiStepClass2() { return 'ai-step-dot' + (this.brandAiStep === 2 ? ' ai-step-dot_active' : (this.brandAiStep > 2 ? ' ai-step-dot_done' : '')); }
+  get brandAiStepClass3() { return 'ai-step-dot' + (this.brandAiStep === 3 ? ' ai-step-dot_active' : ''); }
+  get isBrandAiStep1() { return this.brandAiStep === 1; }
+  get isBrandAiStep2() { return this.brandAiStep === 2; }
+  get isBrandAiStep3() { return this.brandAiStep === 3; }
+  get brandSfRulesChevron() { return this.brandSfRulesExpanded ? '▲' : '▼'; }
+  get brandAiCopyBtnClass() { return 'ai-copy-btn' + (this.brandPromptCopied ? ' ai-copy-btn_success' : ''); }
+  get brandAiCopyBtnLabel() { return this.brandPromptCopied ? '✓ Copied!' : '⌘ Copy Prompt'; }
+  get brandAiIncludedImages() { return (this.brandAiImages || []).filter(i => i.include && i.publicUrl); }
+
+  get brandAiPrompt() {
+    const bd = this.draftBrand;
+    const name = bd.displayName || bd.name || '';
+    const primary = bd.primaryColor || '';
+    const secondary = bd.secondaryColor || '';
+    const logoUrl = bd.logoUrl || '';
+    const physical = bd.physicalAddress || '';
+    const unsubUrl = bd.unsubscribeUrl || '';
+    const unsubLabel = bd.unsubscribeLabel || 'Unsubscribe';
+    const contactEmail = bd.contactEmail || '';
+    const contactPhone = bd.contactPhone || '';
+
+    const logoLine = logoUrl
+      ? `  Logo: <img src="${logoUrl}" width="600" alt="${name}" style="max-width:100%;display:block;">`
+      : '  Logo: (none)';
+
+    const unsubLine = unsubUrl
+      ? `  Unsubscribe: {{Brand.UnsubscribeLink}} = "${unsubUrl}" / label: "${unsubLabel}"`
+      : '';
+    const emailLine = contactEmail ? `  Contact Email: {{Brand.ContactEmail}} = "${contactEmail}"` : '';
+    const phoneLine = contactPhone ? `  Contact Phone: {{Brand.ContactPhone}} = "${contactPhone}"` : '';
+
+    const extraDetails = [unsubLine, emailLine, phoneLine].filter(Boolean).join('\n');
+
+    const extraTags = [
+      unsubUrl ? '  {{Brand.UnsubscribeLink}}' : '',
+      contactEmail ? '  {{Brand.ContactEmail}}' : '',
+      contactPhone ? '  {{Brand.ContactPhone}}' : ''
+    ].filter(Boolean).join('\n');
+
+    const imageLines = this.brandAiIncludedImages
+      .map(img => {
+        const w = img.width || 600;
+        const hAttr = img.height ? ` height="${img.height}"` : '';
+        return `  ${img.title}: <img src="${img.publicUrl}" width="${w}"${hAttr} alt="${img.title}" style="max-width:100%;display:block;">`;
+      })
+      .join('\n');
+
+    const sfRules = `\n\nSALESFORCE HTML RULES — the following will BLOCK saving:\n` +
+      `PROHIBITED TAGS: <meta> <html> <head> <body> <link> <script> <style> <iframe> <object> <embed>\n` +
+      `  <form> <input> <button> <svg> <math> <video> <audio> <base> <noscript>\n` +
+      `  <template> <details> <summary> <dialog> <picture> <source>\n` +
+      `PROHIBITED PATTERNS: event handlers (onclick, onload…), javascript:/vbscript: URIs,\n` +
+      `  url(https://…) in CSS, @import, expression(), -moz-binding:, behavior:`;
+
+    return `⚠️ CRITICAL — READ BEFORE WRITING ANYTHING:
+Your response must begin IMMEDIATELY with an HTML tag (e.g. <table ...).
+Do NOT output <!DOCTYPE>, <html>, <head>, <meta>, <body>, <style>, or any document wrapper.
+The very first character must be < and the first tag must be a content tag.
+
+PROHIBITED TAGS — any of these will block saving:
+<meta> <html> <head> <body> <link> <script> <style> <iframe> <object> <embed>
+<form> <input> <button> <svg> <math> <video> <audio> <base> <noscript>
+<template> <details> <summary> <dialog> <picture> <source>
+
+PROHIBITED PATTERNS — also block saving:
+• Any event handler attribute: onclick, onload, onerror, onmouseover, etc.
+• javascript: or vbscript: in any href or src
+• url() in CSS containing any http/https address
+• @import, expression(), -moz-binding:, behavior:
+
+You are building brand HTML for Weave — HTML injected into every email that uses this brand.
+Generate TWO separate HTML blocks, clearly labelled:
+
+  <!-- BRAND_HEADER -->
+  ... your header HTML here ...
+  <!-- END BRAND_HEADER -->
+
+  <!-- BRAND_FOOTER -->
+  ... your footer HTML here ...
+  <!-- END BRAND_FOOTER -->
+
+BRAND DETAILS:
+  Brand Name: ${name}
+  Primary Color: ${primary}
+  Secondary Color: ${secondary}
+${logoLine}
+  Physical Address: {{Brand.PhysicalAddress}} = "${physical}"
+${extraDetails}
+
+AVAILABLE MERGE TAGS (use these — do not hardcode values):
+  {{Brand.LogoUrl}}
+  {{Brand.DisplayName}}
+  {{Brand.PhysicalAddress}}
+${extraTags}
+
+${imageLines ? `ASSET IMAGE TAGS (use these for images, do not change the src):\n${imageLines}\n` : ''}
+HEADER DESCRIPTION:
+  ${this.brandAiHeaderDesc || '(none provided)'}
+
+FOOTER DESCRIPTION:
+  ${this.brandAiFooterDesc || '(none provided)'}
+
+OUTPUT REQUIREMENTS:
+• All CSS must be inline style="…" on each element — no <style> blocks
+• Use table-based layout (table, tr, td) — no div-only layouts
+• Max outer table width: 600px
+• Web-safe fonts only: Arial, Helvetica, Georgia, 'Times New Roman', Verdana
+• Use the exact hex color values from BRAND DETAILS above for all inline CSS colors
+• Do NOT hardcode the logo src — use {{Brand.LogoUrl}} or the asset tag provided above
+${sfRules}
+
+Generate BRAND_HEADER and BRAND_FOOTER now.`;
+  }
+
   get brandStatusPillClass() {
     const s = (this.draftBrand.status || '').toLowerCase();
     return 'status-pill' + (s === 'active' ? ' status-pill_active' : ' status-pill_draft');
+  }
+
+  get isSegmentsView()   { return this.sidebarView === 'segments'; }
+  get sidebarNavClassSegments() { return 'sidebar-nav-btn' + (this.sidebarView === 'segments' ? ' sidebar-nav-btn_active' : ''); }
+  get isSchedulerView()  { return this.sidebarView === 'scheduler'; }
+  get sidebarNavClassScheduler() { return 'sidebar-nav-btn' + (this.sidebarView === 'scheduler' ? ' sidebar-nav-btn_active' : ''); }
+
+  get schedulerIsActive() { return !!(this.schedulerStatus && this.schedulerStatus.isActive); }
+  get schedulerStatusLabel() { return this.schedulerIsActive ? 'Active' : 'Inactive'; }
+  get schedulerStatusPillClass() { return this.schedulerIsActive ? 'status-pill status-pill_active' : 'status-pill status-pill_draft'; }
+  get schedulerNextFireTime() {
+    if (!this.schedulerStatus || !this.schedulerStatus.nextFireTime) return null;
+    return new Date(this.schedulerStatus.nextFireTime).toLocaleString();
+  }
+  get schedulerCronExpression() { return this.schedulerStatus ? this.schedulerStatus.cronExpression : null; }
+  get schedulerFrequencyLabel() {
+    const opt = this.frequencyOptions.find(o => o.value === (this.schedulerStatus && this.schedulerStatus.frequency));
+    return opt ? opt.label : (this.schedulerStatus && this.schedulerStatus.cronExpression) || '';
+  }
+  get frequencyOptions() {
+    return [
+      { label: 'Every 15 minutes', value: 'every_15_min' },
+      { label: 'Every 30 minutes', value: 'every_30_min' },
+      { label: 'Every hour',       value: 'every_hour' },
+      { label: 'Every 6 hours',    value: 'every_6_hours' },
+      { label: 'Every 12 hours',   value: 'every_12_hours' },
+      { label: 'Daily (8 AM)',     value: 'daily' }
+    ];
   }
 
   get isLibraryView() { return !this.isEditing && this.isTemplatesView; }
@@ -350,6 +587,31 @@ export default class WeaveTemplateBuilder extends LightningElement {
   get hasTemplates() { return this.filteredTemplates.length > 0; }
   get hasId() { return !!this.draftTemplate.id; }
   get hasQueries() { return (this.draftTemplate.queries || []).length > 0; }
+
+  get parentQueryOptions() {
+    return [{ label: '-- None (root query) --', value: '' }].concat(
+      (this.draftTemplate.queries || []).map(q => ({
+        label: q.name,
+        value: q.localKey || q.queryApiName || ''
+      }))
+    );
+  }
+
+  get queryListItems() {
+    const queries = this.draftTemplate.queries || [];
+    const keyToName = {};
+    queries.forEach(q => { keyToName[q.localKey || q.queryApiName || ''] = q.name; });
+    return queries.map(q => {
+      const parentKey = q.parentQueryLocalKey || '';
+      const parentName = parentKey ? keyToName[parentKey] : null;
+      return {
+        ...q,
+        isChild: !!parentName,
+        parentQueryName: parentName || '',
+        cardClass: parentName ? 'item-card item-card--child' : 'item-card'
+      };
+    });
+  }
   get hasRecipients() { return (this.draftTemplate.recipients || []).length > 0; }
   get hasActions() { return (this.draftTemplate.actions || []).length > 0; }
 
@@ -361,6 +623,10 @@ export default class WeaveTemplateBuilder extends LightningElement {
   }
   get isFromCurrentUser() { return this.fromEmailType === 'CurrentUser'; }
   get isFromOrgWide() { return this.fromEmailType === 'OrgWide'; }
+  get showPageSize() { return this.draftTemplate.templateOutputType === 'Document'; }
+  get showCustomPdfSize() { return this.draftTemplate.pdfPageSize === 'Custom'; }
+  get isDocumentTemplate() { return this.draftTemplate.templateOutputType === 'Document'; }
+  get isEmailTemplate() { return this.draftTemplate.templateOutputType !== 'Document'; }
 
   // ── Filter tab class getters ────────────────────────────────────────────────
 
@@ -466,10 +732,48 @@ export default class WeaveTemplateBuilder extends LightningElement {
   get editingComponentButtonConfig()   { return this._parseComponentConfig(this.editingComponent.configJson); }
   get isTab_files()      { return this.activeTab === 'files'; }
   get tabClass_files()   { return 'editor-tab' + (this.activeTab === 'files'     ? ' editor-tab_active' : ''); }
-  get isTab_schedules()  { return this.activeTab === 'schedules'; }
-  get tabClass_schedules() { return 'editor-tab' + (this.activeTab === 'schedules' ? ' editor-tab_active' : ''); }
-  get isScheduleTypeBulk() { return this.scheduleType === 'Bulk'; }
-  get scheduleTypeOptions() { return [{ label: 'Individual Record', value: 'Individual' }, { label: 'Bulk (by filter)', value: 'Bulk' }]; }
+  get isTab_schedules()    { return this.activeTab === 'schedules'; }
+  get tabClass_schedules() { return 'editor-tab' + (this.activeTab === 'schedules'   ? ' editor-tab_active' : ''); }
+  get isTab_datasources()    { return this.activeTab === 'datasources'; }
+  get tabClass_datasources() { return 'editor-tab' + (this.activeTab === 'datasources' ? ' editor-tab_active' : ''); }
+  get isTab_signerfields()    { return this.activeTab === 'signerfields'; }
+  get tabClass_signerfields() { return 'editor-tab' + (this.activeTab === 'signerfields' ? ' editor-tab_active' : ''); }
+  get signerFieldTypeOptions() {
+    return [
+      { label: 'Text', value: 'Text' }, { label: 'Number', value: 'Number' },
+      { label: 'Currency', value: 'Currency' }, { label: 'Date', value: 'Date' },
+      { label: 'Checkbox', value: 'Checkbox' }, { label: 'Picklist', value: 'Picklist' }
+    ];
+  }
+  get allComponentHtml() {
+    return (this.draftTemplate.components || []).map(c => c.htmlContent || '').join('\n');
+  }
+  get scheduleModeOptions() { return [{ label: 'Send Once', value: 'once' }, { label: 'Recurring', value: 'recurring' }]; }
+  get isScheduleModeOnce() { return this.scheduleMode === 'once'; }
+  get isScheduleModeRecurring() { return this.scheduleMode === 'recurring'; }
+  get schedModeTabOnce() { return this.scheduleMode === 'once' ? 'filter-tab filter-tab_active' : 'filter-tab'; }
+  get schedModeTabRecurring() { return this.scheduleMode === 'recurring' ? 'filter-tab filter-tab_active' : 'filter-tab'; }
+  get isRecurringEndByDate() { return this.recurringEndType === 'endDate'; }
+  get isRecurringEndByMaxSends() { return this.recurringEndType === 'maxSends'; }
+  get minScheduleDate() {
+    const d = new Date();
+    return d.toISOString().substring(0, 10);
+  }
+  get dayOfWeekOptions() {
+    return [
+      { label: 'Sun', value: 'sun' }, { label: 'Mon', value: 'mon' },
+      { label: 'Tue', value: 'tue' }, { label: 'Wed', value: 'wed' },
+      { label: 'Thu', value: 'thu' }, { label: 'Fri', value: 'fri' },
+      { label: 'Sat', value: 'sat' }
+    ];
+  }
+  get recurringEndTypeOptions() {
+    return [
+      { label: 'No end', value: 'noEnd' },
+      { label: 'End on date', value: 'endDate' },
+      { label: 'Stop after X sends', value: 'maxSends' }
+    ];
+  }
   get hasScheduledSends() { return this.scheduledSends && this.scheduledSends.length > 0; }
   get templateHasId() { return !!this.draftTemplate.id; }
   get hasAttachmentRules() { return (this.draftTemplate.attachments || []).length > 0; }
@@ -491,6 +795,15 @@ export default class WeaveTemplateBuilder extends LightningElement {
   get editingRecipientIsParentField()      { return (this.editingRecipient.recipientSourceType || '') === 'Parent Field'; }
   get editingRecipientIsRelatedRecords()   { return (this.editingRecipient.recipientSourceType || '') === 'Related Records'; }
   get editingRecipientIsManual()           { return (this.editingRecipient.recipientSourceType || '') === 'Manual'; }
+  get editingRecipientIsDynamicSegment()   { return (this.editingRecipient.recipientSourceType || '') === 'Dynamic Segment'; }
+  get segmentComboboxOptions() {
+    const opts = [{ label: '-- Select a Segment --', value: '' }];
+    (this.availableSegments || []).forEach(s => {
+      opts.push({ label: s.Name + ' (' + s.Object_API_Name__c + ')', value: s.Id });
+    });
+    return opts;
+  }
+  get hasAvailableSegments() { return (this.availableSegments || []).length > 0; }
   get templateQueryOptions() {
     return (this.draftTemplate.queries || []).map(q => ({ label: q.name, value: q.localKey }));
   }
@@ -593,10 +906,24 @@ export default class WeaveTemplateBuilder extends LightningElement {
         this.isDirty = false;
         this._fromEmailType = null;
         this.isEditing = true;
-        if (dto.parentObjectApiName) this.loadRelatedObjects(dto.parentObjectApiName);
+        if (dto.parentObjectApiName) {
+          this.loadRelatedObjects(dto.parentObjectApiName);
+          this.loadSegmentsForObject(dto.parentObjectApiName);
+        }
+        if (dto.brandId) {
+          loadBrand({ brandId: dto.brandId })
+            .then(b => { this.draftBrand = { ...emptyBrand(), ...b }; })
+            .catch(() => {});
+        }
       })
       .catch(err => { this.errorMessage = this.extractError(err); })
       .finally(() => { this.isLoading = false; });
+  }
+
+  loadSegmentsForObject(objectApiName) {
+    getActiveSegments({ objectApiName })
+      .then(segments => { this.availableSegments = segments || []; })
+      .catch(() => { this.availableSegments = []; });
   }
 
   handleBack() { this.backToLibrary(); }
@@ -605,6 +932,80 @@ export default class WeaveTemplateBuilder extends LightningElement {
     this.activeTab = event.currentTarget.dataset.tab;
     if (this.activeTab === 'files') this.loadTemplateFiles();
     if (this.activeTab === 'schedules') this.loadScheduledSends();
+    if (this.activeTab === 'body') this.loadParentFieldsForMergeTags();
+    if (this.activeTab === 'signerfields') this.loadSignerFormFields();
+  }
+
+  loadSignerFormFields() {
+    if (!this.draftTemplate.id) return;
+    this.isSignerFieldLoading = true;
+    getSignerFormFields({ templateId: this.draftTemplate.id })
+      .then(fields => {
+        this.signerFormFields = (fields || []).map(f => ({
+          ...f, key: f.Id,
+          fieldTypeLabel: f.Field_Type__c || 'Text'
+        }));
+      })
+      .catch(() => {})
+      .finally(() => { this.isSignerFieldLoading = false; });
+  }
+
+  handleSignerFieldNew() {
+    this.draftSignerField = { templateId: this.draftTemplate.id, fieldType: 'Text', required: false };
+    this.isEditingSignerField = true;
+  }
+
+  handleSignerFieldEdit(evt) {
+    const id = evt.currentTarget.dataset.id;
+    const f  = this.signerFormFields.find(x => x.Id === id);
+    if (!f) return;
+    this.draftSignerField = {
+      Id: f.Id, templateId: this.draftTemplate.id,
+      tagLabel: f.Tag_Label__c, signerRole: f.Signer_Role__c,
+      fieldType: f.Field_Type__c, targetFieldApiName: f.Target_Field_Api_Name__c,
+      required: f.Required__c, picklistValues: f.Picklist_Values__c,
+      displayOrder: f.Display_Order__c
+    };
+    this.isEditingSignerField = true;
+  }
+
+  handleSignerFieldFieldChange(evt) {
+    const field = evt.currentTarget.dataset.field;
+    const value = evt.detail ? (evt.detail.checked !== undefined ? evt.detail.checked : evt.detail.value) : evt.target.value;
+    this.draftSignerField = { ...this.draftSignerField, [field]: value };
+  }
+
+  handleSignerFieldSave() {
+    this.isSignerFieldLoading = true;
+    upsertSignerFormField({ fieldJson: JSON.stringify(this.draftSignerField) })
+      .then(() => {
+        this.isEditingSignerField = false;
+        this.loadSignerFormFields();
+      })
+      .catch(err => { this.showError(err?.body?.message || 'Save failed.'); })
+      .finally(() => { this.isSignerFieldLoading = false; });
+  }
+
+  handleSignerFieldCancel() { this.isEditingSignerField = false; }
+
+  handleSignerFieldDelete(evt) {
+    const id = evt.currentTarget.dataset.id;
+    // eslint-disable-next-line no-alert
+    if (!window.confirm('Delete this signer field?')) return;
+    deleteSignerFormField({ fieldId: id })
+      .then(() => { this.loadSignerFormFields(); })
+      .catch(err => { this.showError(err?.body?.message || 'Delete failed.'); });
+  }
+
+  handleDataSourceConfigChange(event) {
+    const config = event.detail;
+    if (!config) return;
+    this.draftTemplate = {
+      ...this.draftTemplate,
+      templateChannels: config.templateChannels || this.draftTemplate.templateChannels,
+      dataSourceConfig: JSON.stringify(config)
+    };
+    this.isDirty = true;
   }
 
   loadRelatedObjects(parentObjectApiName) {
@@ -631,6 +1032,26 @@ export default class WeaveTemplateBuilder extends LightningElement {
     this.isDirty = true;
     if (field === 'parentObjectApiName' && value) {
       this.loadRelatedObjects(value);
+      this.loadSegmentsForObject(value);
+      // Auto-create a ParentRecord query for new templates
+      if (!this.draftTemplate.id) {
+        const hasParentQuery = this.draftTemplate.queries.some(q =>
+          q.queryApiName === 'ParentRecord' || q.relationshipType === 'self'
+        );
+        if (!hasParentQuery) {
+          const parentQuery = {
+            id: null, localKey: nextKey(), name: 'Parent Record',
+            soqlQuery: `SELECT Id FROM ${value} LIMIT 1`,
+            soqlObject: value, queryApiName: 'ParentRecord',
+            parentLookupField: 'Id', relationshipType: 'self',
+            parentQueryId: null, parentQueryLocalKey: null
+          };
+          this.draftTemplate = {
+            ...this.draftTemplate,
+            queries: [parentQuery, ...this.draftTemplate.queries]
+          };
+        }
+      }
     }
   }
 
@@ -669,7 +1090,12 @@ export default class WeaveTemplateBuilder extends LightningElement {
       return;
     }
     this.isLoading = true;
-    const payload = JSON.stringify(this.draftTemplate);
+    // Reset email-only fields for Document templates
+    let draft = this.draftTemplate;
+    if (draft.templateOutputType === 'Document') {
+      draft = { ...draft, allowUserEditBeforeSend: false, storeEmailHistory: false, defaultFromEmail: '' };
+    }
+    const payload = JSON.stringify(draft);
     saveTemplate({ templateJson: payload })
       .then(dto => {
         this.draftTemplate = {
@@ -721,6 +1147,47 @@ export default class WeaveTemplateBuilder extends LightningElement {
   }
 
   handleDeleteTemplate(event) { this.deleteTemplateFromLibrary(event); }
+
+  handleCloneOpen(event) {
+    event.stopPropagation();
+    const templateId = event.currentTarget.dataset.id;
+    const tmpl = this.templates.find(t => t.id === templateId);
+    this.cloneSourceId = templateId;
+    this.cloneName = (tmpl ? tmpl.name : '') + ' (Copy)';
+    this.cloneApiName = '';
+    this.cloneOutputType = tmpl?.outputType || 'Email';
+    this.showCloneModal = true;
+  }
+
+  handleCloneFieldChange(event) {
+    const field = event.target.dataset.field;
+    this[field] = event.detail.value;
+  }
+
+  handleCloneModalClose() { this.showCloneModal = false; }
+
+  handleCloneConfirm() {
+    if (!this.cloneName || !this.cloneApiName) {
+      this.errorMessage = 'Name and API Name are required to clone.';
+      return;
+    }
+    this.isCloning = true;
+    this.errorMessage = null;
+    cloneTemplate({
+      templateId: this.cloneSourceId,
+      newName: this.cloneName,
+      newApiName: this.cloneApiName,
+      newOutputType: this.cloneOutputType
+    })
+      .then(newTemplateId => {
+        this.showCloneModal = false;
+        this.dispatchEvent(new ShowToastEvent({ title: 'Cloned', message: 'Template cloned successfully.', variant: 'success' }));
+        this.loadData();
+        this.loadTemplateById(newTemplateId);
+      })
+      .catch(err => { this.errorMessage = this.extractError(err); })
+      .finally(() => { this.isCloning = false; });
+  }
 
   // ── Queries ─────────────────────────────────────────────────────────────────
 
@@ -788,6 +1255,11 @@ export default class WeaveTemplateBuilder extends LightningElement {
 
   handleComponentTypeSelect(event) { this.newComponentType = event.detail.value; }
   handleRegionSelect(event) { this.newComponentRegion = event.detail.value; }
+
+  handleCanvasComponentsChanged(event) {
+    this.draftTemplate = { ...this.draftTemplate, components: event.detail.components };
+    this.isDirty = true;
+  }
 
   handleAddComponent() {
     const newComp = {
@@ -1035,7 +1507,11 @@ export default class WeaveTemplateBuilder extends LightningElement {
 
   handleRecipientFieldChange(event) {
     const field = event.target.dataset.field;
-    this.editingRecipient = { ...this.editingRecipient, [field]: event.detail.value };
+    const value = event.detail.value;
+    this.editingRecipient = { ...this.editingRecipient, [field]: value };
+    if (field === 'recipientSourceType' && value === 'Dynamic Segment') {
+      this.loadSegmentsForObject(this.draftTemplate.parentObjectApiName);
+    }
   }
 
   handleRecipientQuerySelect(event) {
@@ -1046,6 +1522,16 @@ export default class WeaveTemplateBuilder extends LightningElement {
       _linkedQueryLocalKey: localKey,
       sourceObjectApiName: q?.soqlObject || '',
       parentLookupFieldApiName: q?.parentLookupField || ''
+    };
+  }
+
+  handleRecipientSegmentChange(event) {
+    const segmentId = event.detail.value;
+    const seg = (this.availableSegments || []).find(s => s.Id === segmentId);
+    this.editingRecipient = {
+      ...this.editingRecipient,
+      segmentId: segmentId || null,
+      segmentName: seg ? seg.Name : null
     };
   }
 
@@ -1239,6 +1725,22 @@ export default class WeaveTemplateBuilder extends LightningElement {
       .finally(() => { this.previewIsLoading = false; });
   }
 
+  handlePreviewPdf() {
+    if (!this.previewRecordId || !this.draftTemplate.id) {
+      this.errorMessage = 'Select a record to preview the PDF.';
+      return;
+    }
+    this.isPreviewingPdf = true;
+    this.errorMessage = '';
+    previewTemplatePdf({ templateId: this.draftTemplate.id, recordId: this.previewRecordId })
+      .then(docId => {
+        const url = '/sfc/servlet.shepherd/document/download/' + docId;
+        window.open(url, '_blank');
+      })
+      .catch(err => { this.errorMessage = err.body?.message || 'PDF preview failed.'; })
+      .finally(() => { this.isPreviewingPdf = false; });
+  }
+
   handleSendTestEmail() {
     if (!this.previewRecordId || !this.draftTemplate.id) {
       this.errorMessage = 'Save the template and select a record before sending a test email.';
@@ -1258,12 +1760,52 @@ export default class WeaveTemplateBuilder extends LightningElement {
     this.scheduleDateTime = event.target.value;
   }
 
-  handleScheduleTypeChange(event) {
-    this.scheduleType = event.detail.value;
+  handleScheduleDateChange(event) {
+    this.scheduleDate = event.detail.value;
+  }
+
+  handleScheduleTimeChange(event) {
+    this.scheduleTime = event.detail.value;
+  }
+
+  handleScheduleModeChange(event) {
+    this.scheduleMode = event.detail.value;
+  }
+
+  handleScheduleModeToggle(event) {
+    this.scheduleMode = event.currentTarget.dataset.value;
   }
 
   handleBulkFilterChange(event) {
     this.scheduleBulkFilter = event.target.value;
+  }
+
+  handleScheduleOutputTypeChange(event) {
+    this.scheduleOutputType = event.detail.value;
+  }
+
+  handleRecurringDaysChange(event) {
+    this.recurringDays = event.detail.value;
+  }
+
+  handleRecurringTimeChange(event) {
+    this.recurringTime = event.detail.value;
+  }
+
+  handleRecurringStartDateChange(event) {
+    this.recurringStartDate = event.detail.value;
+  }
+
+  handleRecurringEndTypeChange(event) {
+    this.recurringEndType = event.detail.value;
+  }
+
+  handleRecurringEndDateChange(event) {
+    this.recurringEndDate = event.detail.value;
+  }
+
+  handleRecurringMaxSendsChange(event) {
+    this.recurringMaxSends = event.detail.value;
   }
 
   handleCreateScheduledSend() {
@@ -1271,29 +1813,78 @@ export default class WeaveTemplateBuilder extends LightningElement {
       this.errorMessage = 'Save the template before scheduling.';
       return;
     }
-    if (!this.scheduleDateTime) {
+    if (!this.scheduleDate || !this.scheduleTime) {
       this.errorMessage = 'Select a date and time before scheduling.';
       return;
     }
-    if (this.scheduleType === 'Individual' && !this.previewRecordId) {
-      this.errorMessage = 'Select a record for Individual sends.';
-      return;
-    }
+    const scheduledDateTimeStr = this.scheduleDate + 'T' + this.scheduleTime;
     this.isScheduling = true;
     this.errorMessage = '';
     createScheduledSend({
       templateId: this.draftTemplate.id,
-      scheduledDateTime: this.scheduleDateTime,
-      sendType: this.scheduleType,
-      recordId: this.scheduleType === 'Individual' ? this.previewRecordId : null,
-      filterClause: this.scheduleType === 'Bulk' ? this.scheduleBulkFilter : null
+      scheduledDateTime: scheduledDateTimeStr,
+      sendType: 'Bulk',
+      recordId: null,
+      filterClause: this.scheduleBulkFilter || null,
+      outputType: this.scheduleOutputType
     })
       .then(() => {
-        this.dispatchEvent(new ShowToastEvent({ title: 'Send scheduled', message: 'Scheduled for ' + this.scheduleDateTime, variant: 'success' }));
-        this.scheduleDateTime = '';
+        this.dispatchEvent(new ShowToastEvent({ title: 'Send scheduled', message: 'Scheduled for ' + scheduledDateTimeStr, variant: 'success' }));
+        this.scheduleDate = '';
         this.scheduleBulkFilter = '';
+        this.scheduleOutputType = 'Email';
+        this.loadScheduledSends();
       })
       .catch(err => { this.errorMessage = err.body?.message || 'Scheduling failed.'; })
+      .finally(() => { this.isScheduling = false; });
+  }
+
+  handleCreateRecurringSchedule() {
+    if (!this.draftTemplate.id) {
+      this.errorMessage = 'Save the template before scheduling.';
+      return;
+    }
+    if (!this.recurringDays || this.recurringDays.length === 0) {
+      this.errorMessage = 'Select at least one day of the week.';
+      return;
+    }
+    if (!this.recurringStartDate) {
+      this.errorMessage = 'Select a start date.';
+      return;
+    }
+    const recurringConfigJson = JSON.stringify({
+      daysOfWeek: this.recurringDays,
+      timeOfDay: this.recurringTime,
+      startDate: this.recurringStartDate,
+      endType: this.recurringEndType,
+      endDate: this.recurringEndType === 'endDate' ? this.recurringEndDate : null,
+      maxSends: this.recurringEndType === 'maxSends' ? Number(this.recurringMaxSends) : null,
+      filterClause: this.scheduleBulkFilter || null
+    });
+    const request = {
+      templateId: this.draftTemplate.id,
+      recordId: null,
+      subject: this.draftTemplate.subjectTemplate || this.draftTemplate.name || 'Email',
+      htmlBody: null,
+      toRecipients: [],
+      ccRecipients: [],
+      bccRecipients: [],
+      attachmentContentDocumentIds: [],
+      storeHistory: null
+    };
+    this.isScheduling = true;
+    this.errorMessage = '';
+    scheduleRecurringEmail({ request, recurringConfigJson })
+      .then(() => {
+        this.dispatchEvent(new ShowToastEvent({ title: 'Recurring schedule created', message: 'First send will occur on ' + this.recurringStartDate, variant: 'success' }));
+        this.recurringDays = [];
+        this.recurringStartDate = '';
+        this.recurringEndDate = '';
+        this.recurringMaxSends = '';
+        this.recurringEndType = 'noEnd';
+        this.loadScheduledSends();
+      })
+      .catch(err => { this.errorMessage = err.body?.message || 'Failed to create recurring schedule.'; })
       .finally(() => { this.isScheduling = false; });
   }
 
@@ -1472,6 +2063,7 @@ export default class WeaveTemplateBuilder extends LightningElement {
     this.isEditing = false;
     this.isBrandEditing = false;
     if (view === 'brands') this._refreshBrands();
+    if (view === 'scheduler') this.loadSchedulerStatus();
   }
 
   _refreshBrands() {
@@ -1576,6 +2168,73 @@ export default class WeaveTemplateBuilder extends LightningElement {
     });
   }
 
+  // ── Brand AI Prompt Builder ──────────────────────────────────────────────────
+
+  handleOpenBrandAiModal() {
+    this.brandAiStep = 1;
+    this.brandAiHeaderDesc = '';
+    this.brandAiFooterDesc = '';
+    this.brandPromptCopied = false;
+    this.brandSfRulesExpanded = false;
+    this.brandAiImages = (this.brandImages || [])
+      .filter(img => img.publicUrl)
+      .map(img => ({ ...img, width: 600, height: '', include: true }));
+    this.showBrandAiModal = true;
+  }
+
+  handleCloseBrandAiModal() { this.showBrandAiModal = false; }
+  handleBrandAiModalBackdropClick() { this.showBrandAiModal = false; }
+  handleBrandAiModalInnerClick(event) { event.stopPropagation(); }
+
+  handleBrandAiNext() {
+    if (this.brandAiStep < 2) this.brandAiStep += 1;
+  }
+  handleBrandAiBack() {
+    if (this.brandAiStep > 1) this.brandAiStep -= 1;
+  }
+
+  handleBrandAiHeaderDescChange(event) { this.brandAiHeaderDesc = event.detail.value; }
+  handleBrandAiFooterDescChange(event) { this.brandAiFooterDesc = event.detail.value; }
+
+  handleBrandAiImageWidthChange(event) {
+    const idx = parseInt(event.currentTarget.dataset.idx, 10);
+    const val = parseInt(event.target.value, 10) || 600;
+    this.brandAiImages = this.brandAiImages.map((img, i) => i === idx ? { ...img, width: val } : img);
+  }
+
+  handleBrandAiImageHeightChange(event) {
+    const idx = parseInt(event.currentTarget.dataset.idx, 10);
+    const raw = event.target.value.trim();
+    const val = raw === '' ? '' : (parseInt(raw, 10) || '');
+    this.brandAiImages = this.brandAiImages.map((img, i) => i === idx ? { ...img, height: val } : img);
+  }
+
+  handleBrandAiImageToggle(event) {
+    const idx = parseInt(event.currentTarget.dataset.idx, 10);
+    const checked = event.target.checked;
+    this.brandAiImages = this.brandAiImages.map((img, i) => i === idx ? { ...img, include: checked } : img);
+  }
+
+  handleCopyBrandPrompt() {
+    const text = this.brandAiPrompt;
+    navigator.clipboard.writeText(text).then(() => {
+      this.brandPromptCopied = true;
+      if (this._brandCopyTimer) clearTimeout(this._brandCopyTimer);
+      this._brandCopyTimer = setTimeout(() => { this.brandPromptCopied = false; }, 2000);
+    }).catch(() => {});
+  }
+
+  handleCopyBrandImageTag(event) {
+    const idx = parseInt(event.currentTarget.dataset.idx, 10);
+    const img = this.brandAiImages[idx];
+    if (!img || !img.publicUrl) return;
+    const hAttr = img.height ? ` height="${img.height}"` : '';
+    const tag = `<img src="${img.publicUrl}" width="${img.width || 600}"${hAttr} alt="${img.title}" style="max-width:100%;display:block;">`;
+    navigator.clipboard.writeText(tag).catch(() => {});
+  }
+
+  handleToggleBrandSfRules() { this.brandSfRulesExpanded = !this.brandSfRulesExpanded; }
+
   handleBrandTabClick(event) { this.brandActiveTab = event.currentTarget.dataset.tab; }
   handleBrandColorPickerChange(event) {
     const field = event.currentTarget.dataset.field;
@@ -1670,9 +2329,67 @@ export default class WeaveTemplateBuilder extends LightningElement {
       brandName: brand ? (brand.displayName || brand.name) : null
     };
     this.isDirty = true;
+    // Load full brand details so the AI prompt builder can use them
+    if (brandId) {
+      loadBrand({ brandId })
+        .then(b => { this.draftBrand = { ...emptyBrand(), ...b }; })
+        .catch(() => {
+          // Fall back to summary fields already in the brands list
+          if (brand) {
+            this.draftBrand = { ...emptyBrand(), id: brand.id, displayName: brand.displayName || brand.name,
+              primaryColor: brand.primaryColor || '', secondaryColor: brand.secondaryColor || '',
+              logoUrl: brand.logoUrl || '' };
+          }
+        });
+    } else {
+      this.draftBrand = emptyBrand();
+    }
   }
 
   showToast(title, message, variant) {
     this.dispatchEvent(new ShowToastEvent({ title, message, variant }));
+  }
+
+  // ── Scheduler ────────────────────────────────────────────────────────────────
+
+  loadSchedulerStatus() {
+    this.isLoadingScheduler = true;
+    getSchedulerStatus()
+      .then(status => {
+        this.schedulerStatus = status;
+        if (status && status.frequency) {
+          this.selectedFrequency = status.frequency;
+        }
+      })
+      .catch(err => { this.errorMessage = this.extractError(err); })
+      .finally(() => { this.isLoadingScheduler = false; });
+  }
+
+  handleSchedulerFrequencyChange(event) {
+    this.selectedFrequency = event.detail.value;
+  }
+
+  handleActivateScheduler() {
+    this.isTogglingScheduler = true;
+    this.errorMessage = null;
+    activateScheduler({ frequency: this.selectedFrequency })
+      .then(status => {
+        this.schedulerStatus = status;
+        this.dispatchEvent(new ShowToastEvent({ title: 'Scheduler activated', message: 'The automated send job is now running.', variant: 'success' }));
+      })
+      .catch(err => { this.errorMessage = this.extractError(err); })
+      .finally(() => { this.isTogglingScheduler = false; });
+  }
+
+  handleDeactivateScheduler() {
+    this.isTogglingScheduler = true;
+    this.errorMessage = null;
+    deactivateScheduler()
+      .then(() => {
+        this.schedulerStatus = { isActive: false, jobId: null, cronExpression: null, nextFireTime: null, frequency: null };
+        this.dispatchEvent(new ShowToastEvent({ title: 'Scheduler deactivated', message: 'The automated send job has been stopped.', variant: 'success' }));
+      })
+      .catch(err => { this.errorMessage = this.extractError(err); })
+      .finally(() => { this.isTogglingScheduler = false; });
   }
 }

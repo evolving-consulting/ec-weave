@@ -10,6 +10,7 @@ public with sharing class GenericEmailTemplateDTO {
     @AuraEnabled public String parentObjectApiName;
     @AuraEnabled public Boolean allowUserEditBeforeSend;
     @AuraEnabled public Boolean storeEmailHistory;
+    @AuraEnabled public String templateOutputType;
 
     public GenericEmailTemplateDTO() {
     }

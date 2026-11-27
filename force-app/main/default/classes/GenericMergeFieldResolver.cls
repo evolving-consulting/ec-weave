@@ -500,13 +500,7 @@ public with sharing class GenericMergeFieldResolver {
     if (decimalValue == null) {
       return String.valueOf(value);
     }
-
-    Decimal percentValue = decimalValue;
-    if (decimalValue.abs() <= 1) {
-      percentValue = decimalValue * 100;
-    }
-
-    return formatDecimalCompact(percentValue) + '%';
+    return formatDecimalCompact(decimalValue) + '%';
   }
 
   private static String formatDecimalWithScale(Decimal value, Integer scale) {
@@ -688,6 +682,105 @@ public with sharing class GenericMergeFieldResolver {
 
   private static Boolean isBlank(String value) {
     return value == null || value.trim().length() == 0;
+  }
+
+  // ── Conditional block resolution ──────────────────────────────────────────
+  // Pre-pass that strips {{#Field}}...{{/Field}}, {{^Field}}...{{/Field}},
+  // {{#IF expr}}...{{:else}}...{{/IF}}, and {{#IF expr}}...{{/IF}} blocks
+  // before the normal placeholder substitution runs.
+  // Processes innermost blocks first by looping until no blocks remain.
+  public static String resolveConditionals(String template, MergeContext ctx) {
+    if (String.isBlank(template)) return template;
+    if (!template.contains('{{#') && !template.contains('{{^')) return template;
+
+    MergeContext safeCtx = normalizeContext(ctx);
+    String result = template;
+    Boolean changed = true;
+    Integer safety = 30;
+
+    while (changed && safety-- > 0) {
+      changed = false;
+
+      // 1. {{#IF expr}}...{{:else}}...{{/IF}}
+      Pattern ifElsePat = Pattern.compile('(?s)\\{\\{#IF\\s+(.+?)\\}\\}(.*?)\\{\\{:else\\}\\}(.*?)\\{\\{/IF\\}\\}');
+      Matcher m = ifElsePat.matcher(result);
+      if (m.find()) {
+        Boolean cond = evaluateCondition(m.group(1).trim(), safeCtx);
+        result = result.substring(0, m.start()) + (cond ? m.group(2) : m.group(3)) + result.substring(m.end());
+        changed = true; continue;
+      }
+
+      // 2. {{#IF expr}}...{{/IF}}
+      Pattern ifPat = Pattern.compile('(?s)\\{\\{#IF\\s+(.+?)\\}\\}(.*?)\\{\\{/IF\\}\\}');
+      m = ifPat.matcher(result);
+      if (m.find()) {
+        Boolean cond = evaluateCondition(m.group(1).trim(), safeCtx);
+        result = result.substring(0, m.start()) + (cond ? m.group(2) : '') + result.substring(m.end());
+        changed = true; continue;
+      }
+
+      // 3. {{#FieldName}}...{{/FieldName}} — truthy
+      Pattern truthyPat = Pattern.compile('(?s)\\{\\{#([A-Za-z_][A-Za-z0-9_.]*(?:__[cr])?)\\}\\}(.*?)\\{\\{/\\1\\}\\}');
+      m = truthyPat.matcher(result);
+      if (m.find()) {
+        Object val = resolveValue(m.group(1), safeCtx);
+        result = result.substring(0, m.start()) + (isTruthy(val) ? m.group(2) : '') + result.substring(m.end());
+        changed = true; continue;
+      }
+
+      // 4. {{^FieldName}}...{{/FieldName}} — falsy
+      Pattern falsyPat = Pattern.compile('(?s)\\{\\{\\^([A-Za-z_][A-Za-z0-9_.]*(?:__[cr])?)\\}\\}(.*?)\\{\\{/\\1\\}\\}');
+      m = falsyPat.matcher(result);
+      if (m.find()) {
+        Object val = resolveValue(m.group(1), safeCtx);
+        result = result.substring(0, m.start()) + (!isTruthy(val) ? m.group(2) : '') + result.substring(m.end());
+        changed = true; continue;
+      }
+    }
+    return result;
+  }
+
+  public static Boolean evaluateCondition(String expr, MergeContext ctx) {
+    expr = expr.trim();
+    // Comparison: Field == 'Value', Field != 'Value', Field > 100, etc.
+    Pattern opPat = Pattern.compile(
+      '^([A-Za-z_][A-Za-z0-9_.]*(?:__[cr])?)\\s*(==|!=|>=|<=|>|<)\\s*(?:\'([^\']*)\'|(\\d+(?:\\.\\d+)?))$'
+    );
+    Matcher m = opPat.matcher(expr);
+    if (m.find()) {
+      String field = m.group(1);
+      String op = m.group(2);
+      String stringVal = m.group(3);
+      String numericStr = m.group(4);
+      Object rawValue = resolveValue(field, ctx);
+      String fieldStr = rawValue != null ? String.valueOf(rawValue) : '';
+      if (numericStr != null) {
+        Decimal expected = Decimal.valueOf(numericStr);
+        Decimal actual;
+        try { actual = Decimal.valueOf(fieldStr); } catch (Exception e) { return false; }
+        if (op == '==') return actual == expected;
+        if (op == '!=') return actual != expected;
+        if (op == '>') return actual > expected;
+        if (op == '<') return actual < expected;
+        if (op == '>=') return actual >= expected;
+        if (op == '<=') return actual <= expected;
+      } else {
+        if (op == '==') return fieldStr == stringVal;
+        if (op == '!=') return fieldStr != stringVal;
+      }
+      return false;
+    }
+    return isTruthy(resolveValue(expr, ctx));
+  }
+
+  private static Boolean isTruthy(Object val) {
+    if (val == null) return false;
+    if (val instanceof Boolean) return (Boolean) val;
+    if (val instanceof String) return !String.isBlank((String) val);
+    if (val instanceof Decimal) return (Decimal) val != 0;
+    if (val instanceof Integer) return (Integer) val != 0;
+    if (val instanceof Long) return (Long) val != 0;
+    return true;
   }
 
   private class ResolvedMergeValue {

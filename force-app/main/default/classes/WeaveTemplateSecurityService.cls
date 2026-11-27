@@ -3,13 +3,15 @@ public with sharing class WeaveTemplateSecurityService {
     private static Boolean allowManagementDuringTest = false;
 
     public static void assertCanManageTemplates() {
-        if (
-            FeatureManagement.checkPermission('Weave_Manage_Templates') ||
-            (Test.isRunningTest() && allowManagementDuringTest)
-        ) {
+        if (Test.isRunningTest()) {
+            if (!allowManagementDuringTest) {
+                throw new AuraHandledException('You do not have permission to manage Weave templates.');
+            }
             return;
         }
-        throw new AuraHandledException('You do not have permission to manage Weave templates.');
+        if (!FeatureManagement.checkPermission('Weave_Manage_Templates')) {
+            throw new AuraHandledException('You do not have permission to manage Weave templates.');
+        }
     }
 
     @TestVisible

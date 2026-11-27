@@ -1,0 +1,34 @@
+:host {
+    --ec-brand-teal: #1f5f5b;
+    --ec-brand-teal-mid: #2d7a73;
+    --ec-brand-teal-bg: #ebf4f3;
+    --ec-brand-teal-border: #c0deda;
+    --ec-brand-ink: #2b2b29;
+    --ec-brand-muted: #6b7280;
+}
+.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 8999; }
+.modal-panel { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); width: min(640px,96vw); background: #fff; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); z-index: 9000; display: flex; flex-direction: column; max-height: 90vh; }
+.modal-header { display: flex; align-items: flex-start; justify-content: space-between; padding: 24px 24px 0; }
+.modal-eyebrow { font-size: 11px; font-weight: 800; letter-spacing: 0.1em; color: var(--ec-brand-teal); margin-bottom: 2px; }
+.modal-title { font-size: 20px; font-weight: 700; color: var(--ec-brand-ink); }
+.modal-close { background: none; border: none; font-size: 18px; color: var(--ec-brand-muted); cursor: pointer; line-height: 1; }
+.modal-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
+.modal-footer { display: flex; gap: 10px; justify-content: flex-end; padding: 16px 24px; border-top: 1px solid #f3f4f6; }
+.error-banner { margin: 12px 24px 0; background: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px; padding: 10px 14px; color: #991b1b; font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
+.dismiss-btn { background: none; border: none; color: #991b1b; cursor: pointer; font-size: 14px; }
+.field-group { margin-bottom: 16px; }
+.field-hint { font-size: 11px; color: var(--ec-brand-muted); margin-top: 4px; }
+.signers-label { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.section-eyebrow { font-size: 11px; font-weight: 800; letter-spacing: 0.1em; color: var(--ec-brand-teal); }
+.add-signer-btn { background: none; border: 1px solid var(--ec-brand-teal); border-radius: 6px; padding: 4px 12px; font-size: 12px; font-weight: 600; color: var(--ec-brand-teal); cursor: pointer; }
+.add-signer-btn:hover { background: var(--ec-brand-teal-bg); }
+.signer-row { background: var(--ec-brand-teal-bg); border: 1px solid var(--ec-brand-teal-border); border-radius: 8px; padding: 14px; margin-bottom: 10px; }
+.signer-row-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.signer-num { font-size: 12px; font-weight: 700; color: var(--ec-brand-teal); }
+.remove-btn { background: none; border: none; font-size: 12px; color: #dc2626; cursor: pointer; }
+.signer-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.btn-cancel { background: none; border: 1px solid #e5e7eb; border-radius: 8px; padding: 9px 18px; font-size: 13px; font-weight: 600; color: var(--ec-brand-muted); cursor: pointer; }
+.btn-cancel:hover { border-color: #9ca3af; }
+.btn-primary { background: var(--ec-brand-teal); color: #fff; border: none; border-radius: 8px; padding: 9px 18px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.btn-primary:hover { background: var(--ec-brand-teal-mid); }
+.btn-primary:disabled, .btn-cancel:disabled { opacity: 0.5; cursor: not-allowed; }

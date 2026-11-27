@@ -20,10 +20,10 @@
 }
 
 .qed-hint_up {
-  background: #ebf4f3;
-  border: 1px solid #c0deda;
+  background: var(--ec-brand-teal-bg, #ebf4f3);
+  border: 1px solid var(--ec-brand-teal-border, #c0deda);
   border-radius: 6px;
-  color: #1f5f5b;
+  color: var(--ec-brand-teal, #1f5f5b);
   font-size: 12px;
   padding: 8px 10px;
 }
@@ -41,8 +41,8 @@
   flex-wrap: wrap;
   gap: 6px;
   padding: 6px 8px;
-  background: #ebf4f3;
-  border: 1px solid #4fb893;
+  background: var(--ec-brand-teal-bg, #ebf4f3);
+  border: 1px solid var(--ec-brand-teal-light, #4f9b93);
   border-radius: 8px;
 }
 
@@ -51,9 +51,9 @@
   align-items: center;
   gap: 4px;
   background: #fff;
-  border: 1px solid #4fb893;
+  border: 1px solid var(--ec-brand-teal-light, #4f9b93);
   border-radius: 20px;
-  color: #1f5f5b;
+  color: var(--ec-brand-teal, #1f5f5b);
   font-size: 12px;
   font-weight: 600;
   padding: 2px 8px;
@@ -80,7 +80,7 @@
   padding: 6px 10px;
   width: 100%;
 }
-.qed-search:focus { border-color: #1f5f5b; outline: none; }
+.qed-search:focus { border-color: var(--ec-brand-teal, #1f5f5b); outline: none; }
 
 /* Field list — native buttons, no LWC component overhead */
 .qed-field-list {
@@ -106,9 +106,9 @@
   width: 100%;
 }
 .qed-field-row:last-child { border-bottom: none; }
-.qed-field-row:hover { background: #ebf4f3; }
+.qed-field-row:hover { background: var(--ec-brand-teal-bg, #ebf4f3); }
 
-.qed-field-label { color: #2b2b29; flex: 1; font-size: 13px; }
+.qed-field-label { color: var(--ec-brand-ink, #2b2b29); flex: 1; font-size: 13px; }
 
 .qed-field-api {
   color: #6b7280;
@@ -128,6 +128,85 @@
   align-items: flex-end;
 }
 .qed-row-inline > * { flex: 1; }
+
+/* Multi-column sort rows */
+.qed-sort-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.qed-sort-row > lightning-combobox { flex: 1; }
+
+.qed-sort-remove {
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0 4px;
+}
+.qed-sort-remove:hover { color: #c0392b; }
+
+.qed-sort-add {
+  background: none;
+  border: none;
+  color: var(--ec-brand-teal, #1f5f5b);
+  cursor: pointer;
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  padding: 2px 0;
+}
+.qed-sort-add:hover { text-decoration: underline; }
+
+/* Relationship field groups */
+.qed-rel-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.qed-rel-group {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.qed-rel-group-header {
+  align-items: center;
+  background: #f9fafb;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  padding: 7px 10px;
+  text-align: left;
+  width: 100%;
+}
+.qed-rel-group-header:hover { background: var(--ec-brand-teal-bg, #ebf4f3); }
+
+.qed-rel-group-label {
+  color: var(--ec-brand-teal, #1f5f5b);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.qed-rel-toggle {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.qed-rel-field-list {
+  border: none;
+  border-radius: 0;
+  border-top: 1px solid #e5e7eb;
+  max-height: 160px;
+}
 
 /* SOQL preview */
 .qed-soql-preview {

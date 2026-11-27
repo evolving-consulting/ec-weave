@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <description>A single template entry within a Weave Document Packet, with its page order and record-resolution strategy.</description>
+    <enableHistory>false</enableHistory>
+    <enableReports>true</enableReports>
+    <label>Weave Packet Item</label>
+    <nameField>
+        <label>Weave Packet Item Name</label>
+        <displayFormat>PKT-{0000}</displayFormat>
+        <type>AutoNumber</type>
+    </nameField>
+    <pluralLabel>Weave Packet Items</pluralLabel>
+    <sharingModel>ControlledByParent</sharingModel>
+</CustomObject>

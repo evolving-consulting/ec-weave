@@ -1,0 +1,170 @@
+<apex:page controller="McnTemplatePublisherController"
+    title="Publish to Marketing Cloud Next"
+    showHeader="true"
+    sidebar="false"
+    docType="html-5.0">
+
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f9fafb; }
+        .mcn-page { max-width: 800px; margin: 2rem auto; padding: 0 1.5rem; }
+        .mcn-header { margin-bottom: 1.5rem; }
+        .mcn-eyebrow { font-size: 11px; font-weight: 800; letter-spacing: 0.1em; color: #1f5f5b; text-transform: uppercase; margin-bottom: 6px; }
+        .mcn-title { font-size: 24px; font-weight: 700; color: #2b2b29; }
+        .mcn-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 1.5rem; margin-bottom: 1.5rem; }
+        .mcn-card-title { font-size: 13px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 1rem; }
+        .mcn-status-row { display: flex; gap: 2rem; margin-bottom: 1rem; }
+        .mcn-status-item label { font-size: 11px; font-weight: 700; color: #6b7280; display: block; margin-bottom: 2px; }
+        .mcn-status-item span { font-size: 13px; color: #2b2b29; }
+        .pill { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .pill-published { background: #d1fae5; color: #065f46; }
+        .pill-draft     { background: #fef3c7; color: #92400e; }
+        .pill-error     { background: #fee2e2; color: #991b1b; }
+        .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 1rem; }
+        .btn-primary { background: #1f5f5b; color: #fff; border: none; border-radius: 8px; padding: 9px 18px; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .btn-primary:hover { background: #2d7a73; }
+        .btn-secondary { background: transparent; color: #1f5f5b; border: 1px solid #1f5f5b; border-radius: 8px; padding: 9px 18px; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .btn-secondary:hover { background: #ebf4f3; }
+        .btn-danger { background: transparent; color: #dc2626; border: 1px solid #dc2626; border-radius: 8px; padding: 9px 18px; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .alert { border-radius: 8px; padding: 12px 16px; margin-bottom: 1rem; font-size: 13px; }
+        .alert-success { background: #d1fae5; border: 1px solid #6ee7b7; color: #065f46; }
+        .alert-error { background: #fef2f2; border: 1px solid #fca5a5; color: #991b1b; }
+        .alert-info { background: #ebf4f3; border: 1px solid #c0deda; color: #1f5f5b; }
+        .val-list { margin: 0; padding-left: 1.25rem; }
+        .val-list li { margin-bottom: 4px; }
+        .mcn-asset-link { color: #1f5f5b; font-size: 12px; word-break: break-all; }
+        .section-divider { border: none; border-top: 1px solid #e5e7eb; margin: 1.25rem 0; }
+    </style>
+
+    <apex:form >
+    <div class="mcn-page">
+        <!-- Header -->
+        <div class="mcn-header">
+            <p class="mcn-eyebrow">Weave · Marketing Cloud Next</p>
+            <h1 class="mcn-title">
+                <apex:outputText value="{!template.Name}" rendered="{!NOT(ISNULL(template))}" />
+                <apex:outputText value="Publish to MCN" rendered="{!ISNULL(template)}" />
+            </h1>
+        </div>
+
+        <!-- Status messages -->
+        <apex:outputPanel rendered="{!isSuccess}">
+            <div class="alert alert-success">&#x2713; {!statusMessage}</div>
+        </apex:outputPanel>
+        <apex:outputPanel rendered="{!hasError && !isSuccess}">
+            <div class="alert alert-error">&#x26A0; {!statusMessage}</div>
+        </apex:outputPanel>
+
+        <!-- Template status card -->
+        <apex:outputPanel rendered="{!NOT(ISNULL(template))}">
+            <div class="mcn-card">
+                <p class="mcn-card-title">Template Status</p>
+                <div class="mcn-status-row">
+                    <div class="mcn-status-item">
+                        <label>Weave Status</label>
+                        <span>{!template.Status__c}</span>
+                    </div>
+                    <div class="mcn-status-item">
+                        <label>MCN Publish Status</label>
+                        <span>
+                            <apex:outputText value="{!template.SFMC_Publish_Status__c}" />
+                        </span>
+                    </div>
+                    <apex:outputPanel rendered="{!isPublished}">
+                        <div class="mcn-status-item">
+                            <label>MCN Asset ID</label>
+                            <span class="mcn-asset-link">{!template.SFMC_Template_ID__c}</span>
+                        </div>
+                    </apex:outputPanel>
+                    <apex:outputPanel rendered="{!NOT(ISNULL(template.SFMC_Last_Published__c))}">
+                        <div class="mcn-status-item">
+                            <label>Last Published</label>
+                            <span><apex:outputText value="{0,date,MM/dd/yyyy HH:mm}"><apex:param value="{!template.SFMC_Last_Published__c}" /></apex:outputText></span>
+                        </div>
+                    </apex:outputPanel>
+                </div>
+
+                <apex:outputPanel rendered="{!NOT(ISNULL(template.SFMC_Last_Error__c))}">
+                    <div class="alert alert-error" style="margin-top:0.5rem">
+                        <strong>Last Error:</strong> {!template.SFMC_Last_Error__c}
+                    </div>
+                </apex:outputPanel>
+
+                <hr class="section-divider" />
+
+                <!-- Action buttons -->
+                <div class="btn-row">
+                    <apex:outputPanel rendered="{!NOT(isPublished)}">
+                        <apex:commandButton value="Publish to MCN" action="{!doPublish}" styleClass="btn-primary" />
+                    </apex:outputPanel>
+                    <apex:outputPanel rendered="{!isPublished}">
+                        <apex:commandButton value="Update MCN Asset" action="{!doUpdate}" styleClass="btn-primary" />
+                        <apex:commandButton value="Check for Conflicts" action="{!doCheckConflict}" styleClass="btn-secondary" />
+                        <apex:commandButton value="Delete from MCN" action="{!doDelete}" styleClass="btn-danger"
+                            onclick="return confirm('Delete the MCN asset? The Weave template will be retained.');" />
+                    </apex:outputPanel>
+                    <apex:commandButton value="Validate" action="{!doValidate}" styleClass="btn-secondary" />
+                </div>
+            </div>
+
+            <!-- Conflict result -->
+            <apex:outputPanel rendered="{!NOT(ISNULL(conflictResult))}">
+                <div class="mcn-card">
+                    <p class="mcn-card-title">Conflict Check Result</p>
+                    <apex:outputPanel rendered="{!hasConflict}">
+                        <div class="alert alert-error">
+                            <strong>Conflict Detected</strong><br/>
+                            {!conflictResult.message}<br/>
+                            <small>Local hash: {!conflictResult.localHash}</small><br/>
+                            <small>Remote hash: {!conflictResult.remoteHash}</small>
+                        </div>
+                        <div class="btn-row">
+                            <apex:commandButton value="Overwrite MCN with Local Version" action="{!doUpdate}" styleClass="btn-primary" />
+                        </div>
+                    </apex:outputPanel>
+                    <apex:outputPanel rendered="{!NOT(hasConflict)}">
+                        <div class="alert alert-success">{!conflictResult.message}</div>
+                    </apex:outputPanel>
+                </div>
+            </apex:outputPanel>
+
+            <!-- Validation result -->
+            <apex:outputPanel rendered="{!NOT(ISNULL(validationResult))}">
+                <div class="mcn-card">
+                    <p class="mcn-card-title">Validation Results</p>
+                    <apex:outputPanel rendered="{!validationResult.isValid}">
+                        <div class="alert alert-success">All checks passed. Ready to publish.</div>
+                    </apex:outputPanel>
+                    <apex:outputPanel rendered="{!NOT(validationResult.isValid)}">
+                        <div class="alert alert-error">
+                            <strong>Errors ({!validationResult.errors.size})</strong>
+                            <ul class="val-list">
+                                <apex:repeat value="{!validationResult.errors}" var="err">
+                                    <li>{!err}</li>
+                                </apex:repeat>
+                            </ul>
+                        </div>
+                    </apex:outputPanel>
+                    <apex:outputPanel rendered="{!NOT(ISNULL(validationResult.warnings)) && validationResult.warnings.size != 0}">
+                        <div class="alert alert-info">
+                            <strong>Warnings ({!validationResult.warnings.size})</strong>
+                            <ul class="val-list">
+                                <apex:repeat value="{!validationResult.warnings}" var="warn">
+                                    <li>{!warn}</li>
+                                </apex:repeat>
+                            </ul>
+                        </div>
+                    </apex:outputPanel>
+                </div>
+            </apex:outputPanel>
+        </apex:outputPanel>
+
+        <apex:outputPanel rendered="{!ISNULL(template)}">
+            <div class="mcn-card">
+                <p class="mcn-card-title">No Template Loaded</p>
+                <p style="color:#6b7280;font-size:13px">Pass a Weave_Template_Config__c record ID as the <code>id</code> URL parameter.</p>
+            </div>
+        </apex:outputPanel>
+    </div>
+    </apex:form>
+
+</apex:page>

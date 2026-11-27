@@ -1,0 +1,103 @@
+<template>
+    <div class="sender-modal" if:true={isOpen}>
+        <div class="modal-backdrop" onclick={handleClose}></div>
+        <div class="modal-panel">
+            <div class="modal-header">
+                <div>
+                    <p class="modal-eyebrow">WEAVE E-SIGNATURE</p>
+                    <h2 class="modal-title">Send for Signature</h2>
+                </div>
+                <button class="modal-close" onclick={handleClose}>&#x2715;</button>
+            </div>
+
+            <div if:true={errorMessage} class="error-banner">
+                <span>{errorMessage}</span>
+                <button onclick={clearError} class="dismiss-btn">&#x2715;</button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Signing mode -->
+                <div class="field-group">
+                    <lightning-combobox
+                        label="Signing Mode"
+                        value={signingMode}
+                        options={signingModeOptions}
+                        onchange={handleModeChange}>
+                    </lightning-combobox>
+                    <p class="field-hint">Parallel: all signers receive invites at once. Sequential: each signer is notified only after the previous one signs.</p>
+                </div>
+
+                <div class="field-group">
+                    <lightning-input
+                        type="number"
+                        label="Expiry (days)"
+                        value={expiryDays}
+                        min="1"
+                        max="365"
+                        data-field="expiryDays"
+                        onchange={handleInputChange}>
+                    </lightning-input>
+                </div>
+
+                <!-- Signers -->
+                <div class="signers-label">
+                    <span class="section-eyebrow">SIGNERS</span>
+                    <button class="add-signer-btn" onclick={addSigner}>+ Add Signer</button>
+                </div>
+
+                <template for:each={signers} for:item="signer" for:index="index">
+                    <div key={signer.key} class="signer-row">
+                        <div class="signer-row-header">
+                            <span class="signer-num">Signer {signer.displayOrder}</span>
+                            <button class="remove-btn" data-index={index} onclick={removeSigner}>Remove</button>
+                        </div>
+                        <div class="signer-fields">
+                            <lightning-input
+                                label="Name"
+                                value={signer.name}
+                                data-index={index}
+                                data-field="name"
+                                onchange={handleSignerChange}>
+                            </lightning-input>
+                            <lightning-input
+                                type="email"
+                                label="Email"
+                                value={signer.email}
+                                data-index={index}
+                                data-field="email"
+                                onchange={handleSignerChange}>
+                            </lightning-input>
+                            <lightning-input
+                                label="Role (matches template tag)"
+                                value={signer.role}
+                                placeholder="e.g. Buyer, Seller"
+                                data-index={index}
+                                data-field="role"
+                                onchange={handleSignerChange}>
+                            </lightning-input>
+                            <template if:true={isSequential}>
+                                <lightning-input
+                                    type="number"
+                                    label="Sign Order"
+                                    value={signer.signOrder}
+                                    min="1"
+                                    data-index={index}
+                                    data-field="signOrder"
+                                    onchange={handleSignerChange}>
+                                </lightning-input>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick={handleClose} disabled={isLoading}>Cancel</button>
+                <button class="btn-primary" onclick={handleSend} disabled={isLoading}>
+                    <template if:false={isLoading}>Send for Signature</template>
+                    <template if:true={isLoading}>Sending…</template>
+                </button>
+            </div>
+        </div>
+    </div>
+</template>

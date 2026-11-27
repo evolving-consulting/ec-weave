@@ -5,8 +5,12 @@ import getRelatedAttachments from '@salesforce/apex/WeaveEmailTemplateController
 import renderEmail from '@salesforce/apex/WeaveEmailTemplateController.renderEmail';
 import sendEmail from '@salesforce/apex/WeaveEmailTemplateController.sendEmail';
 import scheduleEmail from '@salesforce/apex/WeaveEmailTemplateController.scheduleEmail';
+import scheduleRecurringEmail from '@salesforce/apex/WeaveEmailTemplateController.scheduleRecurringEmail';
 import getObjectApiNameFromRecordId from '@salesforce/apex/WeaveEmailTemplateController.getObjectApiNameFromRecordId';
 import getRecordSummary from '@salesforce/apex/WeaveEmailTemplateController.getRecordSummary';
+import getActiveSegments from '@salesforce/apex/WeaveEmailTemplateController.getActiveSegments';
+import resolveSegmentRecipients from '@salesforce/apex/WeaveEmailTemplateController.resolveSegmentRecipients';
+import generatePdf from '@salesforce/apex/WeaveEmailTemplateController.generatePdf';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import { CloseActionScreenEvent } from 'lightning/actions';
 import { RefreshEvent } from 'lightning/refresh';
@@ -22,6 +26,8 @@ const VIEW_COMPOSE = 'compose';
 const VIEW_PREVIEW = 'preview';
 const EMAIL_FONT_FAMILY = '"Salesforce Sans", Arial, sans-serif';
 const EMAIL_FONT_SIZE = '13px';
+const TAB_COMPOSE = 'compose';
+const TAB_SCHEDULE = 'schedule';
 
 export default class WeaveEmailComposer extends LightningElement {
     _recordId;
@@ -85,13 +91,121 @@ export default class WeaveEmailComposer extends LightningElement {
     @track isScheduling = false;
     @track sendComplete = false;
     @track showManualRecipientForm = false;
-    @track showSchedulePanel = false;
-    @track scheduledDateTime = '';
     @track recordSummary = {};
     @track currentView = VIEW_COMPOSE;
     @track sectionCollapsed = { recipients: true, attachments: true, subject: true, message: false };
+    @track segments = [];
+    @track selectedSegmentId = '';
+    @track isLoadingSegment = false;
+    @track isGeneratingPdf = false;
+    @track pdfContentDocumentId = '';
+
+    // Tab state
+    @track activeTab = TAB_COMPOSE;
+
+    // Schedule — once
+    @track scheduleType = 'once';
+    @track scheduleDate = '';
+    @track scheduleTime = '09:00';
+
+    // Schedule — recurring
+    @track recurringDays = [];
+    @track recurringTime = '09:00';
+    @track recurringStartDate = '';
+    @track recurringEndType = 'noEnd';
+    @track recurringEndDate = '';
+    @track recurringMaxSends = '';
 
     manualRecipientCounter = 0;
+
+    // ─── Tab ───────────────────────────────────────────────────────────────────
+
+    get isComposeTab() { return this.activeTab === TAB_COMPOSE; }
+    get isScheduleTab() { return this.activeTab === TAB_SCHEDULE; }
+
+    get composeTabClass() {
+        return 'composer-tab-btn' + (this.activeTab === TAB_COMPOSE ? ' composer-tab-btn--active' : '');
+    }
+
+    get scheduleTabClass() {
+        return 'composer-tab-btn' + (this.activeTab === TAB_SCHEDULE ? ' composer-tab-btn--active' : '');
+    }
+
+    handleSelectComposeTab() { this.activeTab = TAB_COMPOSE; }
+    handleSelectScheduleTab() { this.activeTab = TAB_SCHEDULE; }
+
+    // ─── Schedule options ──────────────────────────────────────────────────────
+
+    get scheduleTypeOptions() {
+        return [
+            { label: 'Send Once', value: 'once' },
+            { label: 'Recurring', value: 'recurring' }
+        ];
+    }
+
+    get dayOfWeekOptions() {
+        return [
+            { label: 'Sun', value: 'sun' },
+            { label: 'Mon', value: 'mon' },
+            { label: 'Tue', value: 'tue' },
+            { label: 'Wed', value: 'wed' },
+            { label: 'Thu', value: 'thu' },
+            { label: 'Fri', value: 'fri' },
+            { label: 'Sat', value: 'sat' }
+        ];
+    }
+
+    get recurringEndTypeOptions() {
+        return [
+            { label: 'No end date', value: 'noEnd' },
+            { label: 'End by date', value: 'endDate' },
+            { label: 'Stop after X sends', value: 'maxSends' }
+        ];
+    }
+
+    get isScheduleOnce() { return this.scheduleType === 'once'; }
+    get isScheduleRecurring() { return this.scheduleType === 'recurring'; }
+    get isEndByDate() { return this.recurringEndType === 'endDate'; }
+    get isEndByMaxSends() { return this.recurringEndType === 'maxSends'; }
+
+    get minScheduleDate() {
+        const d = new Date();
+        const pad = (n) => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    }
+
+    get disableScheduleOnceButton() {
+        return this.disableSendButton || !this.scheduleDate || !this.scheduleTime;
+    }
+
+    get disableScheduleRecurringButton() {
+        return (
+            this.disableSendButton ||
+            this.recurringDays.length === 0 ||
+            !this.recurringTime ||
+            !this.recurringStartDate ||
+            (this.isEndByDate && !this.recurringEndDate) ||
+            (this.isEndByMaxSends && (!this.recurringMaxSends || Number(this.recurringMaxSends) < 1))
+        );
+    }
+
+    get disableScheduleButton() {
+        return this.isScheduleOnce ? this.disableScheduleOnceButton : this.disableScheduleRecurringButton;
+    }
+
+    // ─── Schedule handlers ─────────────────────────────────────────────────────
+
+    handleScheduleTypeChange(event) { this.scheduleType = event.detail.value; }
+    handleScheduleDateChange(event) { this.scheduleDate = event.detail.value; this.clearError(); }
+    handleScheduleTimeChange(event) { this.scheduleTime = event.detail.value; this.clearError(); }
+    handleRecurringDaysChange(event) { this.recurringDays = event.detail.value; this.clearError(); }
+    handleRecurringTimeChange(event) { this.recurringTime = event.detail.value; this.clearError(); }
+    handleRecurringStartDateChange(event) { this.recurringStartDate = event.detail.value; this.clearError(); }
+    handleRecurringEndTypeChange(event) { this.recurringEndType = event.detail.value; this.clearError(); }
+    handleRecurringEndDateChange(event) { this.recurringEndDate = event.detail.value; this.clearError(); }
+    handleRecurringMaxSendsChange(event) { this.recurringMaxSends = event.detail.value; this.clearError(); }
+
+    // ─── Section collapse ──────────────────────────────────────────────────────
 
     get isRecipientsCollapsed() { return this.sectionCollapsed.recipients; }
     get isAttachmentsCollapsed() { return this.sectionCollapsed.attachments; }
@@ -114,6 +228,8 @@ export default class WeaveEmailComposer extends LightningElement {
         this.sectionCollapsed = { ...this.sectionCollapsed, [section]: !this.sectionCollapsed[section] };
     }
 
+    // ─── Template / record ─────────────────────────────────────────────────────
+
     get templateOptions() {
         return this.templates.map((template) => ({
             label: template.name,
@@ -121,58 +237,27 @@ export default class WeaveEmailComposer extends LightningElement {
         }));
     }
 
-    get hasTemplates() {
-        return this.templates.length > 0;
-    }
-
-    get hasMultipleTemplates() {
-        return this.templates.length > 1;
-    }
-
-    get hasSelectedTemplate() {
-        return Boolean(this.effectiveTemplateId);
-    }
-
-    get isComposeView() {
-        return this.hasSelectedTemplate;
-    }
-
-    get hasNoTemplates() {
-        return !this.isLoading && this.templates.length === 0 && !this.errorMessage;
-    }
-
-    get showAutoSelectedBadge() {
-        return this.templates.length === 1 && Boolean(this.selectedTemplateId);
-    }
-
-    get selectedTemplateName() {
-        return this.selectedTemplate?.name || 'Select a template';
-    }
+    get hasTemplates() { return this.templates.length > 0; }
+    get hasMultipleTemplates() { return this.templates.length > 1; }
+    get hasSelectedTemplate() { return Boolean(this.effectiveTemplateId); }
+    get isComposeView() { return this.hasSelectedTemplate; }
+    get hasNoTemplates() { return !this.isLoading && this.templates.length === 0 && !this.errorMessage; }
+    get showAutoSelectedBadge() { return this.templates.length === 1 && Boolean(this.selectedTemplateId); }
+    get selectedTemplateName() { return this.selectedTemplate?.name || 'Select a template'; }
 
     get templateContextLine() {
-        if (!this.selectedTemplate) {
-            return 'Choose a template to generate this email.';
-        }
+        if (!this.selectedTemplate) return 'Choose a template to generate this email.';
         return this.selectedTemplate.parentObjectApiName
             ? `Used for ${this.selectedTemplate.parentObjectApiName}`
             : 'Configuration-driven email template';
     }
 
-    get recordDisplayName() {
-        return this.recordSummary?.recordName || this.effectiveRecordId || 'Current record';
-    }
+    get recordDisplayName() { return this.recordSummary?.recordName || this.effectiveRecordId || 'Current record'; }
+    get recordContextLine() { return this.recordSummary?.objectLabel || this.objectApiName || 'Record context'; }
+    get showSelectedTemplateDescription() { return this.selectedTemplate?.description; }
+    get showSelectedTemplateSubject() { return this.selectedTemplate?.subjectTemplate; }
 
-    get recordContextLine() {
-        return this.recordSummary?.objectLabel || this.objectApiName || 'Record context';
-    }
-
-    get showSelectedTemplateDescription() {
-        return this.selectedTemplate?.description;
-    }
-
-    get showSelectedTemplateSubject() {
-        return this.selectedTemplate?.subjectTemplate;
-    }
+    // ─── Recipients ────────────────────────────────────────────────────────────
 
     get configuredRecipients() {
         return this.recipients.filter((recipient) => recipient.sourceType !== 'Manual');
@@ -202,17 +287,9 @@ export default class WeaveEmailComposer extends LightningElement {
         );
     }
 
-    get toRecipientCards() {
-        return this.selectedToRecipients.map((recipient) => this.toRecipientCard(recipient));
-    }
-
-    get ccRecipientCards() {
-        return this.selectedCcRecipients.map((recipient) => this.toRecipientCard(recipient));
-    }
-
-    get bccRecipientCards() {
-        return this.selectedBccRecipients.map((recipient) => this.toRecipientCard(recipient));
-    }
+    get toRecipientCards() { return this.selectedToRecipients.map((r) => this.toRecipientCard(r)); }
+    get ccRecipientCards() { return this.selectedCcRecipients.map((r) => this.toRecipientCard(r)); }
+    get bccRecipientCards() { return this.selectedBccRecipients.map((r) => this.toRecipientCard(r)); }
 
     get availableRecipientCards() {
         return this.configuredRecipients
@@ -223,21 +300,10 @@ export default class WeaveEmailComposer extends LightningElement {
             }));
     }
 
-    get hasAvailableRecipients() {
-        return this.availableRecipientCards.length > 0;
-    }
-
-    get hasSelectedToRecipient() {
-        return this.selectedToRecipients.length > 0;
-    }
-
-    get hasRecipientOptions() {
-        return this.configuredRecipients.length > 0;
-    }
-
-    get hasNoRecipientOptions() {
-        return !this.isLoading && !this.hasRecipientOptions;
-    }
+    get hasAvailableRecipients() { return this.availableRecipientCards.length > 0; }
+    get hasSelectedToRecipient() { return this.selectedToRecipients.length > 0; }
+    get hasRecipientOptions() { return this.configuredRecipients.length > 0; }
+    get hasNoRecipientOptions() { return !this.isLoading && !this.hasRecipientOptions; }
 
     get recipientTypeOptions() {
         return [
@@ -247,53 +313,23 @@ export default class WeaveEmailComposer extends LightningElement {
         ];
     }
 
-    get hasAttachments() {
-        return this.attachments.length > 0;
-    }
+    // ─── Attachments ───────────────────────────────────────────────────────────
 
-    get selectedAttachments() {
-        return this.attachments.filter((attachment) => attachment.selected === true);
-    }
+    get hasAttachments() { return this.attachments.length > 0; }
+    get selectedAttachments() { return this.attachments.filter((a) => a.selected === true); }
+    get selectedAttachmentCount() { return this.selectedAttachments.length; }
+    get hasSelectedAttachments() { return this.selectedAttachments.length > 0; }
 
-    get selectedAttachmentCount() {
-        return this.selectedAttachments.length;
-    }
+    get toRecipientEmails() { return this.selectedToRecipients.map((r) => r.email); }
+    get ccRecipientEmails() { return this.selectedCcRecipients.map((r) => r.email); }
+    get bccRecipientEmails() { return this.selectedBccRecipients.map((r) => r.email); }
+    get hasCcRecipients() { return this.ccRecipientEmails.length > 0; }
+    get hasBccRecipients() { return this.bccRecipientEmails.length > 0; }
+    get ccRecipientDisplay() { return this.hasCcRecipients ? this.ccRecipientEmails.join(', ') : 'None'; }
+    get bccRecipientDisplay() { return this.hasBccRecipients ? this.bccRecipientEmails.join(', ') : 'None'; }
+    get toRecipientDisplay() { return this.toRecipientEmails.length ? this.toRecipientEmails.join(', ') : 'None'; }
 
-    get hasSelectedAttachments() {
-        return this.selectedAttachments.length > 0;
-    }
-
-    get toRecipientEmails() {
-        return this.selectedToRecipients.map((recipient) => recipient.email);
-    }
-
-    get ccRecipientEmails() {
-        return this.selectedCcRecipients.map((recipient) => recipient.email);
-    }
-
-    get bccRecipientEmails() {
-        return this.selectedBccRecipients.map((recipient) => recipient.email);
-    }
-
-    get hasCcRecipients() {
-        return this.ccRecipientEmails.length > 0;
-    }
-
-    get hasBccRecipients() {
-        return this.bccRecipientEmails.length > 0;
-    }
-
-    get ccRecipientDisplay() {
-        return this.hasCcRecipients ? this.ccRecipientEmails.join(', ') : 'None';
-    }
-
-    get bccRecipientDisplay() {
-        return this.hasBccRecipients ? this.bccRecipientEmails.join(', ') : 'None';
-    }
-
-    get toRecipientDisplay() {
-        return this.toRecipientEmails.length ? this.toRecipientEmails.join(', ') : 'None';
-    }
+    // ─── Send state ────────────────────────────────────────────────────────────
 
     get disableSendButton() {
         return (
@@ -307,27 +343,7 @@ export default class WeaveEmailComposer extends LightningElement {
         );
     }
 
-    get disableScheduleSendButton() {
-        return this.disableSendButton || !this.scheduledDateTime;
-    }
-
-    get sendLaterButtonLabel() {
-        return this.showSchedulePanel ? 'Cancel Schedule' : 'Send Later';
-    }
-
-    get sendLaterButtonIcon() {
-        return this.showSchedulePanel ? 'utility:close' : 'utility:clock';
-    }
-
-    get minScheduleDateTime() {
-        const min = new Date(Date.now() + 5 * 60 * 1000);
-        const pad = (n) => String(n).padStart(2, '0');
-        return `${min.getFullYear()}-${pad(min.getMonth() + 1)}-${pad(min.getDate())}T${pad(min.getHours())}:${pad(min.getMinutes())}`;
-    }
-
-    get disablePreviewButton() {
-        return this.disableSendButton;
-    }
+    get disablePreviewButton() { return this.disableSendButton; }
 
     get effectiveTemplateId() {
         return this.selectedTemplateId || this.selectedTemplate?.id || this.templateId || null;
@@ -338,25 +354,33 @@ export default class WeaveEmailComposer extends LightningElement {
         return value ? String(value).trim() : null;
     }
 
-    get isFlowMode() {
-        return this.flowMode === true || this.flowMode === 'true';
+    get isFlowMode() { return this.flowMode === true || this.flowMode === 'true'; }
+    get isQuickActionMode() { return !this.isFlowMode; }
+    get shouldFinishFlowOnSend() { return this.finishFlowOnSend === true || this.finishFlowOnSend === 'true'; }
+    get hasManualRecipients() { return this.manualRecipients.length > 0; }
+
+    get segmentOptions() {
+        const opts = [{ label: '-- Load from Segment --', value: '' }];
+        this.segments.forEach(s => opts.push({ label: s.Name, value: s.Id }));
+        return opts;
     }
 
-    get isQuickActionMode() {
-        return !this.isFlowMode;
+    get hasSegments() { return this.segments.length > 0; }
+
+    get showPdfButtons() {
+        return this.selectedTemplate?.templateOutputType === 'Both';
     }
 
-    get shouldFinishFlowOnSend() {
-        return this.finishFlowOnSend === true || this.finishFlowOnSend === 'true';
-    }
-
-    get hasManualRecipients() {
-        return this.manualRecipients.length > 0;
+    get pdfDownloadUrl() {
+        if (!this.pdfContentDocumentId) return '#';
+        return '/sfc/servlet.shepherd/document/download/' + this.pdfContentDocumentId;
     }
 
     get hasBlankRenderedContent() {
         return !this.isLoading && (!this.renderedSubject || !this.renderedBody);
     }
+
+    // ─── Lifecycle ─────────────────────────────────────────────────────────────
 
     connectedCallback() {
         this._isConnected = true;
@@ -364,9 +388,7 @@ export default class WeaveEmailComposer extends LightningElement {
     }
 
     async initializeWhenReady() {
-        if (!this._isConnected || this._hasInitialized) {
-            return;
-        }
+        if (!this._isConnected || this._hasInitialized) return;
 
         const providedRecordId = this._recordId || this.flowRecordId || this._pageReferenceRecordId;
         if (providedRecordId && !this._recordId) {
@@ -424,6 +446,7 @@ export default class WeaveEmailComposer extends LightningElement {
         try {
             const templates = await getAvailableTemplates({ parentObjectApiName: this.objectApiName });
             this.templates = templates || [];
+            this.loadSegments();
 
             const flowTemplate = this.templateId ? this.templates.find((t) => t.id === this.templateId) : null;
             const currentTemplate = currentTemplateId ? this.templates.find((t) => t.id === currentTemplateId) : null;
@@ -568,6 +591,8 @@ export default class WeaveEmailComposer extends LightningElement {
         }
     }
 
+    // ─── Recipient handlers ────────────────────────────────────────────────────
+
     handleRecipientSelectedChange(event) {
         const recipientId = event.target.dataset.id;
         const selected = event.target.checked;
@@ -678,6 +703,87 @@ export default class WeaveEmailComposer extends LightningElement {
         this.clearError();
     }
 
+    // ─── Segments ──────────────────────────────────────────────────────────────
+
+    loadSegments() {
+        const objApiName = this.objectApiName || (this.selectedTemplate && this.selectedTemplate.parentObjectApiName) || '';
+        getActiveSegments({ objectApiName: objApiName })
+            .then(result => { this.segments = result || []; })
+            .catch(() => { this.segments = []; });
+    }
+
+    handleSegmentChange(event) {
+        const segId = event.detail.value;
+        this.selectedSegmentId = segId;
+        if (!segId) return;
+        this.isLoadingSegment = true;
+        resolveSegmentRecipients({ segmentId: segId })
+            .then(resolved => {
+                if (resolved && resolved.length > 0) {
+                    const existing = new Set(this.allSelectedRecipients.map(r => (r.email || '').toLowerCase()));
+                    const toAdd = resolved.filter(r => r.email && !existing.has(r.email.toLowerCase()));
+                    this.manualRecipients = [...this.manualRecipients, ...toAdd.map(r => ({
+                        ...r,
+                        id: 'seg-' + (++this.manualRecipientCounter) + '-' + (r.id || r.email)
+                    }))];
+                    this.dispatchEvent(new ShowToastEvent({ title: 'Segment Loaded', message: toAdd.length + ' recipient(s) added.', variant: 'success' }));
+                } else {
+                    this.dispatchEvent(new ShowToastEvent({ title: 'No Recipients', message: 'No matching recipients found in this segment.', variant: 'warning' }));
+                }
+                this.selectedSegmentId = '';
+            })
+            .catch(err => {
+                this.dispatchEvent(new ShowToastEvent({ title: 'Error', message: (err && err.body && err.body.message) || 'Unable to load segment.', variant: 'error' }));
+                this.selectedSegmentId = '';
+            })
+            .finally(() => { this.isLoadingSegment = false; });
+    }
+
+    // ─── PDF ───────────────────────────────────────────────────────────────────
+
+    handleSavePdf() {
+        if (!this.effectiveTemplateId || !this.effectiveRecordId) {
+            this.dispatchEvent(new ShowToastEvent({ title: 'Error', message: 'Template and record are required.', variant: 'error' }));
+            return;
+        }
+        this.isGeneratingPdf = true;
+        this.pdfContentDocumentId = '';
+        generatePdf({ templateId: this.effectiveTemplateId, recordId: this.effectiveRecordId })
+            .then(docId => {
+                this.pdfContentDocumentId = docId;
+                this.dispatchEvent(new ShowToastEvent({ title: 'PDF Saved', message: 'PDF has been saved to this record.', variant: 'success' }));
+            })
+            .catch(err => {
+                this.dispatchEvent(new ShowToastEvent({ title: 'Error', message: (err && err.body && err.body.message) || 'Unable to generate PDF.', variant: 'error' }));
+            })
+            .finally(() => { this.isGeneratingPdf = false; });
+    }
+
+    handleDownloadPdf() {
+        if (!this.effectiveTemplateId || !this.effectiveRecordId) {
+            this.dispatchEvent(new ShowToastEvent({ title: 'Error', message: 'Template and record are required.', variant: 'error' }));
+            return;
+        }
+        this.isGeneratingPdf = true;
+        this.pdfContentDocumentId = '';
+        generatePdf({ templateId: this.effectiveTemplateId, recordId: this.effectiveRecordId })
+            .then(docId => {
+                this.pdfContentDocumentId = docId;
+                const link = document.createElement('a');
+                link.href = '/sfc/servlet.shepherd/document/download/' + docId;
+                link.target = '_blank';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            })
+            .catch(err => {
+                this.dispatchEvent(new ShowToastEvent({ title: 'Error', message: (err && err.body && err.body.message) || 'Unable to generate PDF.', variant: 'error' }));
+            })
+            .finally(() => { this.isGeneratingPdf = false; });
+    }
+
+    // ─── Attachment handlers ───────────────────────────────────────────────────
+
     handleAttachmentSelectedChange(event) {
         const contentDocumentId = event.target.dataset.id;
         const selected = event.target.checked;
@@ -713,6 +819,30 @@ export default class WeaveEmailComposer extends LightningElement {
         this.clearError();
     }
 
+    // ─── Compose handlers ──────────────────────────────────────────────────────
+
+    handleSubjectChange(event) {
+        this.renderedSubject = event.detail.value;
+        this.hasManualEdits = true;
+        this.clearError();
+    }
+
+    handleBodyChange(event) {
+        this.renderedBody = this.normalizeEmailHtml(event.detail.value);
+        this.hasManualEdits = true;
+        this.clearError();
+    }
+
+    async handleRegenerate() {
+        if (this.hasManualEdits) {
+            const confirmed = window.confirm('Regenerating will overwrite your manual edits. Continue?');
+            if (!confirmed) return;
+        }
+        await this.loadPreview(true);
+    }
+
+    // ─── Send ──────────────────────────────────────────────────────────────────
+
     validateRecipients() {
         for (const recipient of this.allSelectedRecipients) {
             if (!this.isValidEmail(recipient.email)) {
@@ -736,26 +866,6 @@ export default class WeaveEmailComposer extends LightningElement {
         };
     }
 
-    handleSubjectChange(event) {
-        this.renderedSubject = event.detail.value;
-        this.hasManualEdits = true;
-        this.clearError();
-    }
-
-    handleBodyChange(event) {
-        this.renderedBody = this.normalizeEmailHtml(event.detail.value);
-        this.hasManualEdits = true;
-        this.clearError();
-    }
-
-    async handleRegenerate() {
-        if (this.hasManualEdits) {
-            const confirmed = window.confirm('Regenerating will overwrite your manual edits. Continue?');
-            if (!confirmed) return;
-        }
-        await this.loadPreview(true);
-    }
-
     validatePreview() {
         if (String(this.renderedSubject || '').trim().length === 0) {
             this.setError('Email subject is required.');
@@ -770,48 +880,12 @@ export default class WeaveEmailComposer extends LightningElement {
         return true;
     }
 
-    handleToggleSendLater() {
-        this.showSchedulePanel = !this.showSchedulePanel;
-        if (this.showSchedulePanel) {
-            const defaultTime = new Date(Date.now() + 60 * 60 * 1000);
-            const pad = (n) => String(n).padStart(2, '0');
-            this.scheduledDateTime = `${defaultTime.getFullYear()}-${pad(defaultTime.getMonth() + 1)}-${pad(defaultTime.getDate())}T${pad(defaultTime.getHours())}:${pad(defaultTime.getMinutes())}`;
-        } else {
-            this.scheduledDateTime = '';
-        }
-        this.clearError();
-    }
-
-    handleScheduledDateTimeChange(event) {
-        this.scheduledDateTime = event.detail.value;
-        this.clearError();
-    }
-
-    async handleScheduleSend() {
-        if (this.isScheduling) return;
-        this.clearError();
-        if (!this.validateRecipients() || !this.validatePreview()) return;
-
-        if (!this.scheduledDateTime) {
-            this.setError('Please select a date and time for the scheduled send.');
-            return;
-        }
-
-        const scheduledDate = new Date(this.scheduledDateTime);
-        if (isNaN(scheduledDate.getTime()) || scheduledDate <= new Date(Date.now() + 5 * 60 * 1000)) {
-            this.setError('Scheduled time must be at least 5 minutes from now.');
-            return;
-        }
-
-        const templateId = this.effectiveTemplateId;
-        const recordId = this.effectiveRecordId;
-        if (!recordId) { this.setError('Record Id is required.'); return; }
-
+    buildEmailRequest() {
         const recipientPayload = this.buildSendRecipientPayload();
         const normalizedHtmlBody = this.normalizeEmailHtml(this.renderedBody);
-        const request = {
-            templateId: templateId || null,
-            recordId,
+        return {
+            templateId: this.effectiveTemplateId || null,
+            recordId: this.effectiveRecordId,
             subject: this.renderedSubject,
             htmlBody: normalizedHtmlBody,
             toRecipients: recipientPayload.toRecipients,
@@ -820,29 +894,6 @@ export default class WeaveEmailComposer extends LightningElement {
             attachmentContentDocumentIds: this.selectedAttachments.map((a) => a.contentDocumentId),
             storeHistory: null
         };
-
-        this.isScheduling = true;
-        this.isLoading = true;
-
-        try {
-            await scheduleEmail({ request, scheduledAtMs: scheduledDate.getTime() });
-            const formattedDate = scheduledDate.toLocaleString();
-            this.showSchedulePanel = false;
-            this.scheduledDateTime = '';
-            this.showToast('Email Scheduled', `Your email is scheduled to send on ${formattedDate}.`, 'success');
-            if (this.isFlowMode && this.shouldFinishFlowOnSend) {
-                this.dispatchEvent(new FlowNavigationFinishEvent());
-            } else if (this.isQuickActionMode) {
-                try { this.dispatchEvent(new CloseActionScreenEvent()); } catch (e) { /* best-effort */ }
-            }
-        } catch (error) {
-            const message = this.getErrorMessage(error) || 'Unable to schedule email. Please contact your administrator.';
-            this.setError(message);
-            this.showToast('Unable to schedule email', message, 'error');
-        } finally {
-            this.isScheduling = false;
-            this.isLoading = false;
-        }
     }
 
     async handleSend() {
@@ -850,31 +901,13 @@ export default class WeaveEmailComposer extends LightningElement {
         this.clearError();
         if (!this.validateRecipients() || !this.validatePreview()) return;
 
-        const templateId = this.effectiveTemplateId;
         const recordId = this.effectiveRecordId;
+        if (!recordId) { this.setError('Record Id is required.'); return; }
 
-        if (!recordId) {
-            this.setError('Record Id is required.');
-            return;
-        }
-
-        const recipientPayload = this.buildSendRecipientPayload();
-        const normalizedHtmlBody = this.normalizeEmailHtml(this.renderedBody);
-        const request = {
-            templateId: templateId || null,
-            recordId,
-            subject: this.renderedSubject,
-            htmlBody: normalizedHtmlBody,
-            toRecipients: recipientPayload.toRecipients,
-            ccRecipients: recipientPayload.ccRecipients,
-            bccRecipients: recipientPayload.bccRecipients,
-            attachmentContentDocumentIds: this.selectedAttachments.map((a) => a.contentDocumentId),
-            storeHistory: null
-        };
-
+        const request = this.buildEmailRequest();
         this.isSending = true;
         this.isLoading = true;
-        this.renderedBody = normalizedHtmlBody;
+        this.renderedBody = request.htmlBody;
 
         try {
             const sendResult = await sendEmail({ request });
@@ -904,6 +937,126 @@ export default class WeaveEmailComposer extends LightningElement {
             this.isLoading = false;
         }
     }
+
+    async handleScheduleSend() {
+        if (this.isScheduling) return;
+        this.clearError();
+        if (!this.validateRecipients() || !this.validatePreview()) return;
+
+        if (this.isScheduleOnce) {
+            await this._sendOnce();
+        } else {
+            await this._sendRecurring();
+        }
+    }
+
+    async _sendOnce() {
+        if (!this.scheduleDate || !this.scheduleTime) {
+            this.setError('Please select a date and time for the scheduled send.');
+            return;
+        }
+
+        const scheduledDate = new Date(`${this.scheduleDate}T${this.scheduleTime}`);
+        if (isNaN(scheduledDate.getTime()) || scheduledDate <= new Date(Date.now() + 5 * 60 * 1000)) {
+            this.setError('Scheduled time must be at least 5 minutes from now.');
+            return;
+        }
+
+        const recordId = this.effectiveRecordId;
+        if (!recordId) { this.setError('Record Id is required.'); return; }
+
+        const request = this.buildEmailRequest();
+        this.isScheduling = true;
+        this.isLoading = true;
+
+        try {
+            await scheduleEmail({ request, scheduledAtMs: scheduledDate.getTime() });
+            const formattedDate = scheduledDate.toLocaleString();
+            this.scheduleDate = '';
+            this.scheduleTime = '09:00';
+            this.showToast('Email Scheduled', `Your email is scheduled to send on ${formattedDate}.`, 'success');
+            if (this.isFlowMode && this.shouldFinishFlowOnSend) {
+                this.dispatchEvent(new FlowNavigationFinishEvent());
+            } else if (this.isQuickActionMode) {
+                try { this.dispatchEvent(new CloseActionScreenEvent()); } catch (e) { /* best-effort */ }
+            }
+        } catch (error) {
+            const message = this.getErrorMessage(error) || 'Unable to schedule email. Please contact your administrator.';
+            this.setError(message);
+            this.showToast('Unable to schedule email', message, 'error');
+        } finally {
+            this.isScheduling = false;
+            this.isLoading = false;
+        }
+    }
+
+    async _sendRecurring() {
+        if (this.recurringDays.length === 0) {
+            this.setError('Please select at least one day of the week.');
+            return;
+        }
+        if (!this.recurringTime) {
+            this.setError('Please select a time for the recurring send.');
+            return;
+        }
+        if (!this.recurringStartDate) {
+            this.setError('Please select a start date.');
+            return;
+        }
+        if (this.isEndByDate && !this.recurringEndDate) {
+            this.setError('Please select an end date.');
+            return;
+        }
+        if (this.isEndByMaxSends && (!this.recurringMaxSends || Number(this.recurringMaxSends) < 1)) {
+            this.setError('Please enter a valid number of sends (minimum 1).');
+            return;
+        }
+
+        const recordId = this.effectiveRecordId;
+        if (!recordId) { this.setError('Record Id is required.'); return; }
+
+        const request = this.buildEmailRequest();
+        const recurringConfigJson = JSON.stringify({
+            daysOfWeek: this.recurringDays,
+            timeOfDay: this.recurringTime,
+            startDate: this.recurringStartDate,
+            endType: this.recurringEndType,
+            endDate: this.isEndByDate ? this.recurringEndDate : null,
+            maxSends: this.isEndByMaxSends ? Number(this.recurringMaxSends) : null
+        });
+
+        this.isScheduling = true;
+        this.isLoading = true;
+
+        try {
+            await scheduleRecurringEmail({ request, recurringConfigJson });
+            this.showToast(
+                'Recurring Schedule Created',
+                `Email will send on selected days starting ${this.recurringStartDate}.`,
+                'success'
+            );
+            this.recurringDays = [];
+            this.recurringStartDate = '';
+            this.recurringEndDate = '';
+            this.recurringMaxSends = '';
+            this.recurringEndType = 'noEnd';
+            this.activeTab = TAB_COMPOSE;
+            if (this.isFlowMode && this.shouldFinishFlowOnSend) {
+                this.dispatchEvent(new FlowNavigationFinishEvent());
+            } else if (this.isQuickActionMode) {
+                try { this.dispatchEvent(new CloseActionScreenEvent()); } catch (e) { /* best-effort */ }
+            }
+        } catch (error) {
+            const message = this.getErrorMessage(error) || 'Unable to create recurring schedule. Please contact your administrator.';
+            this.setError(message);
+            this.showToast('Unable to schedule email', message, 'error');
+        } finally {
+            this.isScheduling = false;
+            this.isLoading = false;
+        }
+    }
+
+    // ─── Misc ──────────────────────────────────────────────────────────────────
 
     async refreshHostRecord(recordId) {
         if (!recordId) return;

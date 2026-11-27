@@ -20,6 +20,7 @@
             <property name="finishFlowOnSend" type="Boolean" label="Finish Flow On Send" description="Finish the Flow automatically after a successful send." default="true" role="inputOnly"/>
             <property name="emailSent" type="Boolean" label="Email Sent" description="True when the email was sent successfully." role="outputOnly"/>
             <property name="cancelled" type="Boolean" label="Cancelled" description="True when the user cancelled the composer." role="outputOnly"/>
+            <property name="mcnEnabled" type="Boolean" label="Enable MCN Send" description="Show the Send via Marketing Cloud Next button in addition to the standard send." default="false" role="inputOnly"/>
         </targetConfig>
     </targetConfigs>
 </LightningComponentBundle>

@@ -1,0 +1,45 @@
+<template>
+    <div class="merge-field-helper">
+        <div class="mfh-input-row">
+            <lightning-input
+                type="text"
+                label={label}
+                value={value}
+                placeholder="e.g. {{Parent.Name}}, {{Flow.myVar}}"
+                onchange={handleInputChange}
+                class="mfh-input"
+                variant="label-hidden"
+            ></lightning-input>
+            <template if:true={showInsertButton}>
+                <button class="btn-insert" onclick={handleInsert} title="Insert this field">Insert</button>
+            </template>
+        </div>
+
+        <template if:true={hasSuggestions}>
+            <ul class="mfh-suggestions" role="listbox">
+                <template for:each={filteredSuggestions} for:item="s">
+                    <li key={s.value} class="mfh-suggestion-item" role="option"
+                        data-value={s.value} onclick={handleSuggestionClick}>
+                        <span class="suggestion-tag">{s.displayTag}</span>
+                        <span class="suggestion-label">{s.label}</span>
+                        <span class={s.badgeClass}>{s.sourceType}</span>
+                    </li>
+                </template>
+            </ul>
+        </template>
+
+        <template if:true={validationMessage}>
+            <div class={validationClass}>
+                <span class="validation-icon">{validationIcon}</span>
+                <span class="validation-text">{validationMessage}</span>
+            </div>
+        </template>
+
+        <div class="mfh-syntax-hint">
+            <span class="hint-label">Syntax:</span>
+            <code>&#123;&#123;Parent.FieldName&#125;&#125;</code>
+            <code>&#123;&#123;Flow.variableName&#125;&#125;</code>
+            <code>&#123;&#123;DataCloud.Object.Attr&#125;&#125;</code>
+        </div>
+    </div>
+</template>

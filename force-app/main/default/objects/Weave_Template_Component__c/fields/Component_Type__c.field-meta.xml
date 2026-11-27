@@ -17,6 +17,7 @@
             <value><fullName>Image</fullName><default>false</default><label>Image</label></value>
             <value><fullName>Button</fullName><default>false</default><label>Button</label></value>
             <value><fullName>HTML Block</fullName><default>false</default><label>HTML Block</label></value>
+            <value><fullName>Shape</fullName><default>false</default><label>Shape</label></value>
         </valueSetDefinition>
     </valueSet>
 </CustomField>

@@ -1,0 +1,229 @@
+<template>
+    <div class="data-source-editor">
+
+        <!-- Section header -->
+        <div class="dse-section-header">
+            <p class="dse-eyebrow">DATA SOURCES</p>
+            <h2 class="dse-title">Merge Field Sources</h2>
+            <p class="dse-subtitle">
+                Configure which data sources your template uses for
+                <code>&#123;&#123;Flow.*&#125;&#125;</code> and
+                <code>&#123;&#123;DataCloud.*&#125;&#125;</code> merge fields.
+            </p>
+        </div>
+
+        <!-- Template Channels -->
+        <div class="dse-card">
+            <p class="dse-card-title">Template Channels</p>
+            <lightning-combobox
+                label="Delivery Channels"
+                value={templateChannels}
+                options={channelOptions}
+                onchange={handleChannelsChange}
+            ></lightning-combobox>
+        </div>
+
+        <!-- Flow Variables -->
+        <div class="dse-card">
+            <div class="dse-card-header">
+                <p class="dse-card-title">Flow Variables</p>
+                <button class="btn-add-small" onclick={handleAddFlowVar} title="Add a flow variable">+ Add</button>
+            </div>
+            <p class="dse-card-hint">
+                Variables passed into this template when invoked from a Salesforce Flow.
+                Reference them in your template as <code>&#123;&#123;Flow.variableName&#125;&#125;</code>.
+            </p>
+
+            <template if:true={isLoadingFlows}>
+                <lightning-spinner alternative-text="Loading flows" size="small"></lightning-spinner>
+            </template>
+
+            <template if:false={isLoadingFlows}>
+                <template if:true={hasFlowVars}>
+                    <table class="slds-table slds-table_cell-buffer slds-table_bordered dse-table">
+                        <thead>
+                            <tr class="slds-line-height_reset">
+                                <th scope="col"><span class="slds-truncate">Variable Name</span></th>
+                                <th scope="col"><span class="slds-truncate">Source Flow (optional)</span></th>
+                                <th scope="col"><span class="slds-truncate">Merge Tag</span></th>
+                                <th scope="col"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template for:each={flowVarRows} for:item="row">
+                                <tr key={row.id} class="slds-hint-parent">
+                                    <td>
+                                        <lightning-input
+                                            label="Variable Name"
+                                            value={row.varName}
+                                            variant="label-hidden"
+                                            placeholder="e.g. promoCode"
+                                            data-id={row.id}
+                                            data-field="varName"
+                                            onchange={handleFlowVarChange}
+                                        ></lightning-input>
+                                    </td>
+                                    <td>
+                                        <lightning-combobox
+                                            label="Source Flow"
+                                            value={row.flowApiName}
+                                            options={flowOptions}
+                                            placeholder="— any flow —"
+                                            variant="label-hidden"
+                                            data-id={row.id}
+                                            data-field="flowApiName"
+                                            onchange={handleFlowVarChange}
+                                        ></lightning-combobox>
+                                    </td>
+                                    <td>
+                                        <code class="merge-tag-preview">{row.mergeTag}</code>
+                                    </td>
+                                    <td>
+                                        <button class="action-link delete-link"
+                                            data-id={row.id}
+                                            onclick={handleRemoveFlowVar}>Remove</button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </template>
+                <template if:false={hasFlowVars}>
+                    <p class="dse-empty">No flow variables configured. Click <strong>+ Add</strong> to add one.</p>
+                </template>
+            </template>
+        </div>
+
+        <!-- Data Cloud Connectors -->
+        <div class="dse-card">
+            <div class="dse-card-header">
+                <p class="dse-card-title">Data Cloud Objects</p>
+                <button class="btn-add-small" onclick={handleAddDcRef} title="Add a Data Cloud reference">+ Add</button>
+            </div>
+            <p class="dse-card-hint">
+                Attributes from Data Cloud objects resolved at send time.
+                Reference them as <code>&#123;&#123;DataCloud.ObjectApiName.AttributeName&#125;&#125;</code>.
+            </p>
+
+            <template if:true={isLoadingDc}>
+                <lightning-spinner alternative-text="Loading Data Cloud objects" size="small"></lightning-spinner>
+            </template>
+
+            <template if:false={isLoadingDc}>
+                <template if:false={dataCloudEnabled}>
+                    <div class="info-banner">
+                        Data Cloud is not enabled or no objects are accessible in this org.
+                        Data Cloud merge fields will resolve to empty strings at send time.
+                    </div>
+                </template>
+
+                <template if:true={hasDcRefs}>
+                    <table class="slds-table slds-table_cell-buffer slds-table_bordered dse-table">
+                        <thead>
+                            <tr class="slds-line-height_reset">
+                                <th scope="col"><span class="slds-truncate">Object</span></th>
+                                <th scope="col"><span class="slds-truncate">Attribute</span></th>
+                                <th scope="col"><span class="slds-truncate">Merge Tag</span></th>
+                                <th scope="col"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template for:each={dcRefRows} for:item="row">
+                                <tr key={row.id} class="slds-hint-parent">
+                                    <td>
+                                        <lightning-combobox
+                                            label="Object"
+                                            value={row.objectApiName}
+                                            options={dcObjectOptions}
+                                            placeholder="Select object"
+                                            variant="label-hidden"
+                                            data-id={row.id}
+                                            data-field="objectApiName"
+                                            onchange={handleDcRefChange}
+                                        ></lightning-combobox>
+                                    </td>
+                                    <td>
+                                        <lightning-combobox
+                                            label="Attribute"
+                                            value={row.attributeName}
+                                            options={row.attributeOptions}
+                                            placeholder="Select attribute"
+                                            variant="label-hidden"
+                                            data-id={row.id}
+                                            data-field="attributeName"
+                                            onchange={handleDcRefChange}
+                                        ></lightning-combobox>
+                                    </td>
+                                    <td>
+                                        <code class="merge-tag-preview">{row.mergeTag}</code>
+                                    </td>
+                                    <td>
+                                        <button class="action-link delete-link"
+                                            data-id={row.id}
+                                            onclick={handleRemoveDcRef}>Remove</button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </template>
+                <template if:false={hasDcRefs}>
+                    <p class="dse-empty">No Data Cloud references configured.</p>
+                </template>
+            </template>
+        </div>
+
+        <!-- Merge Field Validator -->
+        <div class="dse-card">
+            <div class="dse-card-header">
+                <p class="dse-card-title">Merge Field Validator</p>
+                <button class="btn-primary" onclick={handleValidate} disabled={isValidating}>
+                    {validateButtonLabel}
+                </button>
+            </div>
+            <p class="dse-card-hint">
+                Validate all merge fields in this template against the configured parent object.
+            </p>
+
+            <template if:true={isValidating}>
+                <lightning-spinner alternative-text="Validating" size="small"></lightning-spinner>
+            </template>
+
+            <template if:true={validationResult}>
+                <template if:true={validationResult.isValid}>
+                    <div class="validation-ok">
+                        ✓ All merge fields are valid.
+                        <template if:true={hasValidationWarnings}>
+                            <span> {warningCount} warning(s) found — see details below.</span>
+                        </template>
+                    </div>
+                </template>
+                <template if:false={validationResult.isValid}>
+                    <div class="validation-errors">
+                        <p class="error-count">✕ {errorCount} error(s) found:</p>
+                        <ul>
+                            <template for:each={validationResult.errors} for:item="err">
+                                <li key={err.tag}>
+                                    <code>{err.tag}</code> — {err.message}
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
+                </template>
+                <template if:true={hasValidationWarnings}>
+                    <div class="validation-warnings">
+                        <p class="warn-count">⚠ {warningCount} warning(s):</p>
+                        <ul>
+                            <template for:each={validationResult.warnings} for:item="warn">
+                                <li key={warn.tag}>
+                                    <code>{warn.tag}</code> — {warn.message}
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
+                </template>
+            </template>
+        </div>
+
+    </div>
+</template>

@@ -388,6 +388,15 @@
                         disabled={disableSendButton}
                         onclick={handleSend}>
                     </lightning-button>
+                    <template if:true={mcnEnabled}>
+                        <lightning-button
+                            variant="neutral"
+                            label="Send via MCN"
+                            icon-name="utility:world"
+                            disabled={disableSendButton}
+                            onclick={handleSendViaMcn}>
+                        </lightning-button>
+                    </template>
                 </template>
             </footer>
         </div>

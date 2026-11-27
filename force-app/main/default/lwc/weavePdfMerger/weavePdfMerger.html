@@ -1,0 +1,157 @@
+<template>
+    <lightning-card title="PDF Packet Generator" icon-name="utility:pdf">
+        <div class="slds-p-around_medium">
+            <template if:true={isLoading}>
+                <lightning-spinner alternative-text="Generating PDF" size="small"></lightning-spinner>
+            </template>
+            <template if:true={errorMessage}>
+                <div class="slds-notify slds-notify_alert slds-theme_error slds-m-bottom_small" role="alert">
+                    <span>{errorMessage}</span>
+                </div>
+            </template>
+            <template if:true={successDocumentId}>
+                <div class="slds-notify slds-notify_toast slds-theme_success slds-m-bottom_small" role="status">
+                    <span>PDF generated. <a href={downloadUrl} target="_blank">Download</a></span>
+                </div>
+
+                <!-- Share panel -->
+                <div class="share-panel slds-m-bottom_medium">
+                    <p class="share-eyebrow">Public Link</p>
+                    <template if:false={hasShareUrl}>
+                        <div class="share-row">
+                            <lightning-input
+                                type="number"
+                                label="Expires in (days)"
+                                value={shareExpiryDays}
+                                min="0"
+                                placeholder="0 = never"
+                                onchange={handleExpiryDaysChange}
+                                class="share-expiry-input">
+                            </lightning-input>
+                            <lightning-button
+                                label="Create Link"
+                                icon-name="utility:link"
+                                disabled={isSharing}
+                                onclick={handleCreateShare}>
+                            </lightning-button>
+                        </div>
+                    </template>
+                    <template if:true={hasShareUrl}>
+                        <div class="share-url-row">
+                            <input type="text" class="share-url-field" value={shareUrl} readonly />
+                            <lightning-button-icon
+                                icon-name="utility:copy"
+                                alternative-text="Copy link"
+                                onclick={handleCopyLink}
+                                title="Copy link">
+                            </lightning-button-icon>
+                            <lightning-button-icon
+                                icon-name="utility:delete"
+                                alternative-text="Revoke link"
+                                onclick={handleRevokeShare}
+                                variant="bare"
+                                class="revoke-btn"
+                                title="Revoke">
+                            </lightning-button-icon>
+                        </div>
+                        <template if:true={shareExpiry}>
+                            <p class="share-hint">Expires {shareExpiry}</p>
+                        </template>
+                    </template>
+                </div>
+            </template>
+
+            <!-- Tab bar -->
+            <div class="tab-bar slds-m-bottom_medium">
+                <button class={tabAdhocClass} data-tab="adhoc" onclick={handleTabSwitch}>Ad-hoc</button>
+                <button class={tabPacketClass} data-tab="packet" onclick={handleTabSwitch}>Named Packet</button>
+            </div>
+
+            <!-- Ad-hoc tab -->
+            <template if:true={isAdhocTab}>
+                <p class="slds-m-bottom_small slds-text-color_weak">
+                    Combine templates one-off into a single PDF.
+                </p>
+                <template for:each={items} for:item="item">
+                    <div class="item-row" key={item.key}>
+                        <lightning-input
+                            label="Template ID"
+                            value={item.templateId}
+                            data-key={item.key}
+                            data-field="templateId"
+                            onchange={handleItemChange}
+                            placeholder="Weave_Template_Config__c ID">
+                        </lightning-input>
+                        <lightning-input
+                            label="Record ID"
+                            value={item.recordId}
+                            data-key={item.key}
+                            data-field="recordId"
+                            onchange={handleItemChange}
+                            placeholder="Source record ID">
+                        </lightning-input>
+                        <div class="item-remove">
+                            <lightning-button-icon
+                                icon-name="utility:close"
+                                variant="bare"
+                                data-key={item.key}
+                                onclick={handleRemoveItem}
+                                alternative-text="Remove">
+                            </lightning-button-icon>
+                        </div>
+                    </div>
+                </template>
+                <div class="slds-m-top_small">
+                    <lightning-button label="Add Template" icon-name="utility:add" onclick={handleAddItem}></lightning-button>
+                </div>
+                <div class="slds-m-top_medium">
+                    <lightning-input label="PDF Title" value={pdfTitle} onchange={handleTitleChange}></lightning-input>
+                </div>
+                <div class="slds-m-top_medium">
+                    <lightning-button
+                        label="Generate PDF Packet"
+                        variant="brand"
+                        icon-name="utility:pdf"
+                        disabled={isLoading}
+                        onclick={handleGenerate}>
+                    </lightning-button>
+                </div>
+            </template>
+
+            <!-- Named Packet tab -->
+            <template if:true={isPacketTab}>
+                <template if:true={noPackets}>
+                    <p class="slds-text-color_weak">No packets found. Create a packet in the Weave Template Builder first.</p>
+                </template>
+                <template if:false={noPackets}>
+                    <div class="slds-m-bottom_medium">
+                        <lightning-combobox
+                            label="Packet"
+                            placeholder="Select a packet…"
+                            value={selectedPacketId}
+                            options={packetOptions}
+                            onchange={handlePacketChange}>
+                        </lightning-combobox>
+                    </div>
+                    <div class="slds-m-bottom_medium">
+                        <lightning-input
+                            label="Source Record ID"
+                            value={packetRecordId}
+                            placeholder="Salesforce record ID"
+                            onchange={handlePacketRecordIdChange}>
+                        </lightning-input>
+                    </div>
+                    <div class="slds-m-top_medium">
+                        <lightning-button
+                            label="Generate Packet PDF"
+                            variant="brand"
+                            icon-name="utility:pdf"
+                            disabled={isLoading}
+                            onclick={handleGeneratePacket}>
+                        </lightning-button>
+                    </div>
+                </template>
+            </template>
+        </div>
+    </lightning-card>
+</template>

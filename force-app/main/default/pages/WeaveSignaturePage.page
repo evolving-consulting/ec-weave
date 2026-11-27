@@ -1,0 +1,320 @@
+<apex:page controller="WeaveSignatureController" showHeader="false" sidebar="false" standardStylesheets="false" docType="html-5.0" contentType="text/html;charset=UTF-8">
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Sign Document — Weave</title>
+    <style>
+        :root {
+            --teal: #1f5f5b;
+            --teal-mid: #2d7a73;
+            --teal-bg: #ebf4f3;
+            --teal-border: #c0deda;
+            --ink: #2b2b29;
+            --muted: #6b7280;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f9fafb; color: var(--ink); min-height: 100vh; }
+        .shell { max-width: 680px; margin: 0 auto; padding: 32px 16px 64px; }
+        .logo-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 32px; }
+        .logo-mark { width: 32px; height: 32px; background: var(--teal); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; font-weight: 800; letter-spacing: -1px; }
+        .logo-word { font-size: 16px; font-weight: 700; color: var(--teal); }
+        .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 28px; margin-bottom: 20px; }
+        .doc-title { font-size: 20px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+        .doc-sub { font-size: 13px; color: var(--muted); }
+        .section-label { font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--teal); margin-bottom: 12px; }
+        .error-banner { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px; padding: 14px 16px; color: #991b1b; font-size: 13px; margin-bottom: 20px; }
+        .success-banner { background: var(--teal-bg); border: 1px solid var(--teal-border); border-radius: 8px; padding: 14px 16px; color: var(--teal); font-size: 13px; margin-bottom: 20px; }
+        .sig-box-wrap { margin-bottom: 20px; }
+        .sig-label { font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+        canvas.sig-pad { border: 2px solid var(--teal-border); border-radius: 8px; cursor: crosshair; background: #fff; display: block; width: 100%; height: 120px; touch-action: none; }
+        canvas.sig-pad.signed { border-color: var(--teal); }
+        .sig-actions { display: flex; gap: 8px; margin-top: 6px; }
+        .btn-clear { background: none; border: 1px solid #e5e7eb; border-radius: 6px; padding: 4px 10px; font-size: 12px; color: var(--muted); cursor: pointer; }
+        .btn-clear:hover { border-color: #9ca3af; color: var(--ink); }
+        .form-field-wrap { margin-bottom: 16px; }
+        .form-field-wrap label { display: block; font-size: 12px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+        .form-field-wrap input, .form-field-wrap select, .form-field-wrap textarea {
+            width: 100%; border: 1px solid #d1d5db; border-radius: 6px; padding: 8px 10px;
+            font-size: 13px; color: var(--ink); background: #fff; outline: none;
+        }
+        .form-field-wrap input:focus, .form-field-wrap select:focus { border-color: var(--teal); }
+        .required-star { color: #dc2626; }
+        .btn-primary { background: var(--teal); color: #fff; border: none; border-radius: 8px; padding: 12px 24px; font-size: 14px; font-weight: 600; cursor: pointer; width: 100%; }
+        .btn-primary:hover { background: var(--teal-mid); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-decline { background: none; border: 1px solid #fca5a5; border-radius: 8px; padding: 10px 24px; font-size: 13px; color: #dc2626; cursor: pointer; width: 100%; margin-top: 10px; }
+        .btn-decline:hover { background: #fef2f2; }
+        .divider { border: none; border-top: 1px solid #f3f4f6; margin: 20px 0; }
+        .legal-note { font-size: 11px; color: var(--muted); line-height: 1.6; }
+        #status-msg { font-size: 13px; color: var(--muted); text-align: center; margin-top: 12px; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+<div class="shell">
+
+    <div class="logo-bar">
+        <div class="logo-mark">W</div>
+        <span class="logo-word">Weave</span>
+    </div>
+
+    <!-- Error / terminal state -->
+    <apex:outputPanel rendered="{!isTerminal}">
+        <div class="card">
+            <div class="error-banner"><apex:outputText value="{!errorMessage}"/></div>
+            <p style="font-size:13px;color:#6b7280;">If you believe this is an error, please contact the sender.</p>
+        </div>
+    </apex:outputPanel>
+
+    <!-- Already signed -->
+    <apex:outputPanel rendered="{!AND(isAlreadySigned, NOT(isTerminal))}">
+        <div class="card">
+            <div class="success-banner">You have already signed this document. Thank you!</div>
+        </div>
+    </apex:outputPanel>
+
+    <!-- PIN error (not verified, not terminal) -->
+    <apex:outputPanel rendered="{!AND(NOT(isPinVerified), NOT(isTerminal), NOT(isAlreadySigned))}">
+        <div class="card">
+            <div class="error-banner"><apex:outputText value="{!errorMessage}"/></div>
+        </div>
+    </apex:outputPanel>
+
+    <!-- Signing form -->
+    <apex:outputPanel rendered="{!AND(isPinVerified, NOT(isAlreadySigned), NOT(isTerminal))}">
+
+        <div class="card">
+            <p class="section-label">Document</p>
+            <p class="doc-title"><apex:outputText value="{!documentTitle}"/></p>
+            <p class="doc-sub">Signing as: <strong><apex:outputText value="{!signerName}"/></strong> (<apex:outputText value="{!signerRole}"/>)</p>
+        </div>
+
+        <!-- Signature pads rendered by JS from placementsJson -->
+        <div class="card" id="sig-section">
+            <p class="section-label">Your Signature</p>
+            <div id="sig-pads-container"></div>
+        </div>
+
+        <!-- Form fields rendered by JS from formFieldsJson -->
+        <div class="card hidden" id="fields-section">
+            <p class="section-label">Additional Information</p>
+            <div id="form-fields-container"></div>
+        </div>
+
+        <div class="card">
+            <button class="btn-primary" id="btn-submit" onclick="handleSubmit()">Sign Document</button>
+            <button class="btn-decline" id="btn-decline" onclick="handleDecline()">Decline to Sign</button>
+            <p id="status-msg"></p>
+            <hr class="divider"/>
+            <p class="legal-note">By clicking "Sign Document" you agree that your electronic signature is legally binding under the U.S. ESIGN Act and UETA. Your name, role, timestamp, and IP address are recorded with this signature.</p>
+        </div>
+
+    </apex:outputPanel>
+
+</div>
+
+<script>
+(function() {
+    var SIGNER_ID = '{!JSENCODE(signerIdStr)}';
+    var placements = {!placementsJson};
+    var formFieldDefs = {!formFieldsJson};
+
+    // ── Build signature canvases ──────────────────────────────────────────────
+    var sigData = {};
+
+    function buildPads() {
+        var container = document.getElementById('sig-pads-container');
+        if (!container) return;
+        placements.forEach(function(pl) {
+            if (pl.type !== 'Full' && pl.type !== 'Initials') return;
+            var wrap = document.createElement('div');
+            wrap.className = 'sig-box-wrap';
+            var label = document.createElement('div');
+            label.className = 'sig-label';
+            label.textContent = pl.type === 'Initials'
+                ? 'Initials — ' + pl.role
+                : 'Signature — ' + pl.role;
+            var canvas = document.createElement('canvas');
+            canvas.className = 'sig-pad';
+            canvas.setAttribute('data-role', pl.role.toLowerCase());
+            var w = (pl.wIn || 2.5) * 96;
+            var h = (pl.hIn || 0.75) * 96;
+            canvas.width  = w;
+            canvas.height = h;
+            canvas.style.height = '120px';
+            var actions = document.createElement('div');
+            actions.className = 'sig-actions';
+            var clear = document.createElement('button');
+            clear.className = 'btn-clear';
+            clear.textContent = 'Clear';
+            clear.onclick = (function(c, role) { return function() { clearPad(c, role); }; })(canvas, pl.role.toLowerCase());
+            actions.appendChild(clear);
+            wrap.appendChild(label);
+            wrap.appendChild(canvas);
+            wrap.appendChild(actions);
+            container.appendChild(wrap);
+            initDrawing(canvas, pl.role.toLowerCase());
+        });
+    }
+
+    function initDrawing(canvas, role) {
+        var ctx = canvas.getContext('2d');
+        ctx.strokeStyle = '#1f5f5b';
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        var drawing = false;
+        var lastX = 0, lastY = 0;
+
+        function getPos(e) {
+            var rect = canvas.getBoundingClientRect();
+            var scaleX = canvas.width  / rect.width;
+            var scaleY = canvas.height / rect.height;
+            var src = e.touches ? e.touches[0] : e;
+            return { x: (src.clientX - rect.left) * scaleX, y: (src.clientY - rect.top) * scaleY };
+        }
+        function start(e) { e.preventDefault(); drawing = true; var p = getPos(e); lastX = p.x; lastY = p.y; }
+        function draw(e)  { e.preventDefault(); if (!drawing) return; var p = getPos(e); ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(p.x, p.y); ctx.stroke(); lastX = p.x; lastY = p.y; canvas.classList.add('signed'); }
+        function stop(e)  { e.preventDefault(); drawing = false; sigData[role] = canvas.toDataURL('image/png'); }
+
+        canvas.addEventListener('mousedown',  start);
+        canvas.addEventListener('mousemove',  draw);
+        canvas.addEventListener('mouseup',    stop);
+        canvas.addEventListener('mouseleave', stop);
+        canvas.addEventListener('touchstart', start, { passive: false });
+        canvas.addEventListener('touchmove',  draw,  { passive: false });
+        canvas.addEventListener('touchend',   stop,  { passive: false });
+    }
+
+    function clearPad(canvas, role) {
+        var ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        canvas.classList.remove('signed');
+        delete sigData[role];
+    }
+
+    // ── Build form fields ─────────────────────────────────────────────────────
+    var fieldValues = {};
+
+    function buildFields() {
+        if (!formFieldDefs || formFieldDefs.length === 0) return;
+        document.getElementById('fields-section').classList.remove('hidden');
+        var container = document.getElementById('form-fields-container');
+        formFieldDefs.forEach(function(f) {
+            var wrap = document.createElement('div');
+            wrap.className = 'form-field-wrap';
+            var label = document.createElement('label');
+            label.textContent = f.label + (f.required ? '' : '');
+            if (f.required) {
+                var star = document.createElement('span');
+                star.className = 'required-star';
+                star.textContent = ' *';
+                label.appendChild(star);
+            }
+            var key = f.label.toLowerCase();
+            var input;
+            if (f.type === 'Picklist' && f.options) {
+                input = document.createElement('select');
+                var blank = document.createElement('option');
+                blank.value = '';
+                blank.textContent = '— Select —';
+                input.appendChild(blank);
+                f.options.split(';').forEach(function(opt) {
+                    var o = document.createElement('option');
+                    o.value = opt.trim();
+                    o.textContent = opt.trim();
+                    input.appendChild(o);
+                });
+            } else if (f.type === 'Checkbox') {
+                input = document.createElement('input');
+                input.type = 'checkbox';
+                input.onchange = (function(k, el) { return function() { fieldValues[k] = el.checked ? 'true' : 'false'; }; })(key, input);
+                wrap.appendChild(label);
+                wrap.appendChild(input);
+                container.appendChild(wrap);
+                return;
+            } else if (f.type === 'Date') {
+                input = document.createElement('input');
+                input.type = 'date';
+            } else if (f.type === 'Number' || f.type === 'Currency') {
+                input = document.createElement('input');
+                input.type = 'number';
+                input.step = '0.01';
+            } else {
+                input = document.createElement('input');
+                input.type = 'text';
+            }
+            input.onchange = (function(k) { return function() { fieldValues[k] = this.value; }; })(key);
+            wrap.appendChild(label);
+            wrap.appendChild(input);
+            container.appendChild(wrap);
+        });
+    }
+
+    // ── Submit ────────────────────────────────────────────────────────────────
+    window.handleSubmit = function() {
+        // Validate required signatures
+        var missingPads = placements.filter(function(pl) {
+            return (pl.type === 'Full' || pl.type === 'Initials') && !sigData[pl.role.toLowerCase()];
+        });
+        if (missingPads.length > 0) {
+            setStatus('Please draw your signature in the box above.', true);
+            return;
+        }
+        // Validate required form fields
+        var missing = (formFieldDefs || []).filter(function(f) {
+            return f.required && !fieldValues[f.label.toLowerCase()];
+        });
+        if (missing.length > 0) {
+            setStatus('Please fill in all required fields.', true);
+            return;
+        }
+
+        document.getElementById('btn-submit').disabled = true;
+        setStatus('Submitting signature…', false);
+
+        WeaveSignatureController.submitSignatures(
+            SIGNER_ID,
+            JSON.stringify(sigData),
+            JSON.stringify(fieldValues),
+            function(result, event) {
+                if (!event.status || (typeof result === 'string' && result.indexOf('Error') === 0)) {
+                    setStatus(result || 'Submission failed. Please try again.', true);
+                    document.getElementById('btn-submit').disabled = false;
+                } else {
+                    document.getElementById('sig-section').innerHTML = '';
+                    document.getElementById('fields-section').classList.add('hidden');
+                    document.getElementById('btn-submit').classList.add('hidden');
+                    document.getElementById('btn-decline').classList.add('hidden');
+                    setStatus('✓ Document signed successfully. Thank you!', false);
+                }
+            }
+        );
+    };
+
+    window.handleDecline = function() {
+        if (!confirm('Are you sure you want to decline to sign this document?')) return;
+        var reason = prompt('Optional: Please provide a reason for declining.') || '';
+        document.getElementById('btn-decline').disabled = true;
+        WeaveSignatureController.declineRequest(SIGNER_ID, reason, function(result, event) {
+            setStatus('You have declined to sign this document.', false);
+            document.getElementById('btn-submit').disabled = true;
+        });
+    };
+
+    function setStatus(msg, isError) {
+        var el = document.getElementById('status-msg');
+        el.textContent = msg;
+        el.style.color = isError ? '#dc2626' : '#1f5f5b';
+    }
+
+    // ── Init ──────────────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', function() {
+        buildPads();
+        buildFields();
+    });
+})();
+</script>
+</body>
+</html>
+</apex:page>

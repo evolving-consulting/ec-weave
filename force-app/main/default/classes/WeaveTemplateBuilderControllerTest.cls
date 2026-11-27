@@ -69,6 +69,7 @@ private class WeaveTemplateBuilderControllerTest {
 
     @IsTest
     static void getAvailableObjects_returnsObjects() {
+        WeaveTemplateSecurityService.enableManagementForTest();
         Test.startTest();
         List<WeaveBuilderDTOs.WeaveBuilderObjectDTO> objects = WeaveTemplateBuilderController.getAvailableObjects();
         Test.stopTest();
@@ -78,6 +79,7 @@ private class WeaveTemplateBuilderControllerTest {
 
     @IsTest
     static void getFieldsForObject_returnsFields() {
+        WeaveTemplateSecurityService.enableManagementForTest();
         Test.startTest();
         List<WeaveBuilderDTOs.WeaveBuilderFieldDTO> fields = WeaveTemplateBuilderController.getFieldsForObject('Account');
         Test.stopTest();
@@ -87,6 +89,7 @@ private class WeaveTemplateBuilderControllerTest {
 
     @IsTest
     static void getUpdateableFieldsForObject_returnsFields() {
+        WeaveTemplateSecurityService.enableManagementForTest();
         Test.startTest();
         List<WeaveBuilderDTOs.WeaveBuilderFieldDTO> fields = WeaveTemplateBuilderController.getUpdateableFieldsForObject('Account');
         Test.stopTest();
@@ -96,6 +99,7 @@ private class WeaveTemplateBuilderControllerTest {
 
     @IsTest
     static void getRelationshipFields_returnsFields() {
+        WeaveTemplateSecurityService.enableManagementForTest();
         Test.startTest();
         List<WeaveBuilderDTOs.WeaveBuilderFieldDTO> fields = WeaveTemplateBuilderController.getRelationshipFields('Contact');
         Test.stopTest();

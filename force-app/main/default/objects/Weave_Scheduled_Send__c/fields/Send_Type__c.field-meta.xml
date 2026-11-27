@@ -10,6 +10,7 @@
             <sorted>false</sorted>
             <value><fullName>Individual</fullName><default>true</default><label>Individual</label></value>
             <value><fullName>Bulk</fullName><default>false</default><label>Bulk</label></value>
+            <value><fullName>Recurring</fullName><default>false</default><label>Recurring</label></value>
         </valueSetDefinition>
     </valueSet>
 </CustomField>

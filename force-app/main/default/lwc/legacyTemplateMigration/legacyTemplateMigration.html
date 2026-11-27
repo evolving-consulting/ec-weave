@@ -1,0 +1,131 @@
+<template>
+    <div class="migration-shell">
+        <!-- Header -->
+        <div class="page-header">
+            <div>
+                <p class="eyebrow">WEAVE — MCN</p>
+                <h1 class="page-title">Legacy Template Migration</h1>
+            </div>
+            <button class="btn-primary" onclick={handleAnalyze} disabled={isLoading}>
+                Analyze Templates
+            </button>
+        </div>
+
+        <!-- Error banner -->
+        <template if:true={errorMessage}>
+            <div class="banner-error" role="alert">
+                <span>{errorMessage}</span>
+                <button class="banner-dismiss" onclick={clearError}>&#x2715;</button>
+            </div>
+        </template>
+
+        <!-- Summary cards -->
+        <template if:true={hasSummary}>
+            <div class="summary-row">
+                <div class="summary-card">
+                    <p class="summary-value">{summary.totalTemplates}</p>
+                    <p class="summary-label">Total</p>
+                </div>
+                <div class="summary-card summary-card_good">
+                    <p class="summary-value">{summary.readyToMigrate}</p>
+                    <p class="summary-label">Ready</p>
+                </div>
+                <div class="summary-card summary-card_warn">
+                    <p class="summary-value">{summary.needManualReview}</p>
+                    <p class="summary-label">Manual Review</p>
+                </div>
+                <div class="summary-card">
+                    <p class="summary-value">{summary.alreadyMigrated}</p>
+                    <p class="summary-label">Already Migrated</p>
+                </div>
+                <div class="summary-card">
+                    <p class="summary-value">{summary.avgReadinessScore}%</p>
+                    <p class="summary-label">Avg Score</p>
+                </div>
+            </div>
+        </template>
+
+        <!-- Results table -->
+        <template if:true={hasResults}>
+            <div class="table-toolbar">
+                <div class="filter-tabs">
+                    <button class={tabAll}      data-filter="All"           onclick={handleFilter}>All</button>
+                    <button class={tabMigrate}  data-filter="Migrate"       onclick={handleFilter}>Ready</button>
+                    <button class={tabManual}   data-filter="Manual Review" onclick={handleFilter}>Manual Review</button>
+                    <button class={tabSkip}     data-filter="Skip"          onclick={handleFilter}>Skip</button>
+                </div>
+                <div class="toolbar-actions">
+                    <button class="btn-primary" onclick={handleMigrateSelected}
+                            disabled={noReadySelected}>
+                        Migrate Selected ({selectedCount})
+                    </button>
+                    <button class="btn-secondary" onclick={handleExportCsv}>
+                        Export CSV
+                    </button>
+                </div>
+            </div>
+
+            <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                <thead>
+                    <tr class="slds-line-height_reset">
+                        <th scope="col" style="width:40px">
+                            <input type="checkbox" onchange={handleSelectAll} />
+                        </th>
+                        <th scope="col"><span class="slds-truncate">TEMPLATE</span></th>
+                        <th scope="col"><span class="slds-truncate">STATUS</span></th>
+                        <th scope="col"><span class="slds-truncate">CHANNEL</span></th>
+                        <th scope="col"><span class="slds-truncate">SCORE</span></th>
+                        <th scope="col"><span class="slds-truncate">RECOMMENDATION</span></th>
+                        <th scope="col"><span class="slds-truncate">ISSUES</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template for:each={filteredResults} for:item="row">
+                        <tr key={row.templateId} class="slds-hint-parent">
+                            <td>
+                                <input type="checkbox" data-id={row.templateId}
+                                       checked={row.isSelected} onchange={handleRowSelect} />
+                            </td>
+                            <td class="col-name">{row.templateName}</td>
+                            <td>{row.status}</td>
+                            <td>{row.currentChannel}</td>
+                            <td>
+                                <span class={row.scoreClass}>{row.readinessScore}%</span>
+                            </td>
+                            <td>
+                                <span class={row.recommendationClass}>{row.recommendation}</span>
+                            </td>
+                            <td class="col-issues">{row.issuesSummary}</td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </template>
+
+        <!-- Migration progress -->
+        <template if:true={isMigrating}>
+            <div class="progress-panel">
+                <lightning-spinner alternative-text="Migrating" size="medium"></lightning-spinner>
+                <p class="progress-label">Migrating {migratingCount} templates…</p>
+            </div>
+        </template>
+
+        <!-- Migration result banner -->
+        <template if:true={migrationResult}>
+            <div class="banner-info">
+                <strong>Migration complete:</strong>
+                {migrationResult.migrated} migrated · {migrationResult.skipped} skipped ·
+                {migrationResult.errors} errors
+                <button class="btn-secondary" onclick={handleRollback}
+                        disabled={isLoading} style="margin-left:1rem">
+                    Rollback
+                </button>
+            </div>
+        </template>
+
+        <!-- Loading spinner -->
+        <template if:true={isLoading}>
+            <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+        </template>
+    </div>
+</template>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <description>Platform event published by MCN integration operations (publish, send, migrate, health check). Subscribe in LWC via Lightning Message Service or Streaming API.</description>
+    <label>MCN Integration Event</label>
+    <pluralLabel>MCN Integration Events</pluralLabel>
+    <publishBehavior>PublishAfterCommit</publishBehavior>
+</CustomObject>
