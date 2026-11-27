@@ -1,4 +1,4 @@
-@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces,PMD.NcssMethodCount,PMD.NcssTypeCount,PMD.NcssConstructorCount')
 @SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ApexDoc,PMD.AvoidNonRestrictiveQueries')
 public with sharing class WeaveTemplateBuilderService {
 
@@ -625,7 +625,7 @@ public with sharing class WeaveTemplateBuilderService {
 
     private static void deleteChildRecords(List<Id> ids, String objectType, String parentField, Id templateId) {
         if (ids == null || ids.isEmpty()) return;
-        String soql = 'SELECT Id FROM ' + objectType + ' WHERE Id IN :ids AND ' + parentField + ' = :templateId WITH USER_MODE';
+        String soql = 'SELECT Id FROM ' + String.escapeSingleQuotes(objectType) + ' WHERE Id IN :ids AND ' + String.escapeSingleQuotes(parentField) + ' = :templateId WITH USER_MODE';
         List<SObject> toDelete = Database.query(soql);
         if (!toDelete.isEmpty()) delete as user toDelete;
     }

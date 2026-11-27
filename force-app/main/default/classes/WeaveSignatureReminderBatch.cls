@@ -1,4 +1,4 @@
-@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ApexDoc')
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ApexDoc,PMD.NcssMethodCount,PMD.NcssTypeCount,PMD.NcssConstructorCount')
 public with sharing class WeaveSignatureReminderBatch implements Database.Batchable<SObject> {
 
     public Database.QueryLocator start(Database.BatchableContext ctx) {

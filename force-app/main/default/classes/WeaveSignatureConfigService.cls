@@ -1,5 +1,7 @@
 @SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
-@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ApexDoc,PMD.AvoidNonRestrictiveQueries')
+// PMD.ApexCRUDViolation: SiteDetail is a system object — WITH USER_MODE is not supported.
+// Site and SiteDetail are platform metadata records, not user-owned data.
+@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ApexDoc,PMD.AvoidNonRestrictiveQueries,PMD.ApexCRUDViolation,PMD.NcssMethodCount,PMD.NcssTypeCount,PMD.NcssConstructorCount')
 public with sharing class WeaveSignatureConfigService {
 
     private static final String CONFIG_NAME = 'Default';

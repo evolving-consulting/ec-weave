@@ -41,7 +41,7 @@ export default class DceBuilderQueryConfig extends LightningElement {
     return (this._section?.fields || []).map(f => ({
       localKey: f.localKey,
       fieldApiName: f.fieldApiName,
-      label: f.labelOverride || f.fieldLabel || f.fieldApiName,
+      label: f.labelOverride || f.fieldLabel || f.fieldApiName
     }));
   }
 
@@ -74,7 +74,7 @@ export default class DceBuilderQueryConfig extends LightningElement {
           fieldsLoaded: expanded?.loaded || false,
           fields,
           selectedCount: fields.filter(f => f.isSelected).length,
-          toggleIcon: expanded ? '▾' : '▸',
+          toggleIcon: expanded ? '▾' : '▸'
         };
       });
   }
@@ -89,7 +89,7 @@ export default class DceBuilderQueryConfig extends LightningElement {
     try {
       const [fields, rels] = await Promise.all([
         getFieldsForObject({ objectApiName }),
-        getRelationshipFields({ objectApiName }),
+        getRelationshipFields({ objectApiName })
       ]);
       this.allFields = fields || [];
       this.relationships = rels || [];
@@ -181,7 +181,7 @@ export default class DceBuilderQueryConfig extends LightningElement {
         renderOnlyIfNotBlank: false,
         active: true,
         showLabel: true,
-        displayOrder: currentFields.length + 1,
+        displayOrder: currentFields.length + 1
       });
     } else {
       const idx = currentFields.findIndex(f => f.fieldApiName === apiName);

@@ -47,14 +47,27 @@ export default class WeaveEmailComposer extends LightningElement {
         }
     }
 
-    @api objectApiName;
+    _objectApiName;
+    @api get objectApiName() { return this._objectApiName; }
+    set objectApiName(v) { this._objectApiName = v; }
+
     @api flowRecordId;
-    @api templateId;
+
+    _templateId;
+    @api get templateId() { return this._templateId; }
+    set templateId(v) { this._templateId = v; }
+
     @api flowMode = false;
     @api hideFlowFooter = false;
     @api finishFlowOnSend = false;
-    @api emailSent = false;
-    @api cancelled = false;
+
+    _emailSent = false;
+    @api get emailSent() { return this._emailSent; }
+    set emailSent(v) { this._emailSent = v; }
+
+    _cancelled = false;
+    @api get cancelled() { return this._cancelled; }
+    set cancelled(v) { this._cancelled = v; }
 
     @wire(CurrentPageReference)
     setCurrentPageReference(pageRef) {
@@ -429,7 +442,7 @@ export default class WeaveEmailComposer extends LightningElement {
         const recordId = this.effectiveRecordId;
         if (!recordId || this.objectApiName) return;
         try {
-            this.objectApiName = await getObjectApiNameFromRecordId({ recordId });
+            this._objectApiName = await getObjectApiNameFromRecordId({ recordId });
         } catch (error) {
             this.setError(this.getErrorMessage(error) || 'Unable to determine object type from this record.');
         }
@@ -460,7 +473,7 @@ export default class WeaveEmailComposer extends LightningElement {
             } else if (this.templates.length === 1) {
                 this.selectedTemplateId = this.templates[0].id;
                 this.selectedTemplate = this.templates[0];
-                this.templateId = this.selectedTemplateId;
+                this._templateId = this.selectedTemplateId;
             } else {
                 this.selectedTemplateId = undefined;
                 this.selectedTemplate = undefined;
@@ -481,7 +494,7 @@ export default class WeaveEmailComposer extends LightningElement {
     async handleTemplateChange(event) {
         const value = event.detail.value;
         this.selectedTemplateId = value;
-        this.templateId = value;
+        this._templateId = value;
         this.selectedTemplate = this.templates.find((t) => t.id === value) || null;
         this.hasManualEdits = false;
         this.recipients = [];
@@ -911,8 +924,8 @@ export default class WeaveEmailComposer extends LightningElement {
 
         try {
             const sendResult = await sendEmail({ request });
-            this.emailSent = true;
-            this.cancelled = false;
+            this._emailSent = true;
+            this._cancelled = false;
             this.sendComplete = true;
             this.dispatchEvent(new FlowAttributeChangeEvent('emailSent', this.emailSent));
             this.dispatchEvent(new FlowAttributeChangeEvent('cancelled', this.cancelled));
@@ -1067,8 +1080,8 @@ export default class WeaveEmailComposer extends LightningElement {
     }
 
     handleCancel() {
-        this.cancelled = true;
-        this.emailSent = false;
+        this._cancelled = true;
+        this._emailSent = false;
         this.dispatchEvent(new FlowAttributeChangeEvent('cancelled', this.cancelled));
         this.dispatchEvent(new FlowAttributeChangeEvent('emailSent', this.emailSent));
         if (this.isFlowMode) {

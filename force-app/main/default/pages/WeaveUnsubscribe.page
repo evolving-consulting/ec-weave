@@ -1,4 +1,4 @@
-<apex:page controller="WeaveUnsubscribeController" action="{!init}" showHeader="false" sidebar="false" standardStylesheets="false" docType="html-5.0">
+<apex:page controller="WeaveUnsubscribeController" showHeader="false" sidebar="false" standardStylesheets="false" docType="html-5.0">
 <html lang="en">
 <head>
     <meta charset="UTF-8"/>
@@ -18,7 +18,12 @@
     </style>
 </head>
 <body>
+<apex:form id="initForm">
+    <apex:actionFunction name="doInit" action="{!init}" reRender="bodyPanel"/>
+</apex:form>
+<script>document.addEventListener('DOMContentLoaded', function() { doInit(); });</script>
 <div class="container">
+<apex:outputPanel id="bodyPanel">
     <apex:outputPanel rendered="{!NOT(ISBLANK(logoUrl))}">
         <img src="{!logoUrl}" alt="{!brandName}" class="logo"/>
     </apex:outputPanel>
@@ -68,6 +73,7 @@
         <h1>Something went wrong</h1>
         <p>We were unable to process your request. Please try again later or contact us directly.</p>
     </apex:outputPanel>
+</apex:outputPanel>
 </div>
 </body>
 </html>

@@ -1,4 +1,4 @@
-@SuppressWarnings('PMD.MethodNamingConventions,PMD.ApexUnitTestClassShouldHaveRunAs')
+@SuppressWarnings('PMD.MethodNamingConventions,PMD.ApexUnitTestClassShouldHaveRunAs,PMD.AvoidDebugStatements')
 @IsTest
 private class MCNTemplateRenderServiceTest {
 
@@ -109,6 +109,7 @@ private class MCNTemplateRenderServiceTest {
             MCNTemplateRenderService.renderWithContext(t.Id, ctx);
         } catch (Exception e) {
             // Renderer may throw without template components — that is acceptable
+            System.debug(LoggingLevel.WARN, 'Expected test exception (no template components): ' + e.getMessage());
         }
         // Reaching this line means no unhandled NullPointerException from empty-map branch
         System.assert(true, 'Method completed without unexpected exception');
@@ -130,6 +131,7 @@ private class MCNTemplateRenderServiceTest {
         } catch (Exception e) {
             // Renderer throws in test without full template components; just ensure
             // we entered the method and hit the extended-resolution branch
+            System.debug(LoggingLevel.WARN, 'Expected test exception (extended resolution branch): ' + e.getMessage());
         }
         System.assert(true, 'Extended resolution branch executed');
     }

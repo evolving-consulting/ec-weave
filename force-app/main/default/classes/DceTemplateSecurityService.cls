@@ -1,6 +1,7 @@
 /**
  * Centralizes authorization for Dynamic Communication Engine template administration.
  */
+@SuppressWarnings('PMD.ApexDoc')
 public with sharing class DceTemplateSecurityService {
     @TestVisible
     private static Boolean allowManagementDuringTest = false;

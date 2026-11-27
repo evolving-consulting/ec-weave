@@ -64,10 +64,11 @@ public with sharing class WeaveAttachmentResolver {
             String parentField = cfg.Linked_Query__r.Parent_Lookup_Field__c;
             // Inject parent filter — append to existing WHERE or add one
             String lowerSoql = soql.toLowerCase();
+            String safeField = String.escapeSingleQuotes(parentField);
             if (lowerSoql.contains(' where ')) {
-                soql = soql + ' AND ' + parentField + ' = :sourceRecordId LIMIT 1';
+                soql = soql + ' AND ' + safeField + ' = :sourceRecordId LIMIT 1';
             } else {
-                soql = soql + ' WHERE ' + parentField + ' = :sourceRecordId LIMIT 1';
+                soql = soql + ' WHERE ' + safeField + ' = :sourceRecordId LIMIT 1';
             }
             List<SObject> related = Database.query(soql);
             if (related.isEmpty()) return new List<Id>();

@@ -1,0 +1,8 @@
+engines:
+  pmd:
+    # GlobalVariable flags LWC module-level constants as "global variables".
+    # Module-level const/let declarations are the standard LWC pattern for static
+    # component data (operator options, label maps, etc.) and are module-scoped,
+    # not truly global. This rule produces 140+ false positives project-wide.
+    disable_rule_selectors:
+      - "pmd:GlobalVariable"

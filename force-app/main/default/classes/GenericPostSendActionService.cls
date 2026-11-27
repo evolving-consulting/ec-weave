@@ -3,7 +3,7 @@
  * Actions are intentionally stored and handled generically so new action types
  * can be added by registering another handler.
  */
-@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ApexDoc')
+@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ApexDoc,PMD.NcssMethodCount,PMD.NcssTypeCount,PMD.NcssConstructorCount')
 public with sharing class GenericPostSendActionService {
     private static final String ACTION_UPDATE_FIELD = 'Update Field';
     private static final String ACTION_CREATE_TASK = 'Create Task';

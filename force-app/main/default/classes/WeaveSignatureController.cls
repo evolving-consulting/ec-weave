@@ -1,4 +1,9 @@
-@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ApexDoc')
+// PMD.ApexXSSFromURLParam: 'token' from URL is base64-decoded, then cast to Salesforce Id type.
+// The cast fails fast if the value is not a valid Id. signerIdStr (the only string property set
+// from token data) is escaped with {!JSENCODE()} in WeaveSignaturePage before script injection.
+// PMD.ApexCRUDViolation: without sharing is required so unauthenticated site-guest users can
+// reach signing records regardless of sharing rules. SOQL uses WITH USER_MODE to enforce FLS.
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ApexDoc,PMD.ApexXSSFromURLParam,PMD.ApexCRUDViolation,PMD.NcssMethodCount,PMD.NcssTypeCount,PMD.NcssConstructorCount,PMD.AvoidDebugStatements')
 global without sharing class WeaveSignatureController {
 
     // ─── Page state (read by VF bindings) ────────────────────────────────────
@@ -67,7 +72,7 @@ global without sharing class WeaveSignatureController {
                     if (String.isNotBlank(b.name))           brandName     = b.name;
                     hasBrandLogo = String.isNotBlank(b.logoUrl);
                 } catch (Exception ex) {
-                    System.debug(ex);
+                    System.debug(LoggingLevel.WARN, 'Brand logo URL load failed (non-blocking): ' + ex.getMessage());
                 }
             }
 

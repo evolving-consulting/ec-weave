@@ -1,5 +1,8 @@
 @SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
-@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ApexDoc')
+// PMD.ApexSOQLInjection: soqlFields entries are either schema-validated simple field names
+// (checked via Schema.getGlobalDescribe()) or relationship paths extracted from admin-configured
+// merge tags — not user-supplied input. parentObjectApiName is escapeSingleQuotes-protected.
+@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ApexDoc,PMD.ApexSOQLInjection,PMD.NcssMethodCount,PMD.NcssTypeCount,PMD.NcssConstructorCount')
 public with sharing class WeavePostSendActionService {
 
     public static void executeActions(Id templateId, Id sourceRecordId, String parentObjectApiName) {
@@ -68,7 +71,7 @@ public with sharing class WeavePostSendActionService {
 
         try {
             String soql = 'SELECT ' + String.join(new List<String>(soqlFields), ', ')
-                + ' FROM ' + parentObjectApiName
+                + ' FROM ' + String.escapeSingleQuotes(parentObjectApiName)
                 + ' WHERE Id = :sourceRecordId WITH USER_MODE LIMIT 1';
             List<SObject> records = Database.query(soql);
             return records.isEmpty() ? null : records[0];

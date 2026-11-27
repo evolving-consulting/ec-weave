@@ -115,12 +115,12 @@ public with sharing class LegacyTemplateMigrator {
         }
 
         if (!toUpdate.isEmpty()) {
-            List<Database.SaveResult> saveResults = Database.update(toUpdate, false);
+            List<Database.SaveResult> saveResults = Database.update(toUpdate, false, AccessLevel.USER_MODE);
             reprocessSaveErrors(saveResults, toUpdate, summary);
         }
 
         if (!logs.isEmpty()) {
-            Database.insert(logs, false);
+            Database.insert(logs, false, AccessLevel.USER_MODE);
         }
 
         return summary;
@@ -166,7 +166,7 @@ public with sharing class LegacyTemplateMigrator {
         }
 
         if (!toUpdate.isEmpty()) {
-            List<Database.SaveResult> saveResults = Database.update(toUpdate, false);
+            List<Database.SaveResult> saveResults = Database.update(toUpdate, false, AccessLevel.USER_MODE);
             reprocessSaveErrors(saveResults, toUpdate, summary);
         }
 

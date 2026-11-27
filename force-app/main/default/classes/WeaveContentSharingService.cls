@@ -11,7 +11,7 @@ public with sharing class WeaveContentSharingService {
     public static PublicLinkResult createPublicLink(Id contentDocumentId, Integer expirationDays) {
         // Verify ContentDistribution is available in this org
         try {
-            Schema.describeSObjects(new List<String>{ 'ContentDistribution' });
+            Schema.describeSObjects(new List<String>{ 'ContentDistribution' }, SObjectDescribeOptions.DEFERRED);
         } catch (Exception e) {
             throw new AuraHandledException(
                 'Content Deliveries and Public Sharing must be enabled in your org settings before creating public links.'

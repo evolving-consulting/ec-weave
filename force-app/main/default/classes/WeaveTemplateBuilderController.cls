@@ -1,5 +1,7 @@
 @SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
-@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ApexDoc')
+// PMD.ApexCRUDViolation: CronTrigger is a system object — WITH USER_MODE is not supported on it.
+// The scheduler queries read job metadata for the current org's scheduler; no user data is exposed.
+@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ApexDoc,PMD.ApexCRUDViolation,PMD.NcssMethodCount,PMD.NcssTypeCount,PMD.NcssConstructorCount')
 public with sharing class WeaveTemplateBuilderController {
 
     @AuraEnabled(cacheable=true)
@@ -193,7 +195,7 @@ public with sharing class WeaveTemplateBuilderController {
             Record_Id__c     = recordId != null ? String.valueOf(recordId) : null,
             Filter_Clause__c = filterClause
         );
-        insert rec;
+        insert as user rec;
 
         String jobName = 'WeaveSend_' + rec.Id + '_' + System.now().getTime();
         String cronStr = scheduledDt.second() + ' ' + scheduledDt.minute() + ' ' + scheduledDt.hour()
@@ -201,7 +203,7 @@ public with sharing class WeaveTemplateBuilderController {
         System.schedule(jobName, cronStr, new WeaveScheduledEmailJob(rec.Id));
 
         rec.Job_Name__c = jobName;
-        update rec;
+        update as user rec;
         return rec.Id;
     }
 
@@ -256,7 +258,7 @@ public with sharing class WeaveTemplateBuilderController {
             }
         }
         rec.Status__c = 'Cancelled';
-        update rec;
+        update as user rec;
     }
 
     @AuraEnabled
@@ -333,7 +335,7 @@ public with sharing class WeaveTemplateBuilderController {
         }
         try {
             String whereClause = WeaveFilterConditionBuilder.buildClause(objectApiName, filterConditionsJson);
-            String soql = 'SELECT count() FROM ' + objectApiName;
+            String soql = 'SELECT count() FROM ' + String.escapeSingleQuotes(objectApiName);
             List<String> conditions = new List<String>();
             if (String.isNotBlank(whereClause)) conditions.add(whereClause);
             if (objectApiName == 'Contact' || objectApiName == 'Lead') conditions.add('HasOptedOutOfEmail = false');
@@ -399,7 +401,7 @@ public with sharing class WeaveTemplateBuilderController {
                 Batch_Size__c        = req.batchSize != null ? req.batchSize : 20,
                 Job_Name__c          = 'Recurring Bulk: ' + tmplRows[0].Name
             );
-            insert rec;
+            insert as user rec;
             String cron = WeaveRecurringEmailJob.buildCron(firstOccurrence);
             System.schedule('WeaveRecurring-' + rec.Id, cron, new WeaveRecurringEmailJob(rec.Id));
             return rec.Id;
@@ -432,14 +434,14 @@ public with sharing class WeaveTemplateBuilderController {
             Filter_Clause__c      = filterClause,
             Batch_Size__c         = req.batchSize != null ? req.batchSize : 20
         );
-        insert rec;
+        insert as user rec;
 
         String jobName = 'WeaveBulk_' + rec.Id + '_' + System.now().getTime();
         String cronStr = scheduledDt.second() + ' ' + scheduledDt.minute() + ' ' + scheduledDt.hour()
             + ' ' + scheduledDt.day() + ' ' + scheduledDt.month() + ' ? ' + scheduledDt.year();
         System.schedule(jobName, cronStr, new WeaveScheduledEmailJob(rec.Id));
         rec.Job_Name__c = jobName;
-        update rec;
+        update as user rec;
         return rec.Id;
         } catch (AuraHandledException e) {
             throw e;

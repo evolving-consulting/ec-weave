@@ -8,7 +8,7 @@ import validateTemplateMergeFields from '@salesforce/apex/WeaveTemplateBuilderCo
 const CHANNEL_OPTIONS = [
     { label: 'Salesforce Email',                value: 'Salesforce Email' },
     { label: 'Salesforce Email and Document',   value: 'Salesforce Email and Document' },
-    { label: 'All Channels',                    value: 'All Channels' },
+    { label: 'All Channels',                    value: 'All Channels' }
 ];
 
 let _rowId = 0;
