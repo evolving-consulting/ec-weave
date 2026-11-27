@@ -51,6 +51,16 @@
           </svg>
           Brands
         </button>
+        <button class={sidebarNavClassBulkSend} data-view="bulkSend" onclick={handleSidebarNav}>
+          <svg class="nav-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="3" y="4" width="14" height="2" rx="1" fill="currentColor"/>
+            <rect x="3" y="9" width="10" height="2" rx="1" fill="currentColor" opacity="0.7"/>
+            <rect x="3" y="14" width="7" height="2" rx="1" fill="currentColor" opacity="0.4"/>
+            <circle cx="16" cy="15" r="2.5" fill="currentColor" opacity="0.9"/>
+            <path d="M15 15l1 1 2-2" stroke="white" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Bulk Send
+        </button>
         <button class={sidebarNavClassScheduler} data-view="scheduler" onclick={handleSidebarNav}>
           <svg class="nav-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
             <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/>
@@ -134,6 +144,7 @@
                 <tr class="slds-line-height_reset">
                   <th scope="col"><div class="slds-truncate">TEMPLATE NAME</div></th>
                   <th scope="col"><div class="slds-truncate">PARENT OBJECT</div></th>
+                  <th scope="col"><div class="slds-truncate">OUTPUT TYPE</div></th>
                   <th scope="col"><div class="slds-truncate">STATUS</div></th>
                   <th scope="col"><div class="slds-truncate">LAST MODIFIED</div></th>
                   <th scope="col"><div class="slds-truncate">ACTIONS</div></th>
@@ -148,6 +159,7 @@
                       </button>
                     </td>
                     <td><span class="slds-truncate">{tmpl.parentObjectLabel}</span></td>
+                    <td><span class="slds-truncate">{tmpl.templateOutputType}</span></td>
                     <td><span class={tmpl.statusClass}>{tmpl.statusLabel}</span></td>
                     <td><span class="slds-truncate">{tmpl.lastModifiedDisplay}</span></td>
                     <td>
@@ -195,12 +207,13 @@
           <div class="editor-tabs">
             <button class={tabClass_settings} data-tab="settings" onclick={handleTabClick}>Settings</button>
             <button class={tabClass_queries} data-tab="queries" onclick={handleTabClick}>Queries</button>
+            <button class={tabClass_files} data-tab="files" onclick={handleTabClick}>Files</button>
             <button class={tabClass_body} data-tab="body" onclick={handleTabClick}>Body Builder</button>
             <button class={tabClass_recipients} data-tab="recipients" onclick={handleTabClick}>Recipients</button>
             <button class={tabClass_actions} data-tab="actions" onclick={handleTabClick}>Actions</button>
-            <button class={tabClass_files} data-tab="files" onclick={handleTabClick}>Files</button>
-            <button class={tabClass_schedules} data-tab="schedules" onclick={handleTabClick}>Scheduled Sends</button>
-            <button class={tabClass_datasources} data-tab="datasources" onclick={handleTabClick}>Data Sources</button>
+            <template if:false={isDocumentTemplate}>
+              <button class={tabClass_datasources} data-tab="datasources" onclick={handleTabClick}>Data Sources</button>
+            </template>
             <button class={tabClass_signerfields} data-tab="signerfields" onclick={handleTabClick}>Signer Fields</button>
             <button class={tabClass_preview} data-tab="preview" onclick={handleTabClick}>Preview</button>
           </div>
@@ -243,11 +256,38 @@
                     options={statusOptions}
                     data-field="status"
                     onchange={handleFieldChange}
+                    required
                   ></lightning-combobox>
                 </div>
+                <lightning-combobox
+                  label="Brand"
+                  value={draftTemplate.brandId}
+                  options={brandOptions}
+                  data-field="brandId"
+                  onchange={handleTemplateBrandChange}
+                  placeholder="-- No Brand --"
+                ></lightning-combobox>
+                <template if:true={templateHasBrand}>
+                  <div class="brand-info-banner">
+                    <lightning-icon icon-name="utility:info" size="x-small"></lightning-icon>
+                    <template if:true={isEmailTemplate}>
+                      <span>Brand <strong>{selectedBrandName}</strong> will wrap this email with its header and footer. Its org-wide email address is used as a fallback when no From Email is set above.</span>
+                    </template>
+                    <template if:false={isEmailTemplate}>
+                      <span>Brand <strong>{selectedBrandName}</strong> will wrap this PDF document with its header and footer HTML.</span>
+                    </template>
+                  </div>
+                </template>
+                <lightning-textarea
+                  label="Description"
+                  value={draftTemplate.description}
+                  data-field="description"
+                  onchange={handleFieldChange}
+                ></lightning-textarea>
+                <!-- Email-only fields -->
                 <template if:true={isEmailTemplate}>
                   <lightning-input
-                    label="Subject Template (Variant A)"
+                    label="Subject Template"
                     value={draftTemplate.subjectTemplate}
                     data-field="subjectTemplate"
                     onchange={handleFieldChange}
@@ -259,6 +299,7 @@
                     data-field="subjectVariantB"
                     onchange={handleFieldChange}
                     placeholder="Leave blank to disable A/B testing"
+                    field-level-help="When set, the renderer randomly picks Variant A or B at 50/50. Note: Apex emails don't support open-rate tracking, so you won't see which variant performed better."
                   ></lightning-input>
                   <div class="form-row-2">
                     <lightning-combobox
@@ -285,31 +326,7 @@
                     </template>
                   </div>
                 </template>
-                <lightning-combobox
-                  label="Brand"
-                  value={draftTemplate.brandId}
-                  options={brandOptions}
-                  data-field="brandId"
-                  onchange={handleTemplateBrandChange}
-                  placeholder="-- No Brand --"
-                ></lightning-combobox>
-                <template if:true={templateHasBrand}>
-                  <div class="brand-info-banner">
-                    <lightning-icon icon-name="utility:info" size="x-small"></lightning-icon>
-                    <template if:true={isEmailTemplate}>
-                      <span>Brand <strong>{selectedBrandName}</strong> will wrap this email with its header and footer. Its org-wide email address is used as a fallback when no From Email is set above.</span>
-                    </template>
-                    <template if:false={isEmailTemplate}>
-                      <span>Brand <strong>{selectedBrandName}</strong> will wrap this PDF document with its header and footer HTML.</span>
-                    </template>
-                  </div>
-                </template>
-                <lightning-textarea
-                  label="Description"
-                  value={draftTemplate.description}
-                  data-field="description"
-                  onchange={handleFieldChange}
-                ></lightning-textarea>
+                <!-- Output type row (always shown) -->
                 <div class="form-row-2">
                   <lightning-combobox
                     label="Template Output Type"
@@ -317,22 +334,27 @@
                     options={outputTypeOptions}
                     data-field="templateOutputType"
                     onchange={handleFieldChange}
+                    required
                   ></lightning-combobox>
-                  <template if:true={showPageSize}>
+                  <template if:true={showDocumentFormat}>
                     <lightning-combobox
-                      label="Canvas Layout Size"
-                      value={draftTemplate.canvasPageSize}
-                      options={pageSizeOptions}
-                      data-field="canvasPageSize"
+                      label="Document Format"
+                      value={draftTemplate.documentFormat}
+                      options={documentFormatOptions}
+                      data-field="documentFormat"
                       onchange={handleFieldChange}
                     ></lightning-combobox>
                   </template>
+                </div>
+                <!-- Document-only fields -->
+                <template if:true={isDocumentTemplate}>
                   <lightning-combobox
-                    label="PDF Output Page Size"
+                    label="Output Page Size"
                     value={draftTemplate.pdfPageSize}
                     options={pdfPageSizeOptions}
                     data-field="pdfPageSize"
                     onchange={handleFieldChange}
+                    required
                   ></lightning-combobox>
                   <template if:true={showCustomPdfSize}>
                     <div class="form-row-2">
@@ -356,7 +378,16 @@
                       ></lightning-input>
                     </div>
                   </template>
-                </div>
+                  <lightning-input
+                    label="Document Title"
+                    value={draftTemplate.subjectTemplate}
+                    data-field="subjectTemplate"
+                    onchange={handleFieldChange}
+                    placeholder="Enter the document title"
+                    required
+                  ></lightning-input>
+                </template>
+                <!-- Email-only toggles -->
                 <template if:true={isEmailTemplate}>
                   <div class="form-row-2">
                     <lightning-input
@@ -683,13 +714,16 @@
             <div class="tab-panel">
               <h3 class="tab-section-title">Preview Template</h3>
               <div class="form-row-2">
-                <lightning-record-picker
-                  label="Select Record"
-                  placeholder="Search for a record..."
-                  object-api-name={draftTemplate.parentObjectApiName}
-                  value={previewRecordId}
-                  onchange={handlePreviewRecordChange}
-                ></lightning-record-picker>
+                <div>
+                  <lightning-record-picker
+                    label="Select Record"
+                    placeholder="Search for a record..."
+                    object-api-name={draftTemplate.parentObjectApiName}
+                    value={previewRecordId}
+                    onchange={handlePreviewRecordChange}
+                  ></lightning-record-picker>
+                  <p class="field-hint">Type to search — results appear after a brief pause while Salesforce runs the lookup.</p>
+                </div>
                 <div class="preview-btn-wrap">
                   <template if:true={isEmailTemplate}>
                     <button class="btn-activate-template" onclick={handlePreview}>Preview Email</button>
@@ -727,183 +761,6 @@
             </div>
           </template>
 
-          <!-- Scheduled Sends -->
-          <template if:true={isTab_schedules}>
-            <div class="tab-panel">
-
-              <!-- Create New Schedule -->
-              <div class="sched-new-card">
-                <h3 class="tab-section-title">Create New Schedule</h3>
-
-                <div class="sched-filter-row">
-                  <label class="qed-label">Filter (WHERE clause)</label>
-                  <input type="text" class="qed-search" placeholder="e.g. Status__c = 'Active' AND Region__c = 'West'" value={scheduleBulkFilter} onchange={handleBulkFilterChange} />
-                  <p class="qed-hint">Leave blank to send to all records of the parent object.</p>
-                </div>
-
-                <div class="sched-filter-row">
-                  <label class="qed-label">Output Type</label>
-                  <lightning-combobox
-                    label="Output Type"
-                    variant="label-hidden"
-                    value={scheduleOutputType}
-                    options={scheduleOutputTypeOptions}
-                    onchange={handleScheduleOutputTypeChange}
-                  ></lightning-combobox>
-                  <p class="qed-hint">Email sends the message to recipients. PDF generates a document and attaches it to the record. Email + PDF does both.</p>
-                </div>
-
-                <div class="sched-mode-row">
-                  <p class="qed-label">Schedule Mode</p>
-                  <div class="filter-tabs">
-                    <button class={schedModeTabOnce} data-value="once" onclick={handleScheduleModeToggle}>Send Once</button>
-                    <button class={schedModeTabRecurring} data-value="recurring" onclick={handleScheduleModeToggle}>Recurring</button>
-                  </div>
-                </div>
-
-                <!-- Send Once -->
-                <template if:true={isScheduleModeOnce}>
-                  <div class="form-row-2 sched-row-top">
-                    <lightning-input
-                      type="date"
-                      label="Send Date"
-                      value={scheduleDate}
-                      min={minScheduleDate}
-                      required
-                      onchange={handleScheduleDateChange}
-                    ></lightning-input>
-                    <lightning-input
-                      type="time"
-                      label="Send Time"
-                      value={scheduleTime}
-                      required
-                      onchange={handleScheduleTimeChange}
-                    ></lightning-input>
-                  </div>
-                  <div class="preview-btn-wrap">
-                    <button class="btn-activate-template" onclick={handleCreateScheduledSend} disabled={isScheduling}>
-                      <template if:true={isScheduling}>Scheduling…</template>
-                      <template if:false={isScheduling}>Schedule Send</template>
-                    </button>
-                  </div>
-                </template>
-
-                <!-- Recurring -->
-                <template if:true={isScheduleModeRecurring}>
-                    <div class="sched-days-row">
-                      <lightning-checkbox-group
-                        label="Days of the Week"
-                        name="recurringDays"
-                        options={dayOfWeekOptions}
-                        value={recurringDays}
-                        required
-                        onchange={handleRecurringDaysChange}
-                      ></lightning-checkbox-group>
-                    </div>
-                    <div class="form-row-2 sched-row-top">
-                      <lightning-input
-                        type="time"
-                        label="Time"
-                        value={recurringTime}
-                        required
-                        onchange={handleRecurringTimeChange}
-                      ></lightning-input>
-                      <lightning-input
-                        type="date"
-                        label="Start Date"
-                        value={recurringStartDate}
-                        min={minScheduleDate}
-                        required
-                        onchange={handleRecurringStartDateChange}
-                      ></lightning-input>
-                    </div>
-                    <lightning-radio-group
-                      label="Ends"
-                      name="recurringEndType"
-                      options={recurringEndTypeOptions}
-                      value={recurringEndType}
-                      onchange={handleRecurringEndTypeChange}
-                    ></lightning-radio-group>
-                    <template if:true={isRecurringEndByDate}>
-                      <lightning-input
-                        type="date"
-                        label="End Date"
-                        value={recurringEndDate}
-                        min={recurringStartDate}
-                        required
-                        onchange={handleRecurringEndDateChange}
-                      ></lightning-input>
-                    </template>
-                    <template if:true={isRecurringEndByMaxSends}>
-                      <lightning-input
-                        type="number"
-                        label="Stop After (number of sends)"
-                        value={recurringMaxSends}
-                        min="1"
-                        max="1000"
-                        step="1"
-                        required
-                        onchange={handleRecurringMaxSendsChange}
-                      ></lightning-input>
-                    </template>
-                    <div class="preview-btn-wrap">
-                      <button class="btn-activate-template" onclick={handleCreateRecurringSchedule} disabled={isScheduling}>
-                        <template if:true={isScheduling}>Scheduling…</template>
-                        <template if:false={isScheduling}>Schedule Recurring Send</template>
-                      </button>
-                    </div>
-                </template>
-              </div>
-
-              <!-- Existing Schedules -->
-              <h3 class="tab-section-title sched-list-title">Existing Schedules</h3>
-              <template if:true={isLoadingSchedules}>
-                <lightning-spinner alternative-text="Loading..."></lightning-spinner>
-              </template>
-              <template if:false={isLoadingSchedules}>
-                <template if:false={hasScheduledSends}>
-                  <p class="empty-state-msg">No scheduled sends for this template yet.</p>
-                </template>
-                <template if:true={hasScheduledSends}>
-                  <table class="sched-table">
-                    <thead>
-                      <tr>
-                        <th>Name</th>
-                        <th>Type</th>
-                        <th>Status</th>
-                        <th>Scheduled At</th>
-                        <th>Filter / Record</th>
-                        <th>Sent / Failed</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <template for:each={scheduledSends} for:item="ss">
-                        <tr key={ss.id}>
-                          <td>{ss.name}</td>
-                          <td>{ss.sendType}</td>
-                          <td><span class={ss.statusClass}>{ss.status}</span></td>
-                          <td>{ss.scheduledAt}</td>
-                          <td class="sched-filter-cell">
-                            <template if:true={ss.filterClause}>{ss.filterClause}</template>
-                            <template if:false={ss.filterClause}>{ss.recordId}</template>
-                          </td>
-                          <td>{ss.recordsSent} / {ss.recordsFailed}</td>
-                          <td class="sched-actions">
-                            <template if:true={ss.isPending}>
-                              <button class="btn-secondary btn-xs" data-id={ss.id} onclick={handleSendScheduledSendNow}>Send Now</button>
-                              <button class="btn-danger btn-xs" data-id={ss.id} onclick={handleCancelScheduledSend}>Cancel</button>
-                            </template>
-                          </td>
-                        </tr>
-                      </template>
-                    </tbody>
-                  </table>
-                </template>
-              </template>
-            </div>
-          </template>
-
           <!-- ── SIGNER FIELDS TAB ──────────────────────────────────────── -->
           <template if:true={isTab_signerfields}>
             <div class="tab-panel">
@@ -911,7 +768,25 @@
                 <h3 class="tab-section-title">Signer Form Fields</h3>
                 <button class="btn-new-template" onclick={handleSignerFieldNew}>+ Add Field</button>
               </div>
-              <p class="field-hint" style="margin-bottom:12px;">Define fields signers fill in during signing (e.g. <code>&#123;&#123;@field:Amount:Buyer&#125;&#125;</code>). Map each to a Salesforce field to write back to the record on completion.</p>
+              <p class="field-hint" style="margin-bottom:12px;">Define fields signers fill in during signing. The generated tag (e.g. <code>&#123;&#123;@Buyer:Field:Amount&#125;&#125;</code>) can be pasted into the document body. Enable Write Back to update the source record on completion.</p>
+
+              <!-- Built-in signer tag reference -->
+              <div class="signer-tag-reference">
+                <p class="brand-tags-label">Built-in Signer Tags — click to copy (replace <strong>Role</strong> with your signer's role, e.g. Buyer, Seller)</p>
+                <div class="brand-tags-panel" style="margin-top:6px;">
+                  <button class="merge-chip" data-tag="{{@Role:Full}}" onclick={handleSignerTagCopy} title="Drawn signature">&#x270D; Signature</button>
+                  <button class="merge-chip" data-tag="{{@Role:Initials}}" onclick={handleSignerTagCopy} title="Drawn initials">Initials</button>
+                  <button class="merge-chip" data-tag="{{@Role:Date}}" onclick={handleSignerTagCopy} title="Auto-stamped date when signed">Date (auto)</button>
+                  <button class="merge-chip" data-tag="{{@Role:DatePick}}" onclick={handleSignerTagCopy} title="Signer picks a date">Date (pick)</button>
+                </div>
+                <template if:true={copiedSignerTag}>
+                  <p class="brand-tags-copied">&#x2713; Copied: <code>{copiedSignerTag}</code></p>
+                </template>
+                <p class="field-hint" style="margin-top:6px;">
+                  For multiple signers use different roles: <code>&#123;&#123;@Buyer:Full&#125;&#125;</code> <code>&#123;&#123;@Seller:Full&#125;&#125;</code>.<br/>
+                  Custom fields you define below use: <code>&#123;&#123;@Role:Field:YourLabel&#125;&#125;</code>
+                </p>
+              </div>
 
               <template if:true={isSignerFieldLoading}>
                 <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
@@ -925,7 +800,8 @@
                     <button class="edit-panel-close" onclick={handleSignerFieldCancel}>&#x2715;</button>
                   </div>
                   <div class="form-row">
-                    <lightning-input label="Tag Label (matches {{@field:Label:Role}})" value={draftSignerField.tagLabel} data-field="tagLabel" onchange={handleSignerFieldFieldChange}></lightning-input>
+                    <lightning-input label="Tag Label" value={draftSignerField.tagLabel} data-field="tagLabel" onchange={handleSignerFieldFieldChange}></lightning-input>
+                    <p class="field-hint">Label used in the merge tag and shown to the signer on the signing page.</p>
                   </div>
                   <div class="form-row">
                     <lightning-input label="Signer Role" value={draftSignerField.signerRole} placeholder="e.g. Buyer" data-field="signerRole" onchange={handleSignerFieldFieldChange}></lightning-input>
@@ -934,11 +810,31 @@
                     <lightning-combobox label="Field Type" value={draftSignerField.fieldType} options={signerFieldTypeOptions} data-field="fieldType" onchange={handleSignerFieldFieldChange}></lightning-combobox>
                   </div>
                   <div class="form-row">
-                    <lightning-input label="Target Field API Name (write-back)" value={draftSignerField.targetFieldApiName} placeholder="e.g. Amount" data-field="targetFieldApiName" onchange={handleSignerFieldFieldChange}></lightning-input>
+                    <template if:true={hasSignerFieldTargetOptions}>
+                      <lightning-combobox
+                        label="Target Field (write-back)"
+                        value={draftSignerField.targetFieldApiName}
+                        options={signerFieldTargetFieldOptions}
+                        placeholder="-- None (no write-back) --"
+                        data-field="targetFieldApiName"
+                        onchange={handleSignerFieldFieldChange}
+                      ></lightning-combobox>
+                    </template>
+                    <template if:false={hasSignerFieldTargetOptions}>
+                      <lightning-input label="Target Field API Name (write-back)" value={draftSignerField.targetFieldApiName} placeholder="e.g. Amount" data-field="targetFieldApiName" onchange={handleSignerFieldFieldChange}></lightning-input>
+                    </template>
                     <p class="field-hint">Leave blank to collect the value without writing back to Salesforce.</p>
                   </div>
                   <div class="form-row">
                     <lightning-input type="checkbox" label="Required" checked={draftSignerField.required} data-field="required" onchange={handleSignerFieldFieldChange}></lightning-input>
+                  </div>
+                  <div class="form-row">
+                    <lightning-input type="checkbox" label="Write Back to Salesforce" checked={draftSignerField.writeBack} data-field="writeBack" onchange={handleSignerFieldFieldChange}></lightning-input>
+                    <p class="field-hint">On completion, write the signer's value to the mapped field on the source record.</p>
+                  </div>
+                  <div class="form-row">
+                    <lightning-input type="checkbox" label="Show on Certificate" checked={draftSignerField.onCertificate} data-field="onCertificate" onchange={handleSignerFieldFieldChange}></lightning-input>
+                    <p class="field-hint">Include this field's value in the Certificate of Completion audit page.</p>
                   </div>
                   <div class="form-row">
                     <lightning-input type="number" label="Display Order" value={draftSignerField.displayOrder} data-field="displayOrder" onchange={handleSignerFieldFieldChange}></lightning-input>
@@ -956,22 +852,26 @@
                   <table class="slds-table slds-table_cell-buffer slds-table_bordered">
                     <thead>
                       <tr class="slds-line-height_reset">
-                        <th><span class="slds-truncate">TAG LABEL</span></th>
+                        <th><span class="slds-truncate">MERGE TAG</span></th>
                         <th><span class="slds-truncate">ROLE</span></th>
                         <th><span class="slds-truncate">TYPE</span></th>
                         <th><span class="slds-truncate">TARGET FIELD</span></th>
                         <th><span class="slds-truncate">REQ.</span></th>
+                        <th><span class="slds-truncate">W/B</span></th>
+                        <th><span class="slds-truncate">CERT.</span></th>
                         <th><span class="slds-truncate">ACTIONS</span></th>
                       </tr>
                     </thead>
                     <tbody>
                       <template for:each={signerFormFields} for:item="f">
                         <tr key={f.Id} class="slds-hint-parent">
-                          <td><code>{f.Tag_Label__c}</code></td>
+                          <td><code style="font-size:11px;">{f.computedMergeTag}</code></td>
                           <td>{f.Signer_Role__c}</td>
                           <td>{f.Field_Type__c}</td>
                           <td><span class="field-muted">{f.Target_Field_Api_Name__c}</span></td>
                           <td>{f.Required__c}</td>
+                          <td>{f.Write_Back__c}</td>
+                          <td>{f.On_Certificate__c}</td>
                           <td>
                             <span class="action-links">
                               <button class="action-link edit-link" data-id={f.Id} onclick={handleSignerFieldEdit}>Edit</button>
@@ -1453,7 +1353,7 @@
                   <!-- Step 2: Review Prompt -->
                   <template if:true={isBrandAiStep2}>
                     <div class="pdf-constraints-banner" onclick={handleToggleBrandSfRules}>
-                      <span class="pdf-constraints-badge">🔒 Salesforce HTML rules applied</span>
+                      <span class="pdf-constraints-badge">ꗃ Salesforce HTML rules applied</span>
                       <span class="pdf-constraints-chevron">{brandSfRulesChevron}</span>
                     </div>
                     <template if:true={brandSfRulesExpanded}>
@@ -1492,6 +1392,11 @@
           </template>
 
         </div>
+      </template>
+
+      <!-- ── BULK SEND VIEW ───────────────────────────────────────────────── -->
+      <template if:true={isBulkSendView}>
+        <c-weave-bulk-send-manager></c-weave-bulk-send-manager>
       </template>
 
       <!-- ── SCHEDULER VIEW ──────────────────────────────────────────────── -->
@@ -1548,9 +1453,8 @@
                   value={selectedFrequency}
                   options={frequencyOptions}
                   onchange={handleSchedulerFrequencyChange}
-                  disabled={schedulerIsActive}
                 ></lightning-combobox>
-                <p class="field-hint">Select how often the job should run, then activate it. To change frequency, deactivate first.</p>
+                <p class="field-hint">Select how often the job should run, then activate it. If the scheduler is active, deactivate and reactivate to apply a new frequency.</p>
               </div>
 
               <div class="scheduler-actions">
@@ -1921,7 +1825,7 @@
     <!-- ── Recipient Modal ───────────────────────────────────────────────── -->
     <template if:true={showRecipientModal}>
       <section role="dialog" class="modal-backdrop">
-        <div class="modal-container">
+        <div class="modal-container modal-container_recipient">
           <header class="modal-header">
             <h2 class="modal-title">Recipient</h2>
             <button class="modal-close" onclick={handleRecipientModalClose}>✕</button>
@@ -1976,22 +1880,44 @@
                 onchange={handleRecipientQuerySelect}
               ></lightning-combobox>
               <p class="modal-hint">The query determines which records to fetch. Email + Name fields come from that object's records.</p>
-              <div class="form-row-2">
-                <lightning-input
-                  label="Email Field API Name"
-                  value={editingRecipient.emailFieldApiName}
-                  data-field="emailFieldApiName"
-                  onchange={handleRecipientFieldChange}
-                  placeholder="e.g. Email"
-                ></lightning-input>
-                <lightning-input
-                  label="Name Field API Name"
-                  value={editingRecipient.nameFieldApiName}
-                  data-field="nameFieldApiName"
-                  onchange={handleRecipientFieldChange}
-                  placeholder="e.g. Name"
-                ></lightning-input>
-              </div>
+              <template if:true={recipientHasLinkedQueryFields}>
+                <div class="form-row-2">
+                  <lightning-combobox
+                    label="Email Field"
+                    value={editingRecipient.emailFieldApiName}
+                    options={recipientLinkedQueryFieldOptions}
+                    data-field="emailFieldApiName"
+                    onchange={handleRecipientFieldChange}
+                    placeholder="Select email field…"
+                  ></lightning-combobox>
+                  <lightning-combobox
+                    label="Name Field"
+                    value={editingRecipient.nameFieldApiName}
+                    options={recipientLinkedQueryFieldOptions}
+                    data-field="nameFieldApiName"
+                    onchange={handleRecipientFieldChange}
+                    placeholder="Select name field…"
+                  ></lightning-combobox>
+                </div>
+              </template>
+              <template if:false={recipientHasLinkedQueryFields}>
+                <div class="form-row-2">
+                  <lightning-input
+                    label="Email Field API Name"
+                    value={editingRecipient.emailFieldApiName}
+                    data-field="emailFieldApiName"
+                    onchange={handleRecipientFieldChange}
+                    placeholder="e.g. Email"
+                  ></lightning-input>
+                  <lightning-input
+                    label="Name Field API Name"
+                    value={editingRecipient.nameFieldApiName}
+                    data-field="nameFieldApiName"
+                    onchange={handleRecipientFieldChange}
+                    placeholder="e.g. Name"
+                  ></lightning-input>
+                </div>
+              </template>
             </template>
 
             <!-- Manual: static email address -->
@@ -2020,11 +1946,11 @@
                 <p class="modal-hint">Recipients will be resolved from segment <strong>{editingRecipient.segmentName}</strong> at send time.</p>
               </template>
               <template if:false={hasAvailableSegments}>
-                <p class="modal-hint">No active segments found for this template's object. Create segments in the Segments section of the builder.</p>
+                <p class="modal-hint">No active segments found. Create segments in the Segments section of the builder.</p>
               </template>
             </template>
 
-            <template if:false={editingRecipientIsDynamicSegment}>
+            <template if:true={editingRecipientIsParentField}>
               <lightning-input
                 label="Filter Logic"
                 value={editingRecipient.filterLogic}

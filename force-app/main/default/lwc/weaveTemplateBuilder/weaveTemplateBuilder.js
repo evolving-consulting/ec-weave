@@ -108,16 +108,15 @@ const FROM_EMAIL_TYPE_OPTIONS = [
 ];
 const OUTPUT_TYPE_OPTIONS = [
   { label: 'Email', value: 'Email' },
-  { label: 'Document (PDF)', value: 'Document' }
+  { label: 'Document', value: 'Document' }
 ];
 const SCHEDULE_OUTPUT_TYPE_OPTIONS = [
   { label: 'Email', value: 'Email' },
   { label: 'PDF', value: 'PDF' },
   { label: 'Email + PDF', value: 'Email + PDF' }
 ];
-const PAGE_SIZE_OPTIONS = [
-  { label: 'Letter (8.5 × 11 in)', value: 'Letter' },
-  { label: 'A4 (210 × 297 mm)', value: 'A4' }
+const DOCUMENT_FORMAT_OPTIONS = [
+  { label: 'PDF', value: 'PDF' }
 ];
 const PDF_PAGE_SIZE_OPTIONS = [
   { label: 'Letter (8.5 × 11 in)', value: 'Letter' },
@@ -153,7 +152,7 @@ function emptyTemplate() {
     deletedQueryIds: [], deletedComponentIds: [], deletedRecipientIds: [], deletedActionIds: [],
     attachments: [], deletedAttachmentIds: [],
     canvasPageSize: 'Letter', canvasOrientation: 'Portrait', templateOutputType: 'Email',
-    pdfPageSize: 'Letter', pdfPageWidthIn: null, pdfPageHeightIn: null
+    documentFormat: 'PDF', pdfPageSize: 'Letter', pdfPageWidthIn: null, pdfPageHeightIn: null
   };
 }
 
@@ -255,6 +254,7 @@ export default class WeaveTemplateBuilder extends LightningElement {
   @track brandFooterEditorMode = 'Visual';
   @track brandActiveTab = 'identity';
   @track copiedTag = null;
+  @track copiedSignerTag = null;
   @track insertedTag = null;
   @track headerRteKey = 1;
   @track footerRteKey = 1;
@@ -284,7 +284,7 @@ export default class WeaveTemplateBuilder extends LightningElement {
   fromEmailTypeOptions = FROM_EMAIL_TYPE_OPTIONS;
   outputTypeOptions = OUTPUT_TYPE_OPTIONS;
   scheduleOutputTypeOptions = SCHEDULE_OUTPUT_TYPE_OPTIONS;
-  pageSizeOptions = PAGE_SIZE_OPTIONS;
+  documentFormatOptions = DOCUMENT_FORMAT_OPTIONS;
   pdfPageSizeOptions = PDF_PAGE_SIZE_OPTIONS;
   componentTypeOptions = COMPONENT_TYPE_OPTIONS;
   regionOptions = REGION_OPTIONS;
@@ -539,6 +539,8 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
 
   get isSegmentsView()   { return this.sidebarView === 'segments'; }
   get sidebarNavClassSegments() { return 'sidebar-nav-btn' + (this.sidebarView === 'segments' ? ' sidebar-nav-btn_active' : ''); }
+  get isBulkSendView()   { return this.sidebarView === 'bulkSend'; }
+  get sidebarNavClassBulkSend()  { return 'sidebar-nav-btn' + (this.sidebarView === 'bulkSend'   ? ' sidebar-nav-btn_active' : ''); }
   get isSchedulerView()  { return this.sidebarView === 'scheduler'; }
   get sidebarNavClassScheduler() { return 'sidebar-nav-btn' + (this.sidebarView === 'scheduler' ? ' sidebar-nav-btn_active' : ''); }
   get isResourcesView()  { return this.sidebarView === 'resources'; }
@@ -627,7 +629,7 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
   }
   get isFromCurrentUser() { return this.fromEmailType === 'CurrentUser'; }
   get isFromOrgWide() { return this.fromEmailType === 'OrgWide'; }
-  get showPageSize() { return this.draftTemplate.templateOutputType === 'Document'; }
+  get showDocumentFormat() { return this.draftTemplate.templateOutputType === 'Document'; }
   get showCustomPdfSize() { return this.draftTemplate.pdfPageSize === 'Custom'; }
   get isDocumentTemplate() { return this.draftTemplate.templateOutputType === 'Document'; }
   get isEmailTemplate() { return this.draftTemplate.templateOutputType !== 'Document'; }
@@ -793,6 +795,10 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
   get updateableFieldOptions() {
     return (this.updateableFields || []).map(f => ({ label: f.label + ' (' + f.apiName + ')', value: f.apiName }));
   }
+  get signerFieldTargetFieldOptions() {
+    return (this.updateableFields || []).map(f => ({ label: f.label + ' (' + f.apiName + ')', value: f.apiName }));
+  }
+  get hasSignerFieldTargetOptions() { return this.signerFieldTargetFieldOptions.length > 0; }
   get parentFieldOptions() {
     return (this.parentFieldsForMergeTags || []).map(f => ({ label: f.label + ' (' + f.apiName + ')', value: f.apiName }));
   }
@@ -808,6 +814,12 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
     return opts;
   }
   get hasAvailableSegments() { return (this.availableSegments || []).length > 0; }
+  get recipientLinkedQueryFieldOptions() {
+    return (this.editingRecipient._linkedQueryFields || []).map(f => ({ label: f, value: f }));
+  }
+  get recipientHasLinkedQueryFields() {
+    return (this.editingRecipient._linkedQueryFields || []).length > 0;
+  }
   get templateQueryOptions() {
     return (this.draftTemplate.queries || []).map(q => ({ label: q.name, value: q.localKey }));
   }
@@ -912,7 +924,7 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
         this.isEditing = true;
         if (dto.parentObjectApiName) {
           this.loadRelatedObjects(dto.parentObjectApiName);
-          this.loadSegmentsForObject(dto.parentObjectApiName);
+          this.loadSegmentsForObject();
         }
         if (dto.brandId) {
           loadBrand({ brandId: dto.brandId })
@@ -924,8 +936,8 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
       .finally(() => { this.isLoading = false; });
   }
 
-  loadSegmentsForObject(objectApiName) {
-    getActiveSegments({ objectApiName })
+  loadSegmentsForObject() {
+    getActiveSegments({ objectApiName: '' })
       .then(segments => { this.availableSegments = segments || []; })
       .catch(() => { this.availableSegments = []; });
   }
@@ -934,10 +946,20 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
 
   handleTabClick(event) {
     this.activeTab = event.currentTarget.dataset.tab;
+    this.errorMessage = null;
     if (this.activeTab === 'files') this.loadTemplateFiles();
     if (this.activeTab === 'schedules') this.loadScheduledSends();
     if (this.activeTab === 'body') this.loadParentFieldsForMergeTags();
-    if (this.activeTab === 'signerfields') this.loadSignerFormFields();
+    if (this.activeTab === 'signerfields') {
+      this.loadSignerFormFields();
+      // Load updateable fields for write-back field picker if not already loaded
+      const obj = this.draftTemplate.parentObjectApiName;
+      if (obj && !this.updateableFields.length) {
+        getUpdateableFieldsForObject({ objectApiName: obj })
+          .then(fields => { this.updateableFields = fields || []; })
+          .catch(() => { this.updateableFields = []; });
+      }
+    }
   }
 
   loadSignerFormFields() {
@@ -947,7 +969,8 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
       .then(fields => {
         this.signerFormFields = (fields || []).map(f => ({
           ...f, key: f.Id,
-          fieldTypeLabel: f.Field_Type__c || 'Text'
+          fieldTypeLabel: f.Field_Type__c || 'Text',
+          computedMergeTag: f.mergeTag || ''
         }));
       })
       .catch(() => {})
@@ -955,7 +978,7 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
   }
 
   handleSignerFieldNew() {
-    this.draftSignerField = { templateId: this.draftTemplate.id, fieldType: 'Text', required: false };
+    this.draftSignerField = { templateId: this.draftTemplate.id, fieldType: 'Text', required: false, writeBack: false, onCertificate: false };
     this.isEditingSignerField = true;
   }
 
@@ -967,8 +990,8 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
       Id: f.Id, templateId: this.draftTemplate.id,
       tagLabel: f.Tag_Label__c, signerRole: f.Signer_Role__c,
       fieldType: f.Field_Type__c, targetFieldApiName: f.Target_Field_Api_Name__c,
-      required: f.Required__c, picklistValues: f.Picklist_Values__c,
-      displayOrder: f.Display_Order__c
+      required: f.Required__c, writeBack: f.Write_Back__c, onCertificate: f.On_Certificate__c,
+      picklistValues: f.Picklist_Values__c, displayOrder: f.Display_Order__c
     };
     this.isEditingSignerField = true;
   }
@@ -986,7 +1009,7 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
         this.isEditingSignerField = false;
         this.loadSignerFormFields();
       })
-      .catch(err => { this.showError(err?.body?.message || 'Save failed.'); })
+      .catch(err => { this.errorMessage = this.extractError(err); })
       .finally(() => { this.isSignerFieldLoading = false; });
   }
 
@@ -998,7 +1021,7 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
     if (!window.confirm('Delete this signer field?')) return;
     deleteSignerFormField({ fieldId: id })
       .then(() => { this.loadSignerFormFields(); })
-      .catch(err => { this.showError(err?.body?.message || 'Delete failed.'); });
+      .catch(err => { this.errorMessage = this.extractError(err); });
   }
 
   handleDataSourceConfigChange(event) {
@@ -1036,7 +1059,7 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
     this.isDirty = true;
     if (field === 'parentObjectApiName' && value) {
       this.loadRelatedObjects(value);
-      this.loadSegmentsForObject(value);
+      this.loadSegmentsForObject();
       // Auto-create a ParentRecord query for new templates
       if (!this.draftTemplate.id) {
         const hasParentQuery = this.draftTemplate.queries.some(q =>
@@ -1498,7 +1521,12 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
     const key = event.currentTarget.dataset.key;
     const r = this.draftTemplate.recipients.find(x => x.localKey === key);
     if (r) {
-      this.editingRecipient = { ...r };
+      let editingR = { ...r };
+      if (r.recipientSourceType === 'Related Records' && r._linkedQueryLocalKey) {
+        const q = this.draftTemplate.queries.find(x => x.localKey === r._linkedQueryLocalKey);
+        if (q) editingR._linkedQueryFields = this._parseFieldsFromSoql(q.soqlQuery || '');
+      }
+      this.editingRecipient = editingR;
       this.editingRecipientKey = key;
       this.showRecipientModal = true;
       this._ensureParentFields();
@@ -1514,18 +1542,22 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
     const value = event.detail.value;
     this.editingRecipient = { ...this.editingRecipient, [field]: value };
     if (field === 'recipientSourceType' && value === 'Dynamic Segment') {
-      this.loadSegmentsForObject(this.draftTemplate.parentObjectApiName);
+      this.loadSegmentsForObject();
     }
   }
 
   handleRecipientQuerySelect(event) {
     const localKey = event.detail.value;
     const q = this.draftTemplate.queries.find(x => x.localKey === localKey);
+    const queryFields = this._parseFieldsFromSoql(q?.soqlQuery || '');
     this.editingRecipient = {
       ...this.editingRecipient,
       _linkedQueryLocalKey: localKey,
+      _linkedQueryFields: queryFields,
       sourceObjectApiName: q?.soqlObject || '',
-      parentLookupFieldApiName: q?.parentLookupField || ''
+      parentLookupFieldApiName: q?.parentLookupField || '',
+      emailFieldApiName: '',
+      nameFieldApiName: ''
     };
   }
 
@@ -2066,6 +2098,7 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
     this.sidebarView = view;
     this.isEditing = false;
     this.isBrandEditing = false;
+    this.errorMessage = null;
     if (view === 'brands') this._refreshBrands();
     if (view === 'scheduler') this.loadSchedulerStatus();
   }
@@ -2246,6 +2279,18 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
   }
   handleBrandFilterChange(event) { this.brandFilter = event.currentTarget.dataset.filter; }
   handleBrandSearch(event) { this.brandSearchTerm = event.detail.value; }
+
+  handleSignerTagCopy(event) {
+    const tag = event.currentTarget.dataset.tag;
+    if (!tag) return;
+    navigator.clipboard.writeText(tag).then(() => {
+      this.copiedSignerTag = tag;
+      // eslint-disable-next-line @lwc/lwc/no-async-operation
+      setTimeout(() => { this.copiedSignerTag = null; }, 1800);
+    }).catch(() => {
+      this.showToast('Copy failed', 'Could not copy to clipboard.', 'error');
+    });
+  }
 
   handleBrandTagCopy(event) {
     const tag = event.currentTarget.dataset.tag;
