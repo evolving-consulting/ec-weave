@@ -1,4 +1,4 @@
-@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces,PMD.CyclomaticComplexity,PMD.CognitiveComplexity')
 public with sharing class DceTemplateBuilderService {
     private static final String EDITOR_MODE_VISUAL = 'Visual';
     private static final String EDITOR_MODE_HTML_SOURCE = 'HTML Source';

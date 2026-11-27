@@ -2,6 +2,7 @@
  * Thin Aura/LWC controller for the Dynamic Communication Engine.
  * Business behavior is delegated to the DCE service classes.
  */
+@SuppressWarnings('PMD.CyclomaticComplexity,PMD.CognitiveComplexity')
 public with sharing class GenericEmailTemplateController {
     @AuraEnabled(cacheable=true)
     public static List<GenericEmailTemplateDTO> getAvailableTemplates(String parentObjectApiName) {

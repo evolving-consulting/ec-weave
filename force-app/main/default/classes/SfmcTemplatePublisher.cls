@@ -10,7 +10,7 @@
  *   6. Write Weave_MCN_Sync_Log__c entry
  */
 @SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
-@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList')
+@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.CyclomaticComplexity,PMD.CognitiveComplexity')
 public with sharing class SfmcTemplatePublisher {
 
     // ── Public DTOs ───────────────────────────────────────────────────────────

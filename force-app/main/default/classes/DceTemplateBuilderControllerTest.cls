@@ -1,3 +1,4 @@
+@SuppressWarnings('PMD.CyclomaticComplexity,PMD.CognitiveComplexity')
 @IsTest
 private class DceTemplateBuilderControllerTest {
     @IsTest

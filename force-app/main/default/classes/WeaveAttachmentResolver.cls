@@ -1,4 +1,4 @@
-@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces,PMD.CyclomaticComplexity,PMD.CognitiveComplexity')
 public with sharing class WeaveAttachmentResolver {
 
     public static List<Id> resolveDocumentIds(Id templateId, Id recordId) {

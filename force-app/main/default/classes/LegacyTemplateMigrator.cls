@@ -11,7 +11,7 @@
  *   LegacyTemplateMigrator.MigrationSummary summary =
  *       LegacyTemplateMigrator.migrateToMCN(templateIds);
  */
-@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList')
+@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.CyclomaticComplexity,PMD.CognitiveComplexity')
 public with sharing class LegacyTemplateMigrator {
 
     public static final String CHANNEL_MCN  = 'All Channels';

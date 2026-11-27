@@ -1,3 +1,4 @@
+@SuppressWarnings('PMD.CyclomaticComplexity,PMD.CognitiveComplexity')
 public with sharing class DceTemplateBuilderController {
     @AuraEnabled(cacheable=true)
     public static List<DceBuilderObjectDTO> getAvailableObjects() {

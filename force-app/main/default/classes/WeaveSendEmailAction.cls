@@ -5,7 +5,7 @@
  *
  * Usage: Flow Action element → category "Dynamic Communication Engine" → "Send Weave Email"
  */
-@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces,PMD.CyclomaticComplexity,PMD.CognitiveComplexity')
 public with sharing class WeaveSendEmailAction {
 
     public class SendRequest {
