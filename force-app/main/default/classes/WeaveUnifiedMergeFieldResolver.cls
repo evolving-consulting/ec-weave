@@ -21,6 +21,7 @@
  *   String html = GenericMergeFieldResolver.resolveTemplate(template, ctx);
  */
 @SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
+@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList')
 public with sharing class WeaveUnifiedMergeFieldResolver {
 
     // ── Context builder ───────────────────────────────────────────────────────

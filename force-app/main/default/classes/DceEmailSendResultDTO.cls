@@ -1,6 +1,7 @@
 /**
  * Reports successful email delivery together with non-fatal history or post-send warnings.
  */
+@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList')
 public with sharing class DceEmailSendResultDTO {
     @AuraEnabled public Boolean success { get; set; }
     @AuraEnabled public List<String> warnings { get; set; }

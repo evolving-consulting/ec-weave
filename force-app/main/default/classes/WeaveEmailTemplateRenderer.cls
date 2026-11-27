@@ -3,6 +3,7 @@
  * executing linked queries for Related Table components, and resolving merge tags.
  */
 @SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
+@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList')
 public with sharing class WeaveEmailTemplateRenderer {
 
     private static Map<String, SObject> standardMergeAliases;

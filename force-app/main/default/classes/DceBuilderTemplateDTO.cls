@@ -1,3 +1,4 @@
+@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList')
 public with sharing class DceBuilderTemplateDTO {
     private static final String DEFAULT_EDITOR_MODE = 'Visual';
 

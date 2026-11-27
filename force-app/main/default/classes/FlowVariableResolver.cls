@@ -13,6 +13,7 @@
  * variable names are trusted at build time and resolved at runtime.
  */
 @SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
+@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList')
 public with sharing class FlowVariableResolver {
 
     // ── Public DTOs ───────────────────────────────────────────────────────────

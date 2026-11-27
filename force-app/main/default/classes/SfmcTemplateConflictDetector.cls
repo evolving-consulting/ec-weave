@@ -8,6 +8,7 @@
  * via the MCN sync log's Translated_Content_Hash__c field.
  */
 @SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
+@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList')
 public with sharing class SfmcTemplateConflictDetector {
 
     // ── Public DTOs ───────────────────────────────────────────────────────────

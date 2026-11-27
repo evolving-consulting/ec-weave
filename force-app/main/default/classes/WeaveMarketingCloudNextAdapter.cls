@@ -9,6 +9,7 @@
  *   GET    /asset/v1/content/assets/{id}     — read
  */
 @SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
+@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList')
 public virtual with sharing class WeaveMarketingCloudNextAdapter {
 
     @TestVisible

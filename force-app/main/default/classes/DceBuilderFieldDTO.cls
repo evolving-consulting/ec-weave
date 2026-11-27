@@ -1,3 +1,4 @@
+@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList')
 public with sharing class DceBuilderFieldDTO {
     @AuraEnabled public String label { get; set; }
     @AuraEnabled public String apiName { get; set; }

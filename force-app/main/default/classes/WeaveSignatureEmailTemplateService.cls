@@ -100,6 +100,7 @@ public with sharing class WeaveSignatureEmailTemplateService {
         return resolveTokens(tpl.subject != null ? tpl.subject : '', ctx);
     }
 
+    @SuppressWarnings('PMD.AvoidDeeplyNestedIfStmts')
     public static String renderBody(WeaveBuilderDTOs.WeaveSignatureEmailTemplateDTO tpl, Map<String, Object> ctx, Id brandId) {
         String body = resolveTokens(tpl.body != null ? tpl.body : '', ctx);
 

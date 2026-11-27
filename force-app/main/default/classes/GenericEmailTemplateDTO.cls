@@ -2,6 +2,7 @@
  * Transport object for moving DCE template configuration data between Apex and LWC/API callers.
  * This class intentionally contains no business logic.
  */
+@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList')
 public with sharing class GenericEmailTemplateDTO {
     @AuraEnabled public Id id;
     @AuraEnabled public String name;

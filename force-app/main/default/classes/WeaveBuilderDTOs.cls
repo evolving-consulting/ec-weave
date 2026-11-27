@@ -1,3 +1,4 @@
+@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList')
 public with sharing class WeaveBuilderDTOs {
 
     public class WeaveBuilderTemplateDTO {

@@ -3,6 +3,7 @@
  * Checks syntax, content, referenced data sources, and Flow existence.
  */
 @SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
+@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList')
 public with sharing class SfmcMappingValidator {
 
     // ── Public DTOs ───────────────────────────────────────────────────────────

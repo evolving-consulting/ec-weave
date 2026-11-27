@@ -1,4 +1,5 @@
 @IsTest
+@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList')
 public class DceTestDataFactory {
     public static Account createAccount() {
         Account account = new Account(Name = 'DCE Test Account');

@@ -8,6 +8,7 @@
  *   Body: { "definitionKey": "<mcnDefinitionKey>", "recipient": { "address": "...", "attributes": {...} } }
  */
 @SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
+@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList')
 public with sharing class MCNEmailSendService {
 
     @TestVisible

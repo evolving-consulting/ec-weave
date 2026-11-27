@@ -1,4 +1,5 @@
 @SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
+@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList')
 public with sharing class WeaveTemplateBuilderService {
 
     // ── Public read methods ───────────────────────────────────────────────────
@@ -336,14 +337,12 @@ public with sharing class WeaveTemplateBuilderService {
                 // Pass 2: clone Parent_Query__c FK using old→new Id map
                 List<Weave_Template_Query__c> childUpdates = new List<Weave_Template_Query__c>();
                 for (Integer i = 0; i < srcQueries.size(); i++) {
-                    if (srcQueries[i].Parent_Query__c != null) {
-                        Id newParentId = queryIdMap.get(srcQueries[i].Parent_Query__c);
-                        if (newParentId != null) {
-                            childUpdates.add(new Weave_Template_Query__c(
-                                Id = newQueries[i].Id, Parent_Query__c = newParentId
-                            ));
-                        }
-                    }
+                    if (srcQueries[i].Parent_Query__c == null) continue;
+                    Id newParentId = queryIdMap.get(srcQueries[i].Parent_Query__c);
+                    if (newParentId == null) continue;
+                    childUpdates.add(new Weave_Template_Query__c(
+                        Id = newQueries[i].Id, Parent_Query__c = newParentId
+                    ));
                 }
                 if (!childUpdates.isEmpty()) update as user childUpdates;
             }

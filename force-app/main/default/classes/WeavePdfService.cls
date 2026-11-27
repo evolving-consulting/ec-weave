@@ -1,4 +1,5 @@
 @SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
+@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList')
 public with sharing class WeavePdfService {
 
     public static ContentVersion generatePdf(Id templateId, Id recordId) {

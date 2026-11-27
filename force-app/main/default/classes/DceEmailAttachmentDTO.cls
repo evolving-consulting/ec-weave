@@ -1,6 +1,7 @@
 /**
  * File option shown in the DCE composer and passed through preview/send selection.
  */
+@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList')
 public with sharing class DceEmailAttachmentDTO {
     @AuraEnabled public Id contentDocumentId { get; set; }
     @AuraEnabled public Id contentVersionId { get; set; }

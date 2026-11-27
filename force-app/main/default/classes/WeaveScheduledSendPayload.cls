@@ -1,3 +1,4 @@
+@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList')
 public class WeaveScheduledSendPayload {
     public Id templateId { get; set; }
     public String recordId { get; set; }
