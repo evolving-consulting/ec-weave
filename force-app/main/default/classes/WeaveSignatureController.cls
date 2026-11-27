@@ -11,18 +11,30 @@ global without sharing class WeaveSignatureController {
     public Id signerId          { get; private set; }
     public String signerIdStr   { get; private set; }
 
+    // ─── Brand (resolved from token's brandId segment) ───────────────────────
+    public String brandColor    { get; private set; }
+    public String brandColorMid { get; private set; }
+    public String brandLogoUrl  { get; private set; }
+    public String brandName     { get; private set; }
+    public Boolean hasBrandLogo { get; private set; }
+
     // Placements serialized to JSON for JS consumption
     public String placementsJson { get; private set; }
     // Form fields serialized to JSON
     public String formFieldsJson { get; private set; }
 
     public WeaveSignatureController() {
-        isPinVerified  = false;
+        isPinVerified   = false;
         isAlreadySigned = false;
-        isTerminal     = false;
-        errorMessage   = '';
-        placementsJson = '[]';
-        formFieldsJson = '[]';
+        isTerminal      = false;
+        errorMessage    = '';
+        placementsJson  = '[]';
+        formFieldsJson  = '[]';
+        brandColor      = '#1f5f5b';
+        brandColorMid   = '#2d7a73';
+        brandLogoUrl    = '';
+        brandName       = 'Weave';
+        hasBrandLogo    = false;
 
         String token = ApexPages.currentPage().getParameters().get('token');
         if (String.isBlank(token)) {
@@ -42,6 +54,21 @@ global without sharing class WeaveSignatureController {
             signerId    = (Id) parts[0];
             signerIdStr = parts[0];
             String pin  = parts[1];
+
+            // Resolve brand from token's optional 3rd segment (backward-compatible)
+            if (parts.size() >= 3 && String.isNotBlank(parts[2])) {
+                try {
+                    Id brandId = (Id) parts[2];
+                    WeaveBuilderDTOs.WeaveBrandDTO b = WeaveBrandService.loadBrand(brandId);
+                    if (String.isNotBlank(b.primaryColor))   brandColor    = b.primaryColor;
+                    if (String.isNotBlank(b.secondaryColor)) brandColorMid = b.secondaryColor;
+                    if (String.isNotBlank(b.logoUrl))        brandLogoUrl  = b.logoUrl;
+                    if (String.isNotBlank(b.name))           brandName     = b.name;
+                    hasBrandLogo = String.isNotBlank(b.logoUrl);
+                } catch (Exception ex) {
+                    // Brand lookup failure is non-fatal; defaults remain
+                }
+            }
 
             List<Weave_Signer__c> rows = [
                 SELECT Id, Name, Role__c, Status__c,

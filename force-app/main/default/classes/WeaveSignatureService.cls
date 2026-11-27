@@ -242,17 +242,55 @@ public with sharing class WeaveSignatureService {
         signer.Sent_At__c    = DateTime.now();
         update signer;
 
-        String token      = EncodingUtil.base64Encode(Blob.valueOf(signer.Id + ':' + pin));
+        String token      = EncodingUtil.base64Encode(Blob.valueOf(signer.Id + ':' + pin + ':' + (brandId != null ? String.valueOf(brandId) : '')));
         String signingUrl = getSiteBaseUrl() + '/weave-sign?token=' + EncodingUtil.urlEncode(token, 'UTF-8');
+
+        // Resolve brand from template
+        Id brandId = null;
+        String documentTitle = '';
+        try {
+            List<Weave_Template_Config__c> tpls = [
+                SELECT Brand__c, Name FROM Weave_Template_Config__c WHERE Id = :req.Template_Id__c WITH USER_MODE LIMIT 1
+            ];
+            if (!tpls.isEmpty()) {
+                brandId = tpls[0].Brand__c;
+                documentTitle = tpls[0].Name;
+            }
+        } catch (Exception e) {}
+
+        String actionButton = '<p><a href="' + signingUrl + '" style="display:inline-block;background:#1f5f5b;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">Review &amp; Sign Document</a></p>';
+        String securityNote = '<p style="color:#6b7280;font-size:12px;">Your one-time PIN: <strong style="letter-spacing:4px;">' + pin + '</strong>. This link is unique to you and expires in 10 minutes.</p>';
+        String documentInfo = '<div style="border-left:4px solid #1f5f5b;padding:12px 16px;margin:16px 0;background:#f9fafb;">'
+            + '<p style="margin:0;color:#6b7280;font-size:12px;">Document</p>'
+            + '<p style="margin:4px 0 0;font-weight:700;">' + documentTitle + '</p>'
+            + '<p style="margin:4px 0 0;color:#6b7280;font-size:13px;">Your role: <strong>' + (signer.Role__c != null ? signer.Role__c : 'Signer') + '</strong></p>'
+            + '</div>';
+
+        Map<String, Object> ctx = new Map<String, Object>{
+            'SignerName'       => signer.Name,
+            'SenderName'       => UserInfo.getName(),
+            'CompanyName'      => UserInfo.getOrganizationName(),
+            'DocumentTitle'    => documentTitle,
+            'RoleName'         => signer.Role__c != null ? signer.Role__c : 'Signer',
+            'Message'          => '',
+            'ActionButton'     => actionButton,
+            'DocumentInfo'     => documentInfo,
+            'SecurityNote'     => securityNote,
+            'SignatureUrl'     => signingUrl,
+            'ExpirationHours'  => '0.17',
+            'VerificationCode' => pin
+        };
+
+        WeaveBuilderDTOs.WeaveSignatureEmailTemplateDTO tpl =
+            WeaveSignatureEmailTemplateService.getEmailTemplate(brandId, WeaveSignatureEmailTemplateService.TYPE_REQUEST);
+
+        String subject = WeaveSignatureEmailTemplateService.renderSubject(tpl, ctx);
+        String htmlBody = WeaveSignatureEmailTemplateService.renderBody(tpl, ctx, brandId);
 
         Messaging.SingleEmailMessage m = new Messaging.SingleEmailMessage();
         m.setToAddresses(new List<String>{ signer.Email__c });
-        m.setSubject('Action Required: Sign Document');
-        m.setHtmlBody('<p>Hello ' + signer.Name + ',</p>'
-            + '<p>You have been invited to review and sign a document.</p>'
-            + '<p><a href="' + signingUrl + '" style="background:#1f5f5b;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;">Sign Now</a></p>'
-            + '<p>Your one-time PIN: <strong style="font-size:18px;letter-spacing:4px;">' + pin + '</strong></p>'
-            + '<p style="color:#6b7280;font-size:11px;">This PIN expires in 10 minutes.</p>');
+        m.setSubject(String.isNotBlank(subject) ? subject : 'Action Required: Sign Document');
+        m.setHtmlBody(htmlBody);
         m.setSaveAsActivity(false);
         Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{ m });
     }

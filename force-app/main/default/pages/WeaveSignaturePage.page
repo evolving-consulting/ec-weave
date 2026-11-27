@@ -6,8 +6,8 @@
     <title>Sign Document — Weave</title>
     <style>
         :root {
-            --teal: #1f5f5b;
-            --teal-mid: #2d7a73;
+            --teal: {!HTMLENCODE(brandColor)};
+            --teal-mid: {!HTMLENCODE(brandColorMid)};
             --teal-bg: #ebf4f3;
             --teal-border: #c0deda;
             --ink: #2b2b29;
@@ -55,8 +55,13 @@
 <div class="shell">
 
     <div class="logo-bar">
-        <div class="logo-mark">W</div>
-        <span class="logo-word">Weave</span>
+        <apex:outputPanel rendered="{!hasBrandLogo}">
+            <img src="{!HTMLENCODE(brandLogoUrl)}" alt="{!HTMLENCODE(brandName)}" style="height:40px;max-width:160px;object-fit:contain;display:block;"/>
+        </apex:outputPanel>
+        <apex:outputPanel rendered="{!NOT(hasBrandLogo)}">
+            <div class="logo-mark">W</div>
+            <span class="logo-word"><apex:outputText value="{!brandName}"/></span>
+        </apex:outputPanel>
     </div>
 
     <!-- Error / terminal state -->

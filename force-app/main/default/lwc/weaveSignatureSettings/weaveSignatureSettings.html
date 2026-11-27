@@ -1,0 +1,341 @@
+<template>
+  <div class="sig-settings-shell">
+
+    <!-- Page header -->
+    <div class="page-header">
+      <div class="page-header-left">
+        <p class="page-eyebrow">WEAVE</p>
+        <h1 class="page-title">Signature Settings</h1>
+      </div>
+      <button class="btn-primary" onclick={handleSaveSettings} disabled={isSavingSettings}>
+        {saveSettingsLabel}
+      </button>
+    </div>
+
+    <!-- Error banner -->
+    <template if:true={errorMessage}>
+      <div class="error-banner">
+        <span>{errorMessage}</span>
+        <button class="error-dismiss" onclick={clearError}>✕</button>
+      </div>
+    </template>
+
+    <!-- Two-column layout: left settings panel + right email templates -->
+    <div class="sig-two-col">
+
+      <!-- ── Left: Settings accordion ─────────────────────────── -->
+      <div class="sig-settings-panel">
+
+        <!-- Setup Status -->
+        <div class="accordion-item">
+          <button class={accordionClassStatus} data-tab="status" onclick={handleTabChange}>
+            <span class="accordion-label">Setup Status</span>
+            <span class="accordion-chevron">{accordionChevronStatus}</span>
+          </button>
+          <template if:true={isStatusTab}>
+            <div class="accordion-body">
+              <template if:true={isLoadingStatus}>
+                <lightning-spinner alternative-text="Checking…" size="small"></lightning-spinner>
+              </template>
+              <template if:false={isLoadingStatus}>
+                <template if:true={setupStatus.allPassed}>
+                  <div class="status-all-pass">
+                    <span class="check-icon check-icon_pass">✓</span>
+                    <strong>All setup checks passed.</strong>
+                  </div>
+                </template>
+                <template for:each={setupStatus.checks} for:item="chk">
+                  <div key={chk.label} class={chk.rowClass}>
+                    <span class={chk.iconClass}>{chk.iconLabel}</span>
+                    <div class="check-content">
+                      <span class="check-label"><strong>{chk.label}</strong> — {chk.detail}</span>
+                      <template if:true={chk.actionLabel}>
+                        <a href={chk.actionUrl} target="_blank" rel="noopener noreferrer" class="check-action">{chk.actionLabel} ↗</a>
+                      </template>
+                    </div>
+                  </div>
+                </template>
+                <div class="check-actions">
+                  <button class="btn-recheck" onclick={handleRecheck}>⟳ Re-check Setup</button>
+                </div>
+              </template>
+            </div>
+          </template>
+        </div>
+
+        <!-- Site Config -->
+        <div class="accordion-item">
+          <button class={accordionClassSite} data-tab="site" onclick={handleTabChange}>
+            <span class="accordion-label">Site Config</span>
+            <span class="accordion-chevron">{accordionChevronSite}</span>
+          </button>
+          <template if:true={isSiteTab}>
+            <div class="accordion-body">
+              <div class="form-row">
+                <lightning-input
+                  label="Signature Site URL"
+                  type="url"
+                  value={config.signatureSiteUrl}
+                  data-field="signatureSiteUrl"
+                  onchange={handleConfigChange}
+                  field-level-help="The public URL of your Force.com Site where signers access the signing page."
+                ></lightning-input>
+              </div>
+              <div class="form-row">
+                <lightning-combobox
+                  label="Send Emails From"
+                  value={config.defaultFromEmail}
+                  options={orgWideEmailOptions}
+                  data-field="defaultFromEmail"
+                  onchange={handleConfigChange}
+                  field-level-help="The org-wide email address used as the sender for all signature emails."
+                ></lightning-combobox>
+              </div>
+            </div>
+          </template>
+        </div>
+
+        <!-- Signing Links -->
+        <div class="accordion-item">
+          <button class={accordionClassLinks} data-tab="links" onclick={handleTabChange}>
+            <span class="accordion-label">Signing Links</span>
+            <span class="accordion-chevron">{accordionChevronLinks}</span>
+          </button>
+          <template if:true={isLinksTab}>
+            <div class="accordion-body">
+              <div class="form-row">
+                <lightning-input
+                  label="Link expiration (days)"
+                  type="number"
+                  value={config.linkExpirationDays}
+                  min="1"
+                  max="90"
+                  data-field="linkExpirationDays"
+                  onchange={handleConfigChange}
+                  field-level-help="Number of days before a signing link expires."
+                ></lightning-input>
+              </div>
+            </div>
+          </template>
+        </div>
+
+        <!-- Reminders -->
+        <div class="accordion-item">
+          <button class={accordionClassReminders} data-tab="reminders" onclick={handleTabChange}>
+            <span class="accordion-label">Reminders</span>
+            <span class="accordion-chevron">{accordionChevronReminders}</span>
+          </button>
+          <template if:true={isRemindersTab}>
+            <div class="accordion-body">
+              <div class="form-row">
+                <lightning-input
+                  label="Enable Signature Reminders"
+                  type="toggle"
+                  checked={config.remindersEnabled}
+                  message-toggle-active="Reminders will be sent automatically"
+                  message-toggle-inactive="Reminders are disabled"
+                  data-field="remindersEnabled"
+                  onchange={handleToggleChange}
+                ></lightning-input>
+              </div>
+              <template if:true={config.remindersEnabled}>
+                <div class="form-row">
+                  <lightning-input
+                    label="Send reminders after (hours, comma-separated)"
+                    value={config.reminderHours}
+                    data-field="reminderHours"
+                    onchange={handleConfigChange}
+                    field-level-help="e.g. 48,72 sends a reminder 48 hours after the request is sent, then again at 72 hours."
+                  ></lightning-input>
+                </div>
+              </template>
+            </div>
+          </template>
+        </div>
+
+        <!-- Verification -->
+        <div class="accordion-item accordion-item_last">
+          <button class={accordionClassVerify} data-tab="verify" onclick={handleTabChange}>
+            <span class="accordion-label">Verification</span>
+            <span class="accordion-chevron">{accordionChevronVerify}</span>
+          </button>
+          <template if:true={isVerifyTab}>
+            <div class="accordion-body">
+              <div class="form-row">
+                <lightning-input
+                  label="Require Email Verification"
+                  type="toggle"
+                  checked={config.requireEmailVerification}
+                  message-toggle-active="Signers must enter a one-time email code before signing"
+                  message-toggle-inactive="No email verification required"
+                  data-field="requireEmailVerification"
+                  onchange={handleToggleChange}
+                ></lightning-input>
+              </div>
+              <template if:true={config.requireEmailVerification}>
+                <div class="form-row">
+                  <lightning-input
+                    label="Pre-fill Signer Email"
+                    type="toggle"
+                    checked={config.prefillSignerEmail}
+                    message-toggle-active="Auto-send the code to the signer's known email"
+                    message-toggle-inactive="Signer must enter their email to receive the code"
+                    data-field="prefillSignerEmail"
+                    onchange={handleToggleChange}
+                  ></lightning-input>
+                </div>
+              </template>
+            </div>
+          </template>
+        </div>
+
+      </div><!-- /sig-settings-panel -->
+
+      <!-- ── Right: Email Templates ───────────────────────────── -->
+      <div class="sig-email-panel">
+        <div class="email-panel-header">
+          <h2 class="email-panel-title">Email Templates</h2>
+        </div>
+        <p class="email-panel-desc">Brand and edit every signature email — request, reminder, verification, and completion.</p>
+
+        <!-- Brand selector -->
+        <div class="form-row">
+          <lightning-combobox
+            label="Brand"
+            value={selectedBrandId}
+            options={brandOptions}
+            onchange={handleBrandSelect}
+          ></lightning-combobox>
+        </div>
+
+        <!-- Email type tabs -->
+        <div class="email-type-tabs">
+          <button class={emailTypeClassRequest}      data-type="Signature Request" onclick={handleEmailTypeChange}>Request</button>
+          <button class={emailTypeClassReminder}     data-type="Reminder"          onclick={handleEmailTypeChange}>Reminder</button>
+          <button class={emailTypeClassVerification} data-type="Verification"      onclick={handleEmailTypeChange}>Verification</button>
+          <button class={emailTypeClassCompletion}   data-type="Completion"        onclick={handleEmailTypeChange}>Completion</button>
+        </div>
+
+        <template if:true={isLoadingTemplate}>
+          <lightning-spinner alternative-text="Loading…" size="small"></lightning-spinner>
+        </template>
+
+        <template if:false={isLoadingTemplate}>
+          <template if:true={activeTemplate}>
+            <div class="email-editor-cols">
+
+              <!-- Editor column -->
+              <div class="email-editor-col">
+                <div class="form-row">
+                  <lightning-input
+                    label="Subject"
+                    value={activeTemplate.subject}
+                    data-field="subject"
+                    onchange={handleTemplateFieldChange}
+                    placeholder="e.g. Action Required: Please Sign {DocumentTitle}"
+                  ></lightning-input>
+                </div>
+
+                <div class="form-row">
+                  <label class="slds-form-element__label">Body</label>
+                  <lightning-input-rich-text
+                    value={activeTemplate.body}
+                    onchange={handleBodyChange}
+                    formats={richTextFormats}
+                  ></lightning-input-rich-text>
+                </div>
+
+                <!-- Merge token chips -->
+                <div class="token-panel">
+                  <p class="token-panel-label">Merge tokens for this email</p>
+                  <div class="token-chips">
+                    <template for:each={mergeTokens} for:item="tok">
+                      <button key={tok} class="token-chip" data-token={tok} onclick={handleInsertToken}>{tok}</button>
+                    </template>
+                  </div>
+                  <p class="token-hint">Type a token (e.g. {SignerName}) into the subject or body. {ActionButton}, {DocumentInfo}, and {SecurityNote} are rendered as branded blocks.</p>
+                </div>
+
+                <!-- Brand overrides -->
+                <div class="overrides-section">
+                  <div class="overrides-row">
+                    <div class="form-row form-row_half">
+                      <lightning-input
+                        label="Brand Color Override"
+                        value={activeTemplate.brandColorOverride}
+                        data-field="brandColorOverride"
+                        onchange={handleTemplateFieldChange}
+                        placeholder="#000000"
+                      ></lightning-input>
+                    </div>
+                    <div class="form-row form-row_half">
+                      <lightning-input
+                        label="Logo URL Override"
+                        value={activeTemplate.logoUrlOverride}
+                        data-field="logoUrlOverride"
+                        onchange={handleTemplateFieldChange}
+                        placeholder="https://.../logo.png"
+                      ></lightning-input>
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <lightning-input
+                      label="Logo height (px)"
+                      type="number"
+                      value={activeTemplate.logoHeightPx}
+                      data-field="logoHeightPx"
+                      onchange={handleTemplateFieldChange}
+                    ></lightning-input>
+                  </div>
+                  <div class="form-row">
+                    <lightning-input
+                      label="Footer Text Override"
+                      value={activeTemplate.footerTextOverride}
+                      data-field="footerTextOverride"
+                      onchange={handleTemplateFieldChange}
+                    ></lightning-input>
+                  </div>
+                  <div class="form-row">
+                    <lightning-input
+                      label="Active"
+                      type="toggle"
+                      checked={activeTemplate.isActive}
+                      data-field="isActive"
+                      onchange={handleToggleTemplate}
+                    ></lightning-input>
+                  </div>
+                </div>
+
+                <div class="template-actions">
+                  <button class="btn-primary" onclick={handleSaveTemplate} disabled={isSavingTemplate}>
+                    {saveTemplateLabel}
+                  </button>
+                  <button class="btn-cancel" onclick={handleResetTemplate}>Reset to Default</button>
+                </div>
+              </div>
+
+              <!-- Preview column -->
+              <div class="email-preview-col">
+                <div class="preview-header">
+                  <span class="preview-title">Preview</span>
+                  <button class="btn-refresh-preview" onclick={handleRefreshPreview}>⟳</button>
+                </div>
+                <template if:true={isLoadingPreview}>
+                  <lightning-spinner alternative-text="Rendering…" size="small"></lightning-spinner>
+                </template>
+                <template if:false={isLoadingPreview}>
+                  <div class="email-preview-frame">
+                    <lightning-formatted-rich-text value={previewHtml}></lightning-formatted-rich-text>
+                  </div>
+                </template>
+              </div>
+
+            </div>
+          </template>
+        </template>
+
+      </div><!-- /sig-email-panel -->
+
+    </div><!-- /sig-two-col -->
+  </div>
+</template>
