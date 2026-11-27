@@ -288,4 +288,62 @@ public with sharing class WeaveBuilderDTOs {
             this.referenceTo = new List<String>();
         }
     }
+
+    // ─── Signature Config DTOs ────────────────────────────────────────────────
+
+    public class WeaveSignatureConfigDTO {
+        @AuraEnabled public Id id { get; set; }
+        @AuraEnabled public String signatureSiteUrl { get; set; }
+        @AuraEnabled public String defaultFromEmail { get; set; }
+        @AuraEnabled public Integer linkExpirationDays { get; set; }
+        @AuraEnabled public Boolean remindersEnabled { get; set; }
+        @AuraEnabled public String reminderHours { get; set; }
+        @AuraEnabled public Boolean requireEmailVerification { get; set; }
+        @AuraEnabled public Boolean prefillSignerEmail { get; set; }
+
+        public WeaveSignatureConfigDTO() {
+            this.linkExpirationDays = 2;
+            this.remindersEnabled = true;
+            this.reminderHours = '48,72';
+            this.requireEmailVerification = true;
+            this.prefillSignerEmail = true;
+        }
+    }
+
+    public class WeaveSignatureEmailTemplateDTO {
+        @AuraEnabled public Id id { get; set; }
+        @AuraEnabled public Id brandId { get; set; }
+        @AuraEnabled public String brandName { get; set; }
+        @AuraEnabled public String emailType { get; set; }
+        @AuraEnabled public String subject { get; set; }
+        @AuraEnabled public String body { get; set; }
+        @AuraEnabled public String brandColorOverride { get; set; }
+        @AuraEnabled public String logoUrlOverride { get; set; }
+        @AuraEnabled public Integer logoHeightPx { get; set; }
+        @AuraEnabled public String footerTextOverride { get; set; }
+        @AuraEnabled public Boolean isActive { get; set; }
+
+        public WeaveSignatureEmailTemplateDTO() {
+            this.logoHeightPx = 48;
+            this.isActive = true;
+        }
+    }
+
+    public class WeaveSignatureSetupCheckDTO {
+        @AuraEnabled public String label { get; set; }
+        @AuraEnabled public Boolean passed { get; set; }
+        @AuraEnabled public String detail { get; set; }
+        @AuraEnabled public String actionLabel { get; set; }
+        @AuraEnabled public String actionUrl { get; set; }
+    }
+
+    public class WeaveSignatureSetupStatusDTO {
+        @AuraEnabled public Boolean allPassed { get; set; }
+        @AuraEnabled public List<WeaveSignatureSetupCheckDTO> checks { get; set; }
+
+        public WeaveSignatureSetupStatusDTO() {
+            this.checks = new List<WeaveSignatureSetupCheckDTO>();
+            this.allPassed = false;
+        }
+    }
 }
