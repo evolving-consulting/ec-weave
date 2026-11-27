@@ -21,7 +21,7 @@ const MOCK_FAILURE = {
 };
 
 function flushPromises() {
-    return new Promise(resolve => setTimeout(resolve, 0));
+    return new Promise(resolve => { setTimeout(resolve, 0); });
 }
 
 describe('mcnTemplateRenderer', () => {

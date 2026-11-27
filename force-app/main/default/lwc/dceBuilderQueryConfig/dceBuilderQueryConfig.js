@@ -161,7 +161,7 @@ export default class DceBuilderQueryConfig extends LightningElement {
     const currentFields = [...(this._section?.fields || [])];
 
     if (isChecked) {
-      let fieldLabel = apiName;
+      let fieldLabel;
       if (apiName.includes('.')) {
         const [relName, fieldApiName] = apiName.split('.');
         const rel = this.relationships.find(r => r.relationshipName === relName);
