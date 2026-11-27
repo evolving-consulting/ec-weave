@@ -1,6 +1,7 @@
 import { LightningElement, api, track } from 'lwc';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import createSignatureRequest from '@salesforce/apex/WeaveSignatureAuraController.createSignatureRequest';
+import getTemplateSignerRoles from '@salesforce/apex/WeaveSignatureAuraController.getTemplateSignerRoles';
 
 const SIGNING_MODE_OPTIONS = [
     { label: 'Parallel (all at once)', value: 'Parallel' },
@@ -26,8 +27,31 @@ export default class WeaveSignatureSender extends LightningElement {
 
     @api open() {
         this.isOpen = true;
-        this.signers = [];
         this.errorMessage = '';
+        this._keyCounter = 0;
+        this.signers = [];
+        if (this.templateId) {
+            getTemplateSignerRoles({ templateId: this.templateId })
+                .then(rolesJson => { this._applySignerRoles(rolesJson); })
+                .catch(() => { this.addSigner(); });
+        } else {
+            this.addSigner();
+        }
+    }
+
+    _applySignerRoles(rolesJson) {
+        try {
+            const roles = rolesJson ? JSON.parse(rolesJson) : [];
+            if (Array.isArray(roles) && roles.length) {
+                const sorted = [...roles].sort((a, b) => (a.order || 1) - (b.order || 1));
+                this.signers = sorted.map((r, i) => {
+                    this._keyCounter++;
+                    return { key: this._keyCounter, name: '', email: '', role: r.role || '', signOrder: r.order || (i + 1), displayOrder: i + 1 };
+                });
+                if (sorted.length > 1) this.signingMode = 'Sequential';
+                return;
+            }
+        } catch (e) { /* fall through */ }
         this.addSigner();
     }
 

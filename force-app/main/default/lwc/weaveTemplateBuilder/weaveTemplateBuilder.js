@@ -152,7 +152,8 @@ function emptyTemplate() {
     deletedQueryIds: [], deletedComponentIds: [], deletedRecipientIds: [], deletedActionIds: [],
     attachments: [], deletedAttachmentIds: [],
     canvasPageSize: 'Letter', canvasOrientation: 'Portrait', templateOutputType: 'Email',
-    documentFormat: 'PDF', pdfPageSize: 'Letter', pdfPageWidthIn: null, pdfPageHeightIn: null
+    documentFormat: 'PDF', pdfPageSize: 'Letter', pdfPageWidthIn: null, pdfPageHeightIn: null,
+    signerRoles: null
   };
 }
 
@@ -237,6 +238,8 @@ export default class WeaveTemplateBuilder extends LightningElement {
   @track templateAttachments = [];
   @track isLoadingFiles = false;
   @track signerFormFields = [];
+  @track signerRolesList = [];
+  _roleKeyCounter = 0;
   @track isEditingSignerField = false;
   @track draftSignerField = {};
   @track isSignerFieldLoading = false;
@@ -389,6 +392,15 @@ export default class WeaveTemplateBuilder extends LightningElement {
   get hasBrandImages() { return (this.brandImages || []).length > 0; }
   get brandImagesWithUrls() { return (this.brandImages || []).filter(img => img.publicUrl); }
   get hasBrandImagesWithUrls() { return this.brandImagesWithUrls.length > 0; }
+
+  get signerBuiltInTags() {
+    return [
+      { key: 'Full',     label: '✍ Signature', tag: '{{@Role:Full}}',     title: 'Drawn signature — replace Role with signer role' },
+      { key: 'Initials', label: 'Initials',         tag: '{{@Role:Initials}}', title: 'Drawn initials — replace Role with signer role' },
+      { key: 'Date',     label: 'Date (auto)',       tag: '{{@Role:Date}}',     title: 'Auto-stamped date when signed' },
+      { key: 'DatePick', label: 'Date (pick)',       tag: '{{@Role:DatePick}}', title: 'Signer picks a date' }
+    ];
+  }
 
   get brandStaticTags() {
     return [
@@ -922,6 +934,7 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
         this.isDirty = false;
         this._fromEmailType = null;
         this.isEditing = true;
+        this._parseSignerRoles();
         if (dto.parentObjectApiName) {
           this.loadRelatedObjects(dto.parentObjectApiName);
           this.loadSegmentsForObject();
@@ -975,6 +988,53 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
       })
       .catch(() => {})
       .finally(() => { this.isSignerFieldLoading = false; });
+  }
+
+  // ── Signer Roles ────────────────────────────────────────────────────────
+  _roleRow(role, order) {
+    this._roleKeyCounter++;
+    const r = role || 'Role';
+    return { key: this._roleKeyCounter, role: role || '', order: order || 1,
+      tagFull: '{{@' + r + ':Full}}', tagInitials: '{{@' + r + ':Initials}}', tagDate: '{{@' + r + ':Date}}' };
+  }
+
+  _parseSignerRoles() {
+    try {
+      const parsed = this.draftTemplate.signerRoles ? JSON.parse(this.draftTemplate.signerRoles) : [];
+      this._roleKeyCounter = 0;
+      this.signerRolesList = (Array.isArray(parsed) ? parsed : []).map(r => this._roleRow(r.role, r.order));
+    } catch (e) {
+      this.signerRolesList = [];
+    }
+  }
+
+  _syncSignerRolesToTemplate() {
+    this.draftTemplate = { ...this.draftTemplate,
+      signerRoles: JSON.stringify(this.signerRolesList.map(r => ({ role: r.role, order: r.order }))) };
+  }
+
+  handleSignerRoleAdd() {
+    this.signerRolesList = [...this.signerRolesList, this._roleRow('', this.signerRolesList.length + 1)];
+    this._syncSignerRolesToTemplate();
+  }
+
+  handleSignerRoleRemove(event) {
+    const key = parseInt(event.currentTarget.dataset.key, 10);
+    this.signerRolesList = this.signerRolesList.filter(r => r.key !== key);
+    this._syncSignerRolesToTemplate();
+  }
+
+  handleSignerRoleChange(event) {
+    const key = parseInt(event.currentTarget.dataset.key, 10);
+    const field = event.currentTarget.dataset.field;
+    const val = field === 'order' ? (parseInt(event.detail.value, 10) || 1) : (event.detail.value || '');
+    this.signerRolesList = this.signerRolesList.map(r => {
+      if (r.key !== key) return r;
+      const u = { ...r, [field]: val };
+      const rn = u.role || 'Role';
+      return { ...u, tagFull: '{{@' + rn + ':Full}}', tagInitials: '{{@' + rn + ':Initials}}', tagDate: '{{@' + rn + ':Date}}' };
+    });
+    this._syncSignerRolesToTemplate();
   }
 
   handleSignerFieldNew() {

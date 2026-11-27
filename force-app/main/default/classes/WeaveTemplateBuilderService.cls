@@ -27,7 +27,7 @@ public with sharing class WeaveTemplateBuilderService {
         List<WeaveBuilderDTOs.WeaveBuilderTemplateSummaryDTO> results = new List<WeaveBuilderDTOs.WeaveBuilderTemplateSummaryDTO>();
         for (Weave_Template_Config__c template : [
             SELECT Id, Name, API_Name__c, Status__c, Parent_Object_API_Name__c, Description__c, LastModifiedDate,
-                Brand__c, Brand__r.Name
+                Brand__c, Brand__r.Name, Template_Output_Type__c, Document_Format__c
             FROM Weave_Template_Config__c
             WITH USER_MODE
             ORDER BY Name ASC
@@ -43,6 +43,7 @@ public with sharing class WeaveTemplateBuilderService {
             dto.lastModifiedDate = template.LastModifiedDate;
             dto.brandId = template.Brand__c;
             dto.brandName = template.Brand__c != null ? template.Brand__r.Name : null;
+            dto.templateOutputType = template.Template_Output_Type__c;
             results.add(dto);
         }
         return results;
@@ -176,8 +177,8 @@ public with sharing class WeaveTemplateBuilderService {
         List<Weave_Template_Config__c> templates = [
             SELECT Id, Name, API_Name__c, Status__c, Parent_Object_API_Name__c, Subject_Template__c, Subject_Variant_B__c,
                 Default_From_Email__c, Description__c, Allow_User_Edit_Before_Send__c, Store_Email_History__c,
-                Brand__c, Brand__r.Name, Template_Output_Type__c, Canvas_Page_Size__c, Canvas_Orientation__c,
-                Pdf_Page_Size__c, Pdf_Page_Width_In__c, Pdf_Page_Height_In__c
+                Brand__c, Brand__r.Name, Template_Output_Type__c, Document_Format__c, Canvas_Page_Size__c, Canvas_Orientation__c,
+                Pdf_Page_Size__c, Pdf_Page_Width_In__c, Pdf_Page_Height_In__c, Signer_Roles__c
             FROM Weave_Template_Config__c
             WHERE Id = :templateId
             WITH USER_MODE
@@ -220,11 +221,13 @@ public with sharing class WeaveTemplateBuilderService {
                 Store_Email_History__c = dto.storeEmailHistory == true,
                 Brand__c = dto.brandId,
                 Template_Output_Type__c = dto.templateOutputType,
-                Canvas_Page_Size__c = dto.canvasPageSize,
+                Document_Format__c = dto.documentFormat,
+                Canvas_Page_Size__c = dto.pdfPageSize,
                 Canvas_Orientation__c = dto.canvasOrientation,
                 Pdf_Page_Size__c = dto.pdfPageSize,
                 Pdf_Page_Width_In__c = dto.pdfPageWidthIn,
-                Pdf_Page_Height_In__c = dto.pdfPageHeightIn
+                Pdf_Page_Height_In__c = dto.pdfPageHeightIn,
+                Signer_Roles__c = dto.signerRoles
             );
             upsert as user template;
             dto.id = template.Id;
@@ -273,7 +276,7 @@ public with sharing class WeaveTemplateBuilderService {
             SELECT Id, Name, API_Name__c, Status__c, Parent_Object_API_Name__c,
                 Subject_Template__c, Subject_Variant_B__c, Default_From_Email__c,
                 Description__c, Allow_User_Edit_Before_Send__c, Store_Email_History__c,
-                Brand__c, Template_Output_Type__c, Canvas_Page_Size__c, Canvas_Orientation__c,
+                Brand__c, Template_Output_Type__c, Document_Format__c, Canvas_Page_Size__c, Canvas_Orientation__c,
                 Pdf_Page_Size__c, Pdf_Page_Width_In__c, Pdf_Page_Height_In__c
             FROM Weave_Template_Config__c WHERE Id = :templateId WITH USER_MODE LIMIT 1
         ];
@@ -297,7 +300,8 @@ public with sharing class WeaveTemplateBuilderService {
                 Store_Email_History__c = isDocument ? false : src.Store_Email_History__c,
                 Brand__c = src.Brand__c,
                 Template_Output_Type__c = String.isBlank(newOutputType) ? src.Template_Output_Type__c : newOutputType,
-                Canvas_Page_Size__c = src.Canvas_Page_Size__c,
+                Document_Format__c = src.Document_Format__c,
+                Canvas_Page_Size__c = src.Pdf_Page_Size__c,
                 Canvas_Orientation__c = src.Canvas_Orientation__c,
                 Pdf_Page_Size__c = src.Pdf_Page_Size__c,
                 Pdf_Page_Width_In__c = src.Pdf_Page_Width_In__c,
@@ -645,11 +649,13 @@ public with sharing class WeaveTemplateBuilderService {
         dto.brandId = template.Brand__c;
         dto.brandName = template.Brand__c != null ? template.Brand__r.Name : null;
         dto.templateOutputType = template.Template_Output_Type__c;
+        dto.documentFormat = template.Document_Format__c;
         dto.canvasPageSize = template.Canvas_Page_Size__c;
         dto.canvasOrientation = template.Canvas_Orientation__c;
         dto.pdfPageSize = template.Pdf_Page_Size__c;
         dto.pdfPageWidthIn = template.Pdf_Page_Width_In__c;
         dto.pdfPageHeightIn = template.Pdf_Page_Height_In__c;
+        dto.signerRoles = template.Signer_Roles__c;
         dto.queries = loadQueries(template.Id);
         dto.components = loadComponents(template.Id);
         dto.recipients = loadRecipients(template.Id, template.Parent_Object_API_Name__c);

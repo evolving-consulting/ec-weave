@@ -26,11 +26,13 @@ public with sharing class WeaveBuilderDTOs {
         @AuraEnabled public List<Id> deletedActionIds { get; set; }
         @AuraEnabled public List<Id> deletedAttachmentIds { get; set; }
         @AuraEnabled public String templateOutputType { get; set; }
+        @AuraEnabled public String documentFormat { get; set; }
         @AuraEnabled public String canvasPageSize { get; set; }
         @AuraEnabled public String canvasOrientation { get; set; }
         @AuraEnabled public String pdfPageSize { get; set; }
         @AuraEnabled public Decimal pdfPageWidthIn { get; set; }
         @AuraEnabled public Decimal pdfPageHeightIn { get; set; }
+        @AuraEnabled public String signerRoles { get; set; }
 
         public WeaveBuilderTemplateDTO() {
             this.status = 'Draft';
@@ -60,6 +62,7 @@ public with sharing class WeaveBuilderDTOs {
         @AuraEnabled public Datetime lastModifiedDate { get; set; }
         @AuraEnabled public Id brandId { get; set; }
         @AuraEnabled public String brandName { get; set; }
+        @AuraEnabled public String templateOutputType { get; set; }
     }
 
     public class WeaveBrandSummaryDTO {
@@ -247,12 +250,28 @@ public with sharing class WeaveBuilderDTOs {
         @AuraEnabled public String outputType { get; set; }
         @AuraEnabled public String scheduledAt { get; set; }
         @AuraEnabled public String filterClause { get; set; }
+        @AuraEnabled public String filterConditions { get; set; }
         @AuraEnabled public String recordId { get; set; }
+        @AuraEnabled public Id emailTemplateId { get; set; }
+        @AuraEnabled public String emailTemplateName { get; set; }
         @AuraEnabled public Integer recordsTargeted { get; set; }
         @AuraEnabled public Integer recordsSent { get; set; }
         @AuraEnabled public Integer recordsFailed { get; set; }
         @AuraEnabled public String errorDetail { get; set; }
         @AuraEnabled public String jobName { get; set; }
+        @AuraEnabled public String templateName { get; set; }
+        @AuraEnabled public String objectApiName { get; set; }
+    }
+
+    public class WeaveBulkSendDTO {
+        @AuraEnabled public Id templateId { get; set; }
+        @AuraEnabled public Id emailTemplateId { get; set; }
+        @AuraEnabled public String outputType { get; set; }
+        @AuraEnabled public String scheduleMode { get; set; }  // 'once' | 'recurring'
+        @AuraEnabled public String scheduledAt { get; set; }
+        @AuraEnabled public String recurringConfigJson { get; set; }
+        @AuraEnabled public String filterConditionsJson { get; set; }
+        @AuraEnabled public Integer batchSize { get; set; }
     }
 
     public class WeaveBuilderFieldDTO {

@@ -770,14 +770,59 @@
               </div>
               <p class="field-hint" style="margin-bottom:12px;">Define fields signers fill in during signing. The generated tag (e.g. <code>&#123;&#123;@Buyer:Field:Amount&#125;&#125;</code>) can be pasted into the document body. Enable Write Back to update the source record on completion.</p>
 
+              <!-- Signer Roles & Signing Order -->
+              <div class="section-header-row" style="margin-top:4px;margin-bottom:4px;">
+                <h4 class="tab-section-subtitle">Signer Roles &amp; Signing Order</h4>
+                <button class="btn-new-template" onclick={handleSignerRoleAdd}>+ Add Role</button>
+              </div>
+              <p class="field-hint" style="margin-bottom:8px;">Define who signs and in what order. Use <strong>Sequential</strong> mode at send time and assign Sign Order to control the sequence. Click a tag chip to copy it into your document.</p>
+              <template if:true={signerRolesList.length}>
+                <table class="slds-table slds-table_cell-buffer slds-table_bordered" style="margin-bottom:12px;">
+                  <thead>
+                    <tr class="slds-line-height_reset">
+                      <th><span class="slds-truncate">ROLE NAME</span></th>
+                      <th style="width:110px;"><span class="slds-truncate">SIGN ORDER</span></th>
+                      <th><span class="slds-truncate">COPY TAGS</span></th>
+                      <th style="width:70px;"><span class="slds-truncate">REMOVE</span></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template for:each={signerRolesList} for:item="r">
+                      <tr key={r.key} class="slds-hint-parent">
+                        <td>
+                          <lightning-input label="" variant="label-hidden" value={r.role} data-key={r.key} data-field="role" onchange={handleSignerRoleChange} placeholder="e.g. Buyer"></lightning-input>
+                        </td>
+                        <td>
+                          <lightning-input type="number" label="" variant="label-hidden" value={r.order} min="1" data-key={r.key} data-field="order" onchange={handleSignerRoleChange}></lightning-input>
+                        </td>
+                        <td>
+                          <span style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;padding:4px 0;">
+                            <button class="merge-chip" data-tag={r.tagFull} onclick={handleSignerTagCopy} title="Full signature">Sig</button>
+                            <button class="merge-chip" data-tag={r.tagInitials} onclick={handleSignerTagCopy} title="Initials">Init</button>
+                            <button class="merge-chip" data-tag={r.tagDate} onclick={handleSignerTagCopy} title="Date (auto-stamped)">Date</button>
+                          </span>
+                        </td>
+                        <td>
+                          <button class="action-link delete-link" data-key={r.key} onclick={handleSignerRoleRemove}>Remove</button>
+                        </td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </template>
+              <template if:false={signerRolesList.length}>
+                <div class="empty-state-mini" style="margin-bottom:12px;">
+                  <p>No roles defined. Add roles to pre-fill the Send for Signature dialog and generate copy-ready tags.</p>
+                </div>
+              </template>
+
               <!-- Built-in signer tag reference -->
               <div class="signer-tag-reference">
                 <p class="brand-tags-label">Built-in Signer Tags — click to copy (replace <strong>Role</strong> with your signer's role, e.g. Buyer, Seller)</p>
                 <div class="brand-tags-panel" style="margin-top:6px;">
-                  <button class="merge-chip" data-tag="{{@Role:Full}}" onclick={handleSignerTagCopy} title="Drawn signature">&#x270D; Signature</button>
-                  <button class="merge-chip" data-tag="{{@Role:Initials}}" onclick={handleSignerTagCopy} title="Drawn initials">Initials</button>
-                  <button class="merge-chip" data-tag="{{@Role:Date}}" onclick={handleSignerTagCopy} title="Auto-stamped date when signed">Date (auto)</button>
-                  <button class="merge-chip" data-tag="{{@Role:DatePick}}" onclick={handleSignerTagCopy} title="Signer picks a date">Date (pick)</button>
+                  <template for:each={signerBuiltInTags} for:item="bt">
+                    <button key={bt.key} class="merge-chip" data-tag={bt.tag} onclick={handleSignerTagCopy} title={bt.title}>{bt.label}</button>
+                  </template>
                 </div>
                 <template if:true={copiedSignerTag}>
                   <p class="brand-tags-copied">&#x2713; Copied: <code>{copiedSignerTag}</code></p>
