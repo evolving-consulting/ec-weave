@@ -9,6 +9,7 @@
  *   5. Update Weave_Template_Config__c status fields
  *   6. Write Weave_MCN_Sync_Log__c entry
  */
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
 public with sharing class SfmcTemplatePublisher {
 
     // ── Public DTOs ───────────────────────────────────────────────────────────

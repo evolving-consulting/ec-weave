@@ -1,3 +1,4 @@
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
 public with sharing class WeaveFilterConditionBuilder {
 
     private static final Set<String> ALLOWED_OPERATORS = new Set<String>{

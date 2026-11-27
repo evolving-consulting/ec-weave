@@ -7,6 +7,7 @@ public with sharing class RenderedEmailDTO {
     @AuraEnabled public String htmlBody;
     @AuraEnabled public String plainTextBody;
 
+    @SuppressWarnings('PMD.EmptyStatementBlock')
     public RenderedEmailDTO() {
     }
 

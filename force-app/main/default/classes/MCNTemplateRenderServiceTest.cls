@@ -1,3 +1,4 @@
+@SuppressWarnings('PMD.MethodNamingConventions')
 @IsTest
 private class MCNTemplateRenderServiceTest {
 

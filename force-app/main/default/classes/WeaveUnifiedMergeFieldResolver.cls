@@ -20,6 +20,7 @@
  *       );
  *   String html = GenericMergeFieldResolver.resolveTemplate(template, ctx);
  */
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
 public with sharing class WeaveUnifiedMergeFieldResolver {
 
     // ── Context builder ───────────────────────────────────────────────────────

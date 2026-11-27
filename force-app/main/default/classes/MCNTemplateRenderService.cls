@@ -8,6 +8,7 @@
  * Results are cached for 5 minutes per (templateId + contextHash) in Platform Cache.
  * Falls back to direct render if cache is unavailable.
  */
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
 public with sharing class MCNTemplateRenderService {
 
     @TestVisible

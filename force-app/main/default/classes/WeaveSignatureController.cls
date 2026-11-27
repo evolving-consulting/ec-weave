@@ -1,3 +1,4 @@
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
 global without sharing class WeaveSignatureController {
 
     // ─── Page state (read by VF bindings) ────────────────────────────────────

@@ -10,6 +10,7 @@
  *   {{Section.ApiName}}                      →  left as-is (pre-rendered HTML block)
  *   {{Brand.Attr}}                           →  left as-is (resolved by Weave brand engine)
  */
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
 public with sharing class MergeFieldTranslator {
 
     private static final Pattern MERGE_TAG = Pattern.compile(

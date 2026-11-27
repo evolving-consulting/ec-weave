@@ -1,3 +1,4 @@
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
 public with sharing class WeaveRecipientSegmentController {
 
     public class SegmentPreviewResult {

@@ -10,6 +10,7 @@ public with sharing class DceEmailAttachmentDTO {
     @AuraEnabled public Boolean selected { get; set; }
     @AuraEnabled public String source { get; set; }
 
+    @SuppressWarnings('PMD.EmptyStatementBlock')
     public DceEmailAttachmentDTO() {
     }
 }

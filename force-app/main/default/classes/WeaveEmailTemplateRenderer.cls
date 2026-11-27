@@ -2,6 +2,7 @@
  * Renders Weave templates by assembling component HTML_Output values by region,
  * executing linked queries for Related Table components, and resolving merge tags.
  */
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
 public with sharing class WeaveEmailTemplateRenderer {
 
     private static Map<String, SObject> standardMergeAliases;

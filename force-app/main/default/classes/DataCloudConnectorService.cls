@@ -11,6 +11,7 @@
  * Results are cached for the duration of the request (static variable) to
  * avoid redundant EntityDefinition queries within the same transaction.
  */
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
 public with sharing class DataCloudConnectorService {
 
     // ── Public DTOs ───────────────────────────────────────────────────────────

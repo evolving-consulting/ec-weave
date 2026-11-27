@@ -31,11 +31,11 @@
     background: none;
     border: none;
     color: var(--ec-brand-muted, #6b7280);
-    font-size: 13px;
+    font-size: var(--slds-g-font-scale-base, 13px);
     cursor: pointer;
-    padding: 4px;
-    line-height: 1;
-    border-radius: 4px;
+    padding: var(--slds-g-spacing-1, 4px);
+    line-height: var(--slds-g-font-line-height-1, 1);
+    border-radius: var(--slds-g-radius-border-1, 4px);
     transition: color .15s;
 }
 .btn-remove-condition:hover { color: #dc2626; }
@@ -43,11 +43,11 @@
 .btn-add-condition {
     align-self: flex-start;
     background: none;
-    border: 1px solid var(--ec-brand-teal-border, #c0deda);
+    border: var(--slds-g-sizing-border-1, 1px) solid var(--ec-brand-teal-border, #c0deda);
     color: var(--ec-brand-teal, #1f5f5b);
-    font-size: 12px;
-    font-weight: 600;
-    padding: 4px 12px;
+    font-size: var(--slds-g-font-scale-neg-1, 12px);
+    font-weight: var(--slds-g-font-weight-6, 600);
+    padding: 4px var(--slds-g-spacing-3, 12px)ds-g-spacing-1, 4px) 12px;
     border-radius: 6px;
     cursor: pointer;
     transition: background .15s;
@@ -57,8 +57,8 @@
 }
 
 .no-conditions-hint {
-    font-size: 12px;
+    font-size: var(--slds-g-font-scale-neg-1, 12px);
     color: var(--ec-brand-muted, #6b7280);
     margin: 0;
-    padding: 4px 0;
+    padding: var(--slds-g-spacing-1, 4px) 0;
 }

@@ -7,6 +7,7 @@
  *   List<LegacyTemplateAnalyzer.AnalysisResult> results =
  *       LegacyTemplateAnalyzer.analyzeAll();
  */
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
 public with sharing class LegacyTemplateAnalyzer {
 
     // ── DTOs ──────────────────────────────────────────────────────────────────

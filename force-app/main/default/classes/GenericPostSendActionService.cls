@@ -15,6 +15,7 @@ public with sharing class GenericPostSendActionService {
     private static final Integer MAX_TASK_DESCRIPTION_LENGTH = 32000;
 
     private virtual class ActionHandler {
+        @SuppressWarnings('PMD.EmptyStatementBlock')
         public virtual void execute(DceBuilderPostSendActionDTO action, ExecutionContext context) {
         }
     }

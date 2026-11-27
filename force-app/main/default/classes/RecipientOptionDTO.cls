@@ -13,6 +13,7 @@ public with sharing class RecipientOptionDTO {
     @AuraEnabled public Boolean allowMultiple;
     @AuraEnabled public String sourceType;
 
+    @SuppressWarnings('PMD.EmptyStatementBlock')
     public RecipientOptionDTO() {
     }
 

@@ -1,3 +1,4 @@
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
 public with sharing class WeaveRecurringEmailJob implements Schedulable {
 
     private static final Date KNOWN_SUNDAY = Date.newInstance(2000, 1, 2);

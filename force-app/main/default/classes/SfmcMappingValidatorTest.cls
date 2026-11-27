@@ -1,4 +1,5 @@
 @IsTest
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
 private class SfmcMappingValidatorTest {
 
     private static Weave_Template_Config__c makeTemplate(String status, String channels) {

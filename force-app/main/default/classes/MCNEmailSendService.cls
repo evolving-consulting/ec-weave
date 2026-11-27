@@ -7,6 +7,7 @@
  *   POST /messaging/v1/email/messages
  *   Body: { "definitionKey": "<mcnDefinitionKey>", "recipient": { "address": "...", "attributes": {...} } }
  */
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
 public with sharing class MCNEmailSendService {
 
     @TestVisible

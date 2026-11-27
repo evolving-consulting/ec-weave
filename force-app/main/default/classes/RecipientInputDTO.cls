@@ -7,6 +7,7 @@ public with sharing class RecipientInputDTO {
     @AuraEnabled public String email { get; set; }
     @AuraEnabled public String recipientType { get; set; }
 
+    @SuppressWarnings('PMD.EmptyStatementBlock')
     public RecipientInputDTO() {
     }
 

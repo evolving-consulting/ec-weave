@@ -3,6 +3,7 @@ public with sharing class DceBuilderObjectDTO {
     @AuraEnabled public String apiName { get; set; }
     @AuraEnabled public String pluralLabel { get; set; }
 
+    @SuppressWarnings('PMD.EmptyStatementBlock')
     public DceBuilderObjectDTO() {
     }
 

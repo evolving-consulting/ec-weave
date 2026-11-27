@@ -2,6 +2,7 @@
  * Generic merge field resolver for the Dynamic Communication Engine.
  * This utility parses and resolves template placeholders without querying data.
  */
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
 public with sharing class GenericMergeFieldResolver {
   private static final String PLACEHOLDER_REGEX = '\\{\\{\\s*([A-Za-z_][A-Za-z0-9_]*(__(c|r))?(\\.[A-Za-z_][A-Za-z0-9_]*(__(c|r))?){0,3})\\s*\\}\\}';
   private static final String FIELD_PATH_REGEX = '^[A-Za-z_][A-Za-z0-9_]*(__(c|r))?(\\.[A-Za-z_][A-Za-z0-9_]*(__(c|r))?){0,3}$';

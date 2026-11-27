@@ -12,6 +12,7 @@ public with sharing class GenericEmailTemplateDTO {
     @AuraEnabled public Boolean storeEmailHistory;
     @AuraEnabled public String templateOutputType;
 
+    @SuppressWarnings('PMD.EmptyStatementBlock')
     public GenericEmailTemplateDTO() {
     }
 

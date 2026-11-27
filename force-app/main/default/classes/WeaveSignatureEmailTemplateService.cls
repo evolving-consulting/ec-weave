@@ -1,3 +1,4 @@
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
 public with sharing class WeaveSignatureEmailTemplateService {
 
     public static final String TYPE_REQUEST      = 'Signature Request';

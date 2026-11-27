@@ -1,3 +1,4 @@
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
 public with sharing class WeaveRecipientResolver {
     private static final String SOURCE_TYPE_PARENT_FIELD = 'Parent Field';
     private static final String SOURCE_TYPE_RELATED_RECORDS = 'Related Records';

@@ -13,6 +13,7 @@ public with sharing class GenericEmailSendRequest {
     @AuraEnabled public List<Id> attachmentContentDocumentIds { get; set; }
     @AuraEnabled public Boolean storeHistory { get; set; }
 
+    @SuppressWarnings('PMD.EmptyStatementBlock')
     public GenericEmailSendRequest() {
     }
 

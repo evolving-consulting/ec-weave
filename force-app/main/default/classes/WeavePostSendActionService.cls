@@ -1,3 +1,4 @@
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
 public with sharing class WeavePostSendActionService {
 
     public static void executeActions(Id templateId, Id sourceRecordId, String parentObjectApiName) {

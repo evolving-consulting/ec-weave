@@ -1,4 +1,6 @@
+@SuppressWarnings('PMD.MethodNamingConventions')
 @IsTest
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
 private class LegacyTemplateAnalyzerTest {
 
     // ── Helpers ───────────────────────────────────────────────────────────────

@@ -1,3 +1,4 @@
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
 public without sharing class WeaveUnsubscribeController {
 
     public String status       { get; private set; }

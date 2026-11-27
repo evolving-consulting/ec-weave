@@ -1,4 +1,5 @@
 @IsTest
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
 private class SfmcTemplateConflictDetectorTest {
 
     private static Weave_Template_Config__c makePublishedTemplate(String assetId) {

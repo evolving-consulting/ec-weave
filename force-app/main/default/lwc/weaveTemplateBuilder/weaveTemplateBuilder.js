@@ -1587,7 +1587,7 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
     const key = event.currentTarget.dataset.key;
     const r = this.draftTemplate.recipients.find(x => x.localKey === key);
     if (r) {
-      let editingR = { ...r };
+      const editingR = { ...r };
       if (r.recipientSourceType === 'Related Records' && r._linkedQueryLocalKey) {
         const q = this.draftTemplate.queries.find(x => x.localKey === r._linkedQueryLocalKey);
         if (q) editingR._linkedQueryFields = this._parseFieldsFromSoql(q.soqlQuery || '');
