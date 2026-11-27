@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Email_Template__c</fullName>
+    <label>Email Template</label>
+    <referenceTo>Weave_Template_Config__c</referenceTo>
+    <relationshipLabel>Bulk Sends (Email Template)</relationshipLabel>
+    <relationshipName>Bulk_Sends_Email_Template</relationshipName>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Lookup</type>
+</CustomField>

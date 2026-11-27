@@ -17,7 +17,7 @@
 .page-header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: flex-end;
     padding: 28px 0 20px;
 }
 
@@ -47,8 +47,7 @@
 .page-header-right {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding-top: 4px;
+    gap: 12px;
 }
 
 /* ── Buttons ──────────────────────────────────────── */
@@ -398,10 +397,9 @@
 /* ── Filter row ───────────────────────────────────── */
 .filter-row {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
-    gap: 12px;
+    margin-bottom: 16px;
+    gap: 16px;
 }
 
 .filter-tabs {

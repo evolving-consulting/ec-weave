@@ -37,6 +37,9 @@ public with sharing class WeaveEmailTemplateRenderer {
                         + (footerHtml == null ? '' : footerHtml)
                         + brandFooter;
 
+        // Strip {{#Signers}} block in preview/email contexts (no signer data available)
+        fullHtml = resolveSignerBlock(fullHtml, null);
+
         String subjectTemplate = (String.isNotBlank(template.Subject_Variant_B__c) && Math.random() >= 0.5)
             ? template.Subject_Variant_B__c
             : template.Subject_Template__c;
@@ -701,7 +704,7 @@ public with sharing class WeaveEmailTemplateRenderer {
             pageDivs.add(pageHtml);
         }
 
-        String canvasHtml = String.join(pageDivs, '\n');
+        String canvasHtml = resolveSignerBlock(String.join(pageDivs, '\n'), null);
 
         // Apply brand header/footer — wrap in weave-pdf-header/footer classes so the PDF
         // wrapper can position them as fixed elements (repeating on every page) rather than
@@ -719,6 +722,41 @@ public with sharing class WeaveEmailTemplateRenderer {
 
         return new RenderedEmailDTO(subject, fullHtml, stripHtml(fullHtml));
     }
+
+    // ── Signer block resolution ───────────────────────────────────────────────
+
+    /**
+     * Resolves {{#Signers}}...{{/Signers}} blocks in html.
+     * When signers is null/empty, strips the block entirely (preview/email contexts).
+     * When signers is provided, repeats the inner template once per signer.
+     * Inner tags: {{Name}}, {{Role}}, {{Email}}, {{Status}}, {{SignedDate}}, {{IP}}
+     */
+    public static String resolveSignerBlock(String html, List<Weave_Signer__c> signers) {
+        if (String.isBlank(html) || !html.contains('{{#Signers}}')) return html;
+        Pattern pat = Pattern.compile('(?s)\\{\\{#Signers\\}\\}(.*?)\\{\\{/Signers\\}\\}');
+        Matcher m = pat.matcher(html);
+        String result = html;
+        while (m.find()) {
+            String fullMatch   = m.group(0);
+            String rowTemplate = m.group(1);
+            String replacement = '';
+            if (signers != null && !signers.isEmpty()) {
+                for (Weave_Signer__c s : signers) {
+                    replacement += rowTemplate
+                        .replace('{{Name}}',       escHtml(s.Name))
+                        .replace('{{Role}}',       escHtml(s.Role__c))
+                        .replace('{{Email}}',      escHtml(s.Email__c))
+                        .replace('{{Status}}',     escHtml(s.Status__c))
+                        .replace('{{SignedDate}}',  s.Signed_At__c != null ? s.Signed_At__c.format('MMM d, yyyy h:mm a') : '')
+                        .replace('{{IP}}',         escHtml(s.IP_Address__c));
+                }
+            }
+            result = result.replace(fullMatch, replacement);
+        }
+        return result;
+    }
+
+    private static String escHtml(String s) { return s != null ? s.escapeHtml4() : ''; }
 
     // ── Rendered Email DTO ────────────────────────────────────────────────────
 

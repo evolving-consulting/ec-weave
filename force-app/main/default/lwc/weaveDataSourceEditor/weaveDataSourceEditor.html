@@ -212,7 +212,7 @@
                 </template>
                 <template if:true={hasValidationWarnings}>
                     <div class="validation-warnings">
-                        <p class="warn-count">⚠ {warningCount} warning(s):</p>
+                        <p class="warn-count">⚠︎ {warningCount} warning(s):</p>
                         <ul>
                             <template for:each={validationResult.warnings} for:item="warn">
                                 <li key={warn.tag}>

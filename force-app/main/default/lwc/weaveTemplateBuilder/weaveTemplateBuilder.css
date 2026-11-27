@@ -646,6 +646,7 @@
 
 /* ── Component edit modal extras ─────────────────────────────────────────── */
 .modal-container_wide { width: min(960px, 96vw); }
+.modal-container_recipient { min-height: 500px; }
 
 .modal-hint { color: var(--ec-brand-muted); font-size: 12px; margin: 4px 0; }
 

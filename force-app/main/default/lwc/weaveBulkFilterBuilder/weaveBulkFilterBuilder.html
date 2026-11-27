@@ -1,0 +1,67 @@
+<template>
+    <div class="filter-builder">
+
+        <template if:true={hasConditions}>
+            <div class="condition-list">
+                <template for:each={conditions} for:item="cond">
+                    <div key={cond.key} class="condition-row">
+                        <div class="condition-cell condition-cell_field">
+                            <lightning-combobox
+                                label="Field"
+                                variant="label-hidden"
+                                value={cond.field}
+                                options={fieldOptions}
+                                placeholder="Select field…"
+                                data-key={cond.key}
+                                onchange={handleFieldChange}>
+                            </lightning-combobox>
+                        </div>
+                        <div class="condition-cell condition-cell_op">
+                            <lightning-combobox
+                                label="Operator"
+                                variant="label-hidden"
+                                value={cond.operator}
+                                options={cond.operatorOptions}
+                                placeholder="is…"
+                                data-key={cond.key}
+                                onchange={handleOperatorChange}>
+                            </lightning-combobox>
+                        </div>
+                        <div class="condition-cell condition-cell_val">
+                            <lightning-input
+                                label="Value"
+                                variant="label-hidden"
+                                value={cond.value}
+                                placeholder="Value"
+                                data-key={cond.key}
+                                onchange={handleValueChange}>
+                            </lightning-input>
+                        </div>
+                        <template if:true={cond.showConjunction}>
+                            <div class="condition-cell condition-cell_conj">
+                                <lightning-combobox
+                                    label="And/Or"
+                                    variant="label-hidden"
+                                    value={cond.conjunction}
+                                    options={conjunctionOptions}
+                                    data-key={cond.key}
+                                    onchange={handleConjunctionChange}>
+                                </lightning-combobox>
+                            </div>
+                        </template>
+                        <div class="condition-cell condition-cell_remove">
+                            <button class="btn-remove-condition" data-key={cond.key} onclick={handleRemoveCondition}
+                                title="Remove condition">&#x2715;</button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </template>
+
+        <template if:false={hasConditions}>
+            <p class="no-conditions-hint">No filters — all records in the object will be included.</p>
+        </template>
+
+        <button class="btn-add-condition" onclick={handleAddCondition}>+ Add Filter</button>
+    </div>
+</template>

@@ -123,42 +123,59 @@
     // ── Build signature canvases ──────────────────────────────────────────────
     var sigData = {};
 
+    // sigData is keyed by "role:type" (e.g. "buyer:full", "buyer:initials", "buyer:datepick")
     function buildPads() {
         var container = document.getElementById('sig-pads-container');
         if (!container) return;
         placements.forEach(function(pl) {
-            if (pl.type !== 'Full' && pl.type !== 'Initials') return;
-            var wrap = document.createElement('div');
-            wrap.className = 'sig-box-wrap';
-            var label = document.createElement('div');
-            label.className = 'sig-label';
-            label.textContent = pl.type === 'Initials'
-                ? 'Initials — ' + pl.role
-                : 'Signature — ' + pl.role;
-            var canvas = document.createElement('canvas');
-            canvas.className = 'sig-pad';
-            canvas.setAttribute('data-role', pl.role.toLowerCase());
-            var w = (pl.wIn || 2.5) * 96;
-            var h = (pl.hIn || 0.75) * 96;
-            canvas.width  = w;
-            canvas.height = h;
-            canvas.style.height = '120px';
-            var actions = document.createElement('div');
-            actions.className = 'sig-actions';
-            var clear = document.createElement('button');
-            clear.className = 'btn-clear';
-            clear.textContent = 'Clear';
-            clear.onclick = (function(c, role) { return function() { clearPad(c, role); }; })(canvas, pl.role.toLowerCase());
-            actions.appendChild(clear);
-            wrap.appendChild(label);
-            wrap.appendChild(canvas);
-            wrap.appendChild(actions);
-            container.appendChild(wrap);
-            initDrawing(canvas, pl.role.toLowerCase());
+            var typeLC = (pl.type || '').toLowerCase();
+            var sigKey = pl.role.toLowerCase() + ':' + typeLC;
+
+            if (typeLC === 'full' || typeLC === 'initials') {
+                var wrap = document.createElement('div');
+                wrap.className = 'sig-box-wrap';
+                var label = document.createElement('div');
+                label.className = 'sig-label';
+                label.textContent = typeLC === 'initials'
+                    ? 'Initials — ' + pl.role
+                    : 'Signature — ' + pl.role;
+                var canvas = document.createElement('canvas');
+                canvas.className = 'sig-pad';
+                var w = (pl.wIn || 2.5) * 96;
+                var h = (pl.hIn || 0.75) * 96;
+                canvas.width  = w;
+                canvas.height = h;
+                canvas.style.height = '120px';
+                var actions = document.createElement('div');
+                actions.className = 'sig-actions';
+                var clear = document.createElement('button');
+                clear.className = 'btn-clear';
+                clear.textContent = 'Clear';
+                clear.onclick = (function(c, k) { return function() { clearPad(c, k); }; })(canvas, sigKey);
+                actions.appendChild(clear);
+                wrap.appendChild(label);
+                wrap.appendChild(canvas);
+                wrap.appendChild(actions);
+                container.appendChild(wrap);
+                initDrawing(canvas, sigKey);
+
+            } else if (typeLC === 'datepick') {
+                var wrap2 = document.createElement('div');
+                wrap2.className = 'form-field-wrap';
+                var lbl2 = document.createElement('label');
+                lbl2.textContent = 'Date — ' + pl.role;
+                var inp = document.createElement('input');
+                inp.type = 'date';
+                inp.onchange = (function(k) { return function() { sigData[k] = this.value; }; })(sigKey);
+                wrap2.appendChild(lbl2);
+                wrap2.appendChild(inp);
+                container.appendChild(wrap2);
+            }
+            // 'date' type is auto-stamped server-side — no UI needed
         });
     }
 
-    function initDrawing(canvas, role) {
+    function initDrawing(canvas, sigKey) {
         var ctx = canvas.getContext('2d');
         ctx.strokeStyle = '#1f5f5b';
         ctx.lineWidth = 2;
@@ -175,7 +192,7 @@
         }
         function start(e) { e.preventDefault(); drawing = true; var p = getPos(e); lastX = p.x; lastY = p.y; }
         function draw(e)  { e.preventDefault(); if (!drawing) return; var p = getPos(e); ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(p.x, p.y); ctx.stroke(); lastX = p.x; lastY = p.y; canvas.classList.add('signed'); }
-        function stop(e)  { e.preventDefault(); drawing = false; sigData[role] = canvas.toDataURL('image/png'); }
+        function stop(e)  { e.preventDefault(); drawing = false; sigData[sigKey] = canvas.toDataURL('image/png'); }
 
         canvas.addEventListener('mousedown',  start);
         canvas.addEventListener('mousemove',  draw);
@@ -186,11 +203,11 @@
         canvas.addEventListener('touchend',   stop,  { passive: false });
     }
 
-    function clearPad(canvas, role) {
+    function clearPad(canvas, sigKey) {
         var ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         canvas.classList.remove('signed');
-        delete sigData[role];
+        delete sigData[sigKey];
     }
 
     // ── Build form fields ─────────────────────────────────────────────────────
@@ -253,9 +270,11 @@
 
     // ── Submit ────────────────────────────────────────────────────────────────
     window.handleSubmit = function() {
-        // Validate required signatures
+        // Validate required signatures and datepick
         var missingPads = placements.filter(function(pl) {
-            return (pl.type === 'Full' || pl.type === 'Initials') && !sigData[pl.role.toLowerCase()];
+            var typeLC = (pl.type || '').toLowerCase();
+            var sigKey = pl.role.toLowerCase() + ':' + typeLC;
+            return (typeLC === 'full' || typeLC === 'initials' || typeLC === 'datepick') && !sigData[sigKey];
         });
         if (missingPads.length > 0) {
             setStatus('Please draw your signature in the box above.', true);
