@@ -816,23 +816,6 @@
                 </div>
               </template>
 
-              <!-- Built-in signer tag reference -->
-              <div class="signer-tag-reference">
-                <p class="brand-tags-label">Built-in Signer Tags — click to copy (replace <strong>Role</strong> with your signer's role, e.g. Buyer, Seller)</p>
-                <div class="brand-tags-panel" style="margin-top:6px;">
-                  <template for:each={signerBuiltInTags} for:item="bt">
-                    <button key={bt.key} class="merge-chip" data-tag={bt.tag} onclick={handleSignerTagCopy} title={bt.title}>{bt.label}</button>
-                  </template>
-                </div>
-                <template if:true={copiedSignerTag}>
-                  <p class="brand-tags-copied">&#x2713; Copied: <code>{copiedSignerTag}</code></p>
-                </template>
-                <p class="field-hint" style="margin-top:6px;">
-                  For multiple signers use different roles: <code>&#123;&#123;@Buyer:Full&#125;&#125;</code> <code>&#123;&#123;@Seller:Full&#125;&#125;</code>.<br/>
-                  Custom fields you define below use: <code>&#123;&#123;@Role:Field:YourLabel&#125;&#125;</code>
-                </p>
-              </div>
-
               <template if:true={isSignerFieldLoading}>
                 <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
               </template>

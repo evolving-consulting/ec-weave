@@ -257,7 +257,6 @@ export default class WeaveTemplateBuilder extends LightningElement {
   @track brandFooterEditorMode = 'Visual';
   @track brandActiveTab = 'identity';
   @track copiedTag = null;
-  @track copiedSignerTag = null;
   @track insertedTag = null;
   @track headerRteKey = 1;
   @track footerRteKey = 1;
@@ -392,15 +391,6 @@ export default class WeaveTemplateBuilder extends LightningElement {
   get hasBrandImages() { return (this.brandImages || []).length > 0; }
   get brandImagesWithUrls() { return (this.brandImages || []).filter(img => img.publicUrl); }
   get hasBrandImagesWithUrls() { return this.brandImagesWithUrls.length > 0; }
-
-  get signerBuiltInTags() {
-    return [
-      { key: 'Full',     label: '✍ Signature', tag: '{{@Role:Full}}',     title: 'Drawn signature — replace Role with signer role' },
-      { key: 'Initials', label: 'Initials',         tag: '{{@Role:Initials}}', title: 'Drawn initials — replace Role with signer role' },
-      { key: 'Date',     label: 'Date (auto)',       tag: '{{@Role:Date}}',     title: 'Auto-stamped date when signed' },
-      { key: 'DatePick', label: 'Date (pick)',       tag: '{{@Role:DatePick}}', title: 'Signer picks a date' }
-    ];
-  }
 
   get brandStaticTags() {
     return [
@@ -2344,9 +2334,9 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
     const tag = event.currentTarget.dataset.tag;
     if (!tag) return;
     navigator.clipboard.writeText(tag).then(() => {
-      this.copiedSignerTag = tag;
+      this.copiedTag = tag;
       // eslint-disable-next-line @lwc/lwc/no-async-operation
-      setTimeout(() => { this.copiedSignerTag = null; }, 1800);
+      setTimeout(() => { this.copiedTag = null; }, 1800);
     }).catch(() => {
       this.showToast('Copy failed', 'Could not copy to clipboard.', 'error');
     });
