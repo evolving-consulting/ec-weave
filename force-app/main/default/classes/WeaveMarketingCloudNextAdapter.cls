@@ -8,8 +8,7 @@
  *   DELETE /asset/v1/content/assets/{id}     — delete
  *   GET    /asset/v1/content/assets/{id}     — read
  */
-@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
-@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.ApexDoc')
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces,PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.ApexDoc')
 public virtual with sharing class WeaveMarketingCloudNextAdapter {
 
     @TestVisible

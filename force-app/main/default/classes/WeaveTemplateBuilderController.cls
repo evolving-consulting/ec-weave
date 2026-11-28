@@ -1,7 +1,6 @@
-@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
 // PMD.ApexCRUDViolation: CronTrigger is a system object — WITH USER_MODE is not supported on it.
 // The scheduler queries read job metadata for the current org's scheduler; no user data is exposed.
-@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ApexDoc,PMD.ApexCRUDViolation,PMD.NcssMethodCount,PMD.NcssTypeCount,PMD.NcssConstructorCount')
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces,PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ApexDoc,PMD.ApexCRUDViolation,PMD.NcssMethodCount,PMD.NcssTypeCount,PMD.NcssConstructorCount')
 public with sharing class WeaveTemplateBuilderController {
 
     @AuraEnabled(cacheable=true)
