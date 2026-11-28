@@ -9,8 +9,7 @@
  *   5. Update Weave_Template_Config__c status fields
  *   6. Write Weave_MCN_Sync_Log__c entry
  */
-@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
-@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ApexDoc')
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces,PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ApexDoc')
 public with sharing class SfmcTemplatePublisher {
 
     // ── Public DTOs ───────────────────────────────────────────────────────────

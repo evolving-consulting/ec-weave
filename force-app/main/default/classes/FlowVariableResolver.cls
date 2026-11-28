@@ -12,8 +12,7 @@
  * therefore validates syntax and existence of the Flow itself; individual
  * variable names are trusted at build time and resolved at runtime.
  */
-@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces,PMD.AvoidDebugStatements')
-@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.ApexDoc')
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces,PMD.AvoidDebugStatements,PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.ApexDoc')
 public with sharing class FlowVariableResolver {
 
     // ── Public DTOs ───────────────────────────────────────────────────────────

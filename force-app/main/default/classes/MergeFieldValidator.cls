@@ -3,8 +3,7 @@
  * Supports three source types: Parent (SObject fields), Flow (flow variables),
  * and DataCloud (Data Cloud object attributes).
  */
-@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces,PMD.NcssMethodCount,PMD.NcssTypeCount,PMD.NcssConstructorCount')
-@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ApexDoc')
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces,PMD.NcssMethodCount,PMD.NcssTypeCount,PMD.NcssConstructorCount,PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ApexDoc')
 public with sharing class MergeFieldValidator {
 
     private static final Pattern ANY_TAG = Pattern.compile(

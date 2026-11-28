@@ -1,8 +1,7 @@
-@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
 // PMD.ApexSOQLInjection: soqlFields entries are either schema-validated simple field names
 // (checked via Schema.getGlobalDescribe()) or relationship paths extracted from admin-configured
 // merge tags — not user-supplied input. parentObjectApiName is escapeSingleQuotes-protected.
-@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ApexDoc,PMD.ApexSOQLInjection,PMD.NcssMethodCount,PMD.NcssTypeCount,PMD.NcssConstructorCount')
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces,PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ApexDoc,PMD.ApexSOQLInjection,PMD.NcssMethodCount,PMD.NcssTypeCount,PMD.NcssConstructorCount')
 public with sharing class WeavePostSendActionService {
 
     public static void executeActions(Id templateId, Id sourceRecordId, String parentObjectApiName) {

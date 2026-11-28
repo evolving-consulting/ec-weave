@@ -1,5 +1,4 @@
-@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces,PMD.NcssMethodCount,PMD.NcssTypeCount,PMD.NcssConstructorCount,PMD.AvoidDebugStatements')
-@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ApexDoc')
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces,PMD.NcssMethodCount,PMD.NcssTypeCount,PMD.NcssConstructorCount,PMD.AvoidDebugStatements,PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ApexDoc')
 public with sharing class WeaveSignatureService {
 
     public class SignerInput {
@@ -244,9 +243,6 @@ public with sharing class WeaveSignatureService {
         signer.Sent_At__c    = DateTime.now();
         update as user signer;
 
-        String token      = EncodingUtil.base64Encode(Blob.valueOf(signer.Id + ':' + pin + ':' + (brandId != null ? String.valueOf(brandId) : '')));
-        String signingUrl = getSiteBaseUrl() + '/weave-sign?token=' + EncodingUtil.urlEncode(token, 'UTF-8');
-
         // Resolve brand from template
         Id brandId = null;
         String documentTitle = '';
@@ -261,6 +257,9 @@ public with sharing class WeaveSignatureService {
         } catch (Exception e) {
             System.debug(LoggingLevel.WARN, 'Template lookup failed during notification send (non-blocking): ' + e.getMessage());
         }
+
+        String token      = EncodingUtil.base64Encode(Blob.valueOf(signer.Id + ':' + pin + ':' + (brandId != null ? String.valueOf(brandId) : '')));
+        String signingUrl = getSiteBaseUrl() + '/weave-sign?token=' + EncodingUtil.urlEncode(token, 'UTF-8');
 
         String actionButton = '<p><a href="' + signingUrl + '" style="display:inline-block;background:#1f5f5b;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">Review &amp; Sign Document</a></p>';
         String securityNote = '<p style="color:#6b7280;font-size:12px;">Your one-time PIN: <strong style="letter-spacing:4px;">' + pin + '</strong>. This link is unique to you and expires in 10 minutes.</p>';
