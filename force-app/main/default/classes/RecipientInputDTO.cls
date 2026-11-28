@@ -2,11 +2,13 @@
  * Transport object for moving selected DCE recipient input between Apex and LWC/API callers.
  * This class intentionally contains no business logic.
  */
+@SuppressWarnings('PMD.ApexDoc')
 public with sharing class RecipientInputDTO {
     @AuraEnabled public String name { get; set; }
     @AuraEnabled public String email { get; set; }
     @AuraEnabled public String recipientType { get; set; }
 
+    @SuppressWarnings('PMD.EmptyStatementBlock')
     public RecipientInputDTO() {
     }
 

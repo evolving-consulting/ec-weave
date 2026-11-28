@@ -5,13 +5,16 @@
  * All callers should check response.getStatusCode() — this class does
  * not throw on non-2xx responses so callers can inspect and log details.
  */
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces,PMD.ApexDoc')
 public with sharing class SfmcHttpClient {
 
     @TestVisible
     private static final String NAMED_CREDENTIAL = 'callout:MCN_API';
 
+    @SuppressWarnings('PMD.EmptyStatementBlock')
     public SfmcHttpClient() {}
 
+    @SuppressWarnings('PMD.EmptyStatementBlock')
     public SfmcHttpClient(String namedCredentialOverride) {}
 
     // ── Public request/response wrappers ─────────────────────────────────────

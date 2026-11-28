@@ -8,6 +8,8 @@
  *   DELETE /asset/v1/content/assets/{id}     — delete
  *   GET    /asset/v1/content/assets/{id}     — read
  */
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
+@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.ApexDoc')
 public virtual with sharing class WeaveMarketingCloudNextAdapter {
 
     @TestVisible
@@ -36,6 +38,7 @@ public virtual with sharing class WeaveMarketingCloudNextAdapter {
         public String  mcnAssetId   { get; set; }
         public String  errorMessage { get; set; }
         public Integer statusCode   { get; set; }
+        @SuppressWarnings('PMD.EmptyStatementBlock')
         public MCNPublishResult() {}
         public MCNPublishResult(Boolean success, String assetId) {
             this.isSuccess  = success;
@@ -56,6 +59,7 @@ public virtual with sharing class WeaveMarketingCloudNextAdapter {
         public String version     { get; set; }
         public String contentHash { get; set; }
 
+        @SuppressWarnings('PMD.EmptyStatementBlock')
         public McnAsset() {}
     }
 

@@ -7,6 +7,7 @@
  *   String csv = MigrationReport.generateMigrationCsv(migrationSummary);
  *   MigrationReport.ReportSummary s = MigrationReport.buildSummary(analyses);
  */
+@SuppressWarnings('PMD.ApexDoc')
 public with sharing class MigrationReport {
 
     // ── DTOs ──────────────────────────────────────────────────────────────────

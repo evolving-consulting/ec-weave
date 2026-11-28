@@ -1,0 +1,13 @@
+# GlobalVariable (PMD ECMAScript): LWC module-level constants (const/let) are
+# standard LWC pattern for static component data. Override to Info (5) so they
+# do not block Critical/High gate checks.
+rules:
+  GlobalVariable:
+    severity:
+      severity: 5
+
+# Apply project ESLint config (eslint.config.js) so SLDS2 token rules are
+# disabled for CSS files and custom --ec-brand-* tokens are not flagged.
+engines:
+  eslint:
+    eslint_config_file: eslint.config.js

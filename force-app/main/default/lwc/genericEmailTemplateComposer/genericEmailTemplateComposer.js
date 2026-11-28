@@ -42,14 +42,28 @@ export default class GenericEmailTemplateComposer extends LightningElement {
         }
     }
 
-    @api objectApiName;
+    _objectApiName;
+    @api get objectApiName() { return this._objectApiName; }
+    set objectApiName(v) { this._objectApiName = v; }
+
     @api flowRecordId;
-    @api templateId;
+
+    _templateId;
+    @api get templateId() { return this._templateId; }
+    set templateId(v) { this._templateId = v; }
+
     @api flowMode = false;
     @api hideFlowFooter = false;
     @api finishFlowOnSend = false;
-    @api emailSent = false;
-    @api cancelled = false;
+
+    _emailSent = false;
+    @api get emailSent() { return this._emailSent; }
+    set emailSent(v) { this._emailSent = v; }
+
+    _cancelled = false;
+    @api get cancelled() { return this._cancelled; }
+    set cancelled(v) { this._cancelled = v; }
+
     @api mcnEnabled = false;
 
     @wire(CurrentPageReference)
@@ -363,7 +377,7 @@ export default class GenericEmailTemplateComposer extends LightningElement {
 
         try {
             this.recordSummary = await getRecordSummary({ recordId });
-        } catch (error) {
+        } catch {
             this.recordSummary = {
                 recordName: recordId,
                 objectLabel: this.objectApiName
@@ -378,7 +392,7 @@ export default class GenericEmailTemplateComposer extends LightningElement {
         }
 
         try {
-            this.objectApiName = await getObjectApiNameFromRecordId({ recordId });
+            this._objectApiName = await getObjectApiNameFromRecordId({ recordId });
         } catch (error) {
             const message = this.getErrorMessage(error) || 'Unable to determine object type from this record.';
             this.setError(message);
@@ -417,7 +431,7 @@ export default class GenericEmailTemplateComposer extends LightningElement {
             } else if (this.templates.length === 1) {
                 this.selectedTemplateId = this.templates[0].id;
                 this.selectedTemplate = this.templates[0];
-                this.templateId = this.selectedTemplateId;
+                this._templateId = this.selectedTemplateId;
             } else {
                 this.selectedTemplateId = undefined;
                 this.selectedTemplate = undefined;
@@ -438,7 +452,7 @@ export default class GenericEmailTemplateComposer extends LightningElement {
     async handleTemplateChange(event) {
         const value = event.detail.value;
         this.selectedTemplateId = value;
-        this.templateId = value;
+        this._templateId = value;
         this.selectedTemplate = this.templates.find((template) => template.id === value) || null;
         this.hasManualEdits = false;
         this.recipients = [];
@@ -854,8 +868,8 @@ export default class GenericEmailTemplateComposer extends LightningElement {
 
         try {
             const sendResult = await sendEmail({ request });
-            this.emailSent = true;
-            this.cancelled = false;
+            this._emailSent = true;
+            this._cancelled = false;
             this.sendComplete = true;
             this.dispatchEvent(new FlowAttributeChangeEvent('emailSent', this.emailSent));
             this.dispatchEvent(new FlowAttributeChangeEvent('cancelled', this.cancelled));
@@ -871,7 +885,7 @@ export default class GenericEmailTemplateComposer extends LightningElement {
             } else if (this.isQuickActionMode) {
                 try {
                     this.dispatchEvent(new CloseActionScreenEvent());
-                } catch (closeError) {
+                } catch {
                     // Record page usage does not always have an action modal to close.
                 }
             }
@@ -914,7 +928,7 @@ export default class GenericEmailTemplateComposer extends LightningElement {
             });
 
             if (result.isSuccess) {
-                this.emailSent = true;
+                this._emailSent = true;
                 this.showToast(
                     'Sent via Marketing Cloud Next',
                     'Email dispatched successfully. Message ID: ' + (result.messageId || 'N/A'),
@@ -951,8 +965,8 @@ export default class GenericEmailTemplateComposer extends LightningElement {
     }
 
     handleCancel() {
-        this.cancelled = true;
-        this.emailSent = false;
+        this._cancelled = true;
+        this._emailSent = false;
         this.dispatchEvent(new FlowAttributeChangeEvent('cancelled', this.cancelled));
         this.dispatchEvent(new FlowAttributeChangeEvent('emailSent', this.emailSent));
 
@@ -961,7 +975,7 @@ export default class GenericEmailTemplateComposer extends LightningElement {
         } else if (this.isQuickActionMode) {
             try {
                 this.dispatchEvent(new CloseActionScreenEvent());
-            } catch (closeError) {
+            } catch {
                 this.showToast('Cancelled', 'Email sending was cancelled.', 'info');
             }
         } else {
@@ -1114,9 +1128,11 @@ export default class GenericEmailTemplateComposer extends LightningElement {
         }
 
         const container = document.createElement('div');
+        // eslint-disable-next-line @lwc/lwc/no-inner-html
         container.innerHTML = html;
         this.ensureStandardEmailWrapper(container);
         this.applyStandardEmailTypography(container);
+        // eslint-disable-next-line @lwc/lwc/no-inner-html
         return container.innerHTML;
     }
 

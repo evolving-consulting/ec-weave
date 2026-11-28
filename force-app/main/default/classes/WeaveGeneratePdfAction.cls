@@ -5,6 +5,7 @@
  *
  * Usage: Flow Action element → category "Dynamic Communication Engine" → "Generate Weave PDF"
  */
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces,PMD.ApexDoc')
 public with sharing class WeaveGeneratePdfAction {
 
     public class GeneratePdfRequest {

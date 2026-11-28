@@ -1,4 +1,5 @@
-@isTest
+@SuppressWarnings('PMD.MethodNamingConventions,PMD.ApexUnitTestClassShouldHaveRunAs')
+@IsTest
 private class WeavePdfControllerTest {
 
     @TestSetup
@@ -15,7 +16,7 @@ private class WeavePdfControllerTest {
         insert c;
     }
 
-    @isTest
+    @IsTest
     static void testGeneratePdf() {
         Weave_Template_Config__c template = [SELECT Id FROM Weave_Template_Config__c LIMIT 1];
         Contact c = [SELECT Id FROM Contact LIMIT 1];
@@ -29,7 +30,7 @@ private class WeavePdfControllerTest {
         System.assertEquals(1, cvs.size(), 'ContentVersion should exist');
     }
 
-    @isTest
+    @IsTest
     static void testGeneratePdf_nullTemplate() {
         Contact c = [SELECT Id FROM Contact LIMIT 1];
         try {
@@ -40,7 +41,7 @@ private class WeavePdfControllerTest {
         }
     }
 
-    @isTest
+    @IsTest
     static void testGenerateCombinedPdf() {
         Weave_Template_Config__c template = [SELECT Id FROM Weave_Template_Config__c LIMIT 1];
         Contact c = [SELECT Id FROM Contact LIMIT 1];
@@ -55,7 +56,7 @@ private class WeavePdfControllerTest {
         System.assertNotEquals(null, docId, 'Should return a ContentDocumentId for combined PDF');
     }
 
-    @isTest
+    @IsTest
     static void testGenerateCombinedPdf_mismatchedLists() {
         Weave_Template_Config__c template = [SELECT Id FROM Weave_Template_Config__c LIMIT 1];
         Contact c = [SELECT Id FROM Contact LIMIT 1];

@@ -122,8 +122,8 @@
 <script>
 (function() {
     var SIGNER_ID = '{!JSENCODE(signerIdStr)}';
-    var placements = {!placementsJson};
-    var formFieldDefs = {!formFieldsJson};
+    var placements = JSON.parse('{!JSENCODE(placementsJson)}');
+    var formFieldDefs = JSON.parse('{!JSENCODE(formFieldsJson)}');
 
     // ── Build signature canvases ──────────────────────────────────────────────
     var sigData = {};

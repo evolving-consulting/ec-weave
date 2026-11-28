@@ -1002,7 +1002,7 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
       const parsed = this.draftTemplate.signerRoles ? JSON.parse(this.draftTemplate.signerRoles) : [];
       this._roleKeyCounter = 0;
       this.signerRolesList = (Array.isArray(parsed) ? parsed : []).map(r => this._roleRow(r.role, r.order));
-    } catch (e) {
+    } catch {
       this.signerRolesList = [];
     }
   }
@@ -1470,7 +1470,7 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
 
   _parseComponentConfig(configJson) {
     if (!configJson) return {};
-    try { return JSON.parse(configJson); } catch (e) { return {}; }
+    try { return JSON.parse(configJson); } catch { return {}; }
   }
 
   get editingComponentColumns() {
@@ -1587,7 +1587,7 @@ Generate BRAND_HEADER and BRAND_FOOTER now.`;
     const key = event.currentTarget.dataset.key;
     const r = this.draftTemplate.recipients.find(x => x.localKey === key);
     if (r) {
-      let editingR = { ...r };
+      const editingR = { ...r };
       if (r.recipientSourceType === 'Related Records' && r._linkedQueryLocalKey) {
         const q = this.draftTemplate.queries.find(x => x.localKey === r._linkedQueryLocalKey);
         if (q) editingR._linkedQueryFields = this._parseFieldsFromSoql(q.soqlQuery || '');

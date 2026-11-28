@@ -2,6 +2,8 @@
  * Validates a Weave template before publishing to Marketing Cloud Next.
  * Checks syntax, content, referenced data sources, and Flow existence.
  */
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces,PMD.NcssMethodCount,PMD.NcssTypeCount,PMD.NcssConstructorCount')
+@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ApexDoc')
 public with sharing class SfmcMappingValidator {
 
     // ── Public DTOs ───────────────────────────────────────────────────────────

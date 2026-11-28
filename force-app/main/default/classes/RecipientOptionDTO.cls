@@ -2,6 +2,7 @@
  * Transport object for moving selectable DCE recipient options between Apex and LWC/API callers.
  * This class intentionally contains no business logic.
  */
+@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.ApexDoc')
 public with sharing class RecipientOptionDTO {
     @AuraEnabled public String id;
     @AuraEnabled public String name;
@@ -13,6 +14,7 @@ public with sharing class RecipientOptionDTO {
     @AuraEnabled public Boolean allowMultiple;
     @AuraEnabled public String sourceType;
 
+    @SuppressWarnings('PMD.EmptyStatementBlock')
     public RecipientOptionDTO() {
     }
 

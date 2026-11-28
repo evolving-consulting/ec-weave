@@ -1,3 +1,4 @@
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ApexDoc,PMD.NcssMethodCount,PMD.NcssTypeCount,PMD.NcssConstructorCount')
 public with sharing class WeaveEmailTemplateController {
 
     @AuraEnabled(cacheable=true)

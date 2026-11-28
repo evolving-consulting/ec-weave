@@ -4,7 +4,7 @@ const OPERATORS_TEXT    = [
     { label: 'equals',         value: '='        },
     { label: 'not equals',     value: '!='       },
     { label: 'contains',       value: 'LIKE'     },
-    { label: 'not contains',   value: 'NOT LIKE' },
+    { label: 'not contains',   value: 'NOT LIKE' }
 ];
 const OPERATORS_NUMBER  = [
     { label: 'equals',         value: '='  },
@@ -12,20 +12,20 @@ const OPERATORS_NUMBER  = [
     { label: 'greater than',   value: '>'  },
     { label: 'greater or eq',  value: '>=' },
     { label: 'less than',      value: '<'  },
-    { label: 'less or eq',     value: '<=' },
+    { label: 'less or eq',     value: '<=' }
 ];
 const OPERATORS_PICK    = [
     { label: 'equals',     value: '='    },
     { label: 'not equals', value: '!='   },
     { label: 'in',         value: 'IN'   },
-    { label: 'not in',     value: 'NOT IN' },
+    { label: 'not in',     value: 'NOT IN' }
 ];
 const OPERATORS_BOOL    = [{ label: 'equals', value: '=' }];
 const OPERATORS_DEFAULT = OPERATORS_TEXT;
 
 const CONJUNCTION_OPTIONS = [
     { label: 'AND', value: 'AND' },
-    { label: 'OR',  value: 'OR'  },
+    { label: 'OR',  value: 'OR'  }
 ];
 
 let _keyCounter = 0;
@@ -67,16 +67,16 @@ export default class WeaveBulkFilterBuilder extends LightningElement {
         this.conditions = this.conditions.map((c, i) => ({
             ...c,
             operatorOptions: operatorsForType(this._fieldTypeMap[c.field]),
-            showConjunction: i < this.conditions.length - 1,
+            showConjunction: i < this.conditions.length - 1
         }));
     }
 
     handleAddCondition() {
         const key = nextKey();
         const updated = [
-            ...this.conditions.map((c, i) => ({ ...c, showConjunction: true })),
+            ...this.conditions.map((c) => ({ ...c, showConjunction: true })),
             { key, field: '', operator: '=', value: '', conjunction: 'AND',
-              operatorOptions: OPERATORS_DEFAULT, showConjunction: false },
+              operatorOptions: OPERATORS_DEFAULT, showConjunction: false }
         ];
         this.conditions = updated;
         this._emit();
@@ -96,7 +96,7 @@ export default class WeaveBulkFilterBuilder extends LightningElement {
         const dataType = this._fieldTypeMap[field] || '';
         const ops = operatorsForType(dataType);
         this.conditions = this.conditions.map(c =>
-            c.key === key ? { ...c, field, operatorOptions: ops, operator: ops[0].value } : c
+            (c.key === key ? { ...c, field, operatorOptions: ops, operator: ops[0].value } : c)
         );
         this._emit();
     }
@@ -104,21 +104,21 @@ export default class WeaveBulkFilterBuilder extends LightningElement {
     handleOperatorChange(evt) {
         const key = evt.currentTarget.dataset.key;
         const operator = evt.detail.value;
-        this.conditions = this.conditions.map(c => c.key === key ? { ...c, operator } : c);
+        this.conditions = this.conditions.map(c => (c.key === key ? { ...c, operator } : c));
         this._emit();
     }
 
     handleValueChange(evt) {
         const key = evt.currentTarget.dataset.key;
         const value = evt.detail.value;
-        this.conditions = this.conditions.map(c => c.key === key ? { ...c, value } : c);
+        this.conditions = this.conditions.map(c => (c.key === key ? { ...c, value } : c));
         this._emit();
     }
 
     handleConjunctionChange(evt) {
         const key = evt.currentTarget.dataset.key;
         const conjunction = evt.detail.value;
-        this.conditions = this.conditions.map(c => c.key === key ? { ...c, conjunction } : c);
+        this.conditions = this.conditions.map(c => (c.key === key ? { ...c, conjunction } : c));
         this._emit();
     }
 
@@ -129,7 +129,7 @@ export default class WeaveBulkFilterBuilder extends LightningElement {
                 field: c.field,
                 operator: c.operator,
                 value: c.value || '',
-                conjunction: i < arr.length - 1 ? (c.conjunction || 'AND') : null,
+                conjunction: i < arr.length - 1 ? (c.conjunction || 'AND') : null
             }));
         this.dispatchEvent(new CustomEvent('filterchange', { detail: { conditions: payload } }));
     }

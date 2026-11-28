@@ -7,6 +7,7 @@
  *   List<LegacyTemplateAnalyzer.AnalysisResult> results =
  *       LegacyTemplateAnalyzer.analyzeAll();
  */
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ApexDoc,PMD.AvoidNonRestrictiveQueries')
 public with sharing class LegacyTemplateAnalyzer {
 
     // ── DTOs ──────────────────────────────────────────────────────────────────

@@ -1,3 +1,4 @@
+@SuppressWarnings('PMD.ApexDoc,PMD.ApexUnitTestClassShouldHaveRunAs')
 @IsTest
 private class GenericEmailTemplateControllerTest {
     @IsTest

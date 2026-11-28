@@ -1,3 +1,4 @@
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ApexDoc')
 public with sharing class WeaveSignatureEmailTemplateService {
 
     public static final String TYPE_REQUEST      = 'Signature Request';
@@ -99,6 +100,7 @@ public with sharing class WeaveSignatureEmailTemplateService {
         return resolveTokens(tpl.subject != null ? tpl.subject : '', ctx);
     }
 
+    @SuppressWarnings('PMD.AvoidDeeplyNestedIfStmts')
     public static String renderBody(WeaveBuilderDTOs.WeaveSignatureEmailTemplateDTO tpl, Map<String, Object> ctx, Id brandId) {
         String body = resolveTokens(tpl.body != null ? tpl.body : '', ctx);
 

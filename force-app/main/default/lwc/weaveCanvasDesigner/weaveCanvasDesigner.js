@@ -552,7 +552,6 @@ Generate the complete HTML template now.`;
     _insertImageUrl(url) {
         const w = parseInt(this.imgWidth, 10);
         const h = parseInt(this.imgHeight, 10);
-        const hasDimensions = w > 0 || h > 0;
         let style = 'max-width:100%;display:block;';
         if (w > 0) style += `width:${w}px;`;
         if (h > 0) style += `height:${h}px;`;

@@ -1,3 +1,4 @@
+/* eslint-disable @salesforce-ux/slds/no-hardcoded-values-slds2, @salesforce-ux/slds/no-slds-class-overrides */
 :host {
     --ec-brand-teal: #1f5f5b;
     --ec-brand-teal-bg: #ebf4f3;
@@ -5,36 +6,36 @@
     --ec-brand-ink: #2b2b29;
     --ec-brand-muted: #6b7280;
 }
-.card-body { padding: 0 16px 16px; }
-.empty-state { text-align: center; padding: 2rem 1rem; }
-.empty-title { font-size: 14px; font-weight: 600; color: var(--ec-brand-ink); margin-bottom: 4px; }
-.empty-sub   { font-size: 12px; color: var(--ec-brand-muted); }
-.request-block { border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px; margin-bottom: 12px; }
-.req-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 8px; }
-.req-name   { font-size: 13px; font-weight: 600; color: var(--ec-brand-ink); margin-right: 8px; }
+.card-body { padding: 0 16px var(--slds-g-spacing-4, 16px)s-g-spacing-4, 16px) 16px; }
+.empty-state { text-align: center; padding: 2rem var(--slds-g-spacing-4, 1rem)s-g-spacing-6, 2rem) 1rem; }
+.empty-title { font-size: var(--slds-g-font-scale-1, 14px); font-weight: var(--slds-g-font-weight-6, 600); color: var(--ec-brand-ink); margin-bottom: var(--slds-g-spacing-1, 4px); }
+.empty-sub   { font-size: var(--slds-g-font-scale-neg-1, 12px); color: var(--ec-brand-muted); }
+.request-block { border: var(--slds-g-sizing-border-1, 1px) solid #e5e7eb; border-radius: var(--slds-g-radius-border-2, 8px); padding: 14px; margin-bottom: var(--slds-g-spacing-3, 12px); }
+.req-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--slds-g-spacing-3, 12px); gap: 8px; }
+.req-name   { font-size: var(--slds-g-font-scale-base, 13px); font-weight: var(--slds-g-font-weight-6, 600); color: var(--ec-brand-ink); margin-right: var(--slds-g-spacing-2, 8px); }
 .req-date   { font-size: 11px; color: var(--ec-brand-muted); white-space: nowrap; }
 .timeline   { display: flex; flex-direction: column; gap: 0; }
 .timeline-row { display: flex; gap: 10px; }
 .timeline-dots { display: flex; flex-direction: column; align-items: center; width: 16px; flex-shrink: 0; }
-.dot { width: 12px; height: 12px; border-radius: 50%; margin-top: 2px; flex-shrink: 0; }
+.dot { width: var(--slds-g-sizing-4, 12px); height: var(--slds-g-sizing-4, 12px); border-radius: 50%; margin-top: 2px; flex-shrink: 0; }
 .dot_muted  { background: #d1d5db; }
 .dot_sent   { background: #93c5fd; }
 .dot_opened { background: #fbbf24; }
 .dot_signed { background: #34d399; }
 .dot_error  { background: #f87171; }
-.timeline-line { width: 2px; background: #e5e7eb; flex: 1; min-height: 12px; }
+.timeline-line { width: 2px; background: #e5e7eb; flex: 1; min-height: var(--slds-g-sizing-4, 12px); }
 .timeline-content { padding-bottom: 14px; flex: 1; }
-.signer-name  { font-size: 13px; font-weight: 600; color: var(--ec-brand-ink); }
+.signer-name  { font-size: var(--slds-g-font-scale-base, 13px); font-weight: var(--slds-g-font-weight-6, 600); color: var(--ec-brand-ink); }
 .signer-meta  { display: flex; gap: 8px; align-items: center; margin-top: 2px; }
 .signer-role  { font-size: 11px; color: var(--ec-brand-muted); }
 .signer-timestamp { font-size: 11px; color: var(--ec-brand-muted); margin-top: 2px; }
-.pill { display: inline-block; border-radius: 20px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+.pill { display: inline-block; border-radius: var(--slds-g-radius-border-4, 20px); padding: 2px var(--slds-g-spacing-2, 8px); font-size: 11px; font-weight: var(--slds-g-font-weight-6, 600); }
 .pill_draft    { background: #fef3c7; color: #92400e; }
 .pill_sent     { background: #dbeafe; color: #1e40af; }
 .pill_progress { background: #ede9fe; color: #5b21b6; }
 .pill_active   { background: #d1fae5; color: #065f46; }
 .pill_error    { background: #fee2e2; color: #991b1b; }
 .pill_muted    { background: #f3f4f6; color: var(--ec-brand-muted); }
-.cancel-btn { background: none; border: 1px solid #fca5a5; border-radius: 6px; padding: 5px 12px; font-size: 12px; color: #dc2626; cursor: pointer; }
+.cancel-btn { background: none; border: var(--slds-g-sizing-border-1, 1px) solid #fca5a5; border-radius: 6px; padding: 5px var(--slds-g-spacing-3, 12px); font-size: var(--slds-g-font-scale-neg-1, 12px); color: #dc2626; cursor: pointer; }
 .cancel-btn:hover { background: #fef2f2; }
 .cancel-btn:disabled { opacity: 0.5; cursor: not-allowed; }

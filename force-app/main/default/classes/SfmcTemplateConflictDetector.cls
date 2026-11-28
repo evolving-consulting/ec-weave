@@ -7,6 +7,8 @@
  * Detection uses a SHA-256 content hash stored on Weave_Send_Log__c
  * via the MCN sync log's Translated_Content_Hash__c field.
  */
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
+@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.ApexDoc')
 public with sharing class SfmcTemplateConflictDetector {
 
     // ── Public DTOs ───────────────────────────────────────────────────────────

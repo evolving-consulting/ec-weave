@@ -1,3 +1,4 @@
+@SuppressWarnings('PMD.ApexDoc')
 public with sharing class DceOrgWideEmailDTO {
     @AuraEnabled public Id id { get; set; }
     @AuraEnabled public String displayName { get; set; }

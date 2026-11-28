@@ -1,10 +1,11 @@
+/* eslint-disable @salesforce-ux/slds/no-hardcoded-values-slds2, @salesforce-ux/slds/no-slds-class-overrides */
 .comp-card {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 12px;
+  padding: 10px var(--slds-g-spacing-3, 12px);
   background: #fff;
-  border: 1px solid #e5e7eb;
+  border: var(--slds-g-sizing-border-1, 1px) solid #e5e7eb;
   border-radius: 6px;
   cursor: grab;
   transition: box-shadow 0.15s;
@@ -15,14 +16,14 @@
 
 .comp-card__handle { color: #9ca3af; flex-shrink: 0; cursor: grab; }
 .comp-card__body { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; }
-.comp-card__name { font-size: 13px; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.comp-card__hint { font-size: 12px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.comp-card__name { font-size: var(--slds-g-font-scale-base, 13px); color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.comp-card__hint { font-size: var(--slds-g-font-scale-neg-1, 12px); color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .comp-card__actions { display: flex; gap: 2px; flex-shrink: 0; }
 
 .comp-card__type {
   display: inline-block;
-  font-size: 10px;
-  font-weight: 600;
+  font-size: var(--slds-g-font-scale-neg-2, 10px);
+  font-weight: var(--slds-g-font-weight-6, 600);
   letter-spacing: .4px;
   text-transform: uppercase;
   padding: 2px 6px;

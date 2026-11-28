@@ -2,13 +2,13 @@ import { LightningElement, api, track, wire } from 'lwc';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import getAvailableFlows        from '@salesforce/apex/WeaveTemplateBuilderController.getAvailableFlows';
 import getDataCloudConnectors   from '@salesforce/apex/WeaveTemplateBuilderController.getDataCloudConnectors';
-import getDataCloudAttributes   from '@salesforce/apex/WeaveTemplateBuilderController.getDataCloudAttributes';
+
 import validateTemplateMergeFields from '@salesforce/apex/WeaveTemplateBuilderController.validateTemplateMergeFields';
 
 const CHANNEL_OPTIONS = [
     { label: 'Salesforce Email',                value: 'Salesforce Email' },
     { label: 'Salesforce Email and Document',   value: 'Salesforce Email and Document' },
-    { label: 'All Channels',                    value: 'All Channels' },
+    { label: 'All Channels',                    value: 'All Channels' }
 ];
 
 let _rowId = 0;

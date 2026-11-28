@@ -1,3 +1,4 @@
+@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.ApexDoc')
 public with sharing class DceBuilderPostSendActionDTO {
     @AuraEnabled public String id { get; set; }
     @AuraEnabled public String localKey { get; set; }

@@ -1,4 +1,5 @@
-@isTest
+@SuppressWarnings('PMD.MethodNamingConventions,PMD.ApexUnitTestClassShouldHaveRunAs')
+@IsTest
 private class WeaveRecipientSegmentControllerTest {
 
     @TestSetup
@@ -21,27 +22,27 @@ private class WeaveRecipientSegmentControllerTest {
         insert c;
     }
 
-    @isTest
+    @IsTest
     static void testGetActiveSegments_all() {
         List<Weave_Recipient_Segment__c> results = WeaveRecipientSegmentController.getActiveSegments(null);
         System.assert(!results.isEmpty(), 'Should return active segments');
         System.assertEquals('Test Segment', results[0].Name);
     }
 
-    @isTest
+    @IsTest
     static void testGetActiveSegments_filtered() {
         List<Weave_Recipient_Segment__c> results = WeaveRecipientSegmentController.getActiveSegments('Contact');
         System.assert(!results.isEmpty(), 'Should return segment for Contact');
         System.assertEquals('Contact', results[0].Object_API_Name__c);
     }
 
-    @isTest
+    @IsTest
     static void testGetActiveSegments_noMatch() {
         List<Weave_Recipient_Segment__c> results = WeaveRecipientSegmentController.getActiveSegments('Opportunity');
         System.assertEquals(0, results.size(), 'Should return empty for non-matching object');
     }
 
-    @isTest
+    @IsTest
     static void testSaveSegment_insert() {
         Weave_Recipient_Segment__c seg = new Weave_Recipient_Segment__c(
             Name = 'New Segment',
@@ -53,7 +54,7 @@ private class WeaveRecipientSegmentControllerTest {
         System.assertNotEquals(null, saved.Id);
     }
 
-    @isTest
+    @IsTest
     static void testSaveSegment_update() {
         Weave_Recipient_Segment__c seg = [
             SELECT Id, Name, Object_API_Name__c, Email_Field_API_Name__c, Name_Field_API_Name__c
@@ -65,7 +66,7 @@ private class WeaveRecipientSegmentControllerTest {
         System.assertEquals(seg.Id, updated.Id);
     }
 
-    @isTest
+    @IsTest
     static void testSaveSegment_missingName() {
         Weave_Recipient_Segment__c seg = new Weave_Recipient_Segment__c(
             Object_API_Name__c = 'Contact',
@@ -79,7 +80,7 @@ private class WeaveRecipientSegmentControllerTest {
         }
     }
 
-    @isTest
+    @IsTest
     static void testDeleteSegment() {
         Weave_Recipient_Segment__c seg = [SELECT Id FROM Weave_Recipient_Segment__c LIMIT 1];
         WeaveRecipientSegmentController.deleteSegment(seg.Id);
@@ -87,7 +88,7 @@ private class WeaveRecipientSegmentControllerTest {
         System.assertEquals(0, remaining.size(), 'Segment should be deleted');
     }
 
-    @isTest
+    @IsTest
     static void testDeleteSegment_nullId() {
         try {
             WeaveRecipientSegmentController.deleteSegment(null);
@@ -97,14 +98,14 @@ private class WeaveRecipientSegmentControllerTest {
         }
     }
 
-    @isTest
+    @IsTest
     static void testPreviewSegmentCount() {
         Weave_Recipient_Segment__c seg = [SELECT Id FROM Weave_Recipient_Segment__c LIMIT 1];
         Integer count = WeaveRecipientSegmentController.previewSegmentCount(seg.Id);
         System.assert(count >= 0, 'Count should be non-negative');
     }
 
-    @isTest
+    @IsTest
     static void testResolveSegmentRecipients() {
         Weave_Recipient_Segment__c seg = [SELECT Id FROM Weave_Recipient_Segment__c LIMIT 1];
         List<RecipientOptionDTO> opts = WeaveRecipientSegmentController.resolveSegmentRecipients(seg.Id);
@@ -113,7 +114,7 @@ private class WeaveRecipientSegmentControllerTest {
         System.assertEquals('Segment', opts[0].sourceType);
     }
 
-    @isTest
+    @IsTest
     static void testResolveSegmentRecipients_nullId() {
         try {
             WeaveRecipientSegmentController.resolveSegmentRecipients(null);

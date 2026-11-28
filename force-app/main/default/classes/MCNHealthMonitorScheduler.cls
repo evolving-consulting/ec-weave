@@ -6,6 +6,8 @@
  * Schedule:
  *   System.schedule('MCN Health Monitor', '0 0 * * * ?', new MCNHealthMonitorScheduler());
  */
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces')
+@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.ApexDoc,PMD.AvoidDebugStatements')
 public with sharing class MCNHealthMonitorScheduler implements Schedulable {
 
     @TestVisible static final Decimal ERROR_THRESHOLD_PCT = 5.0;

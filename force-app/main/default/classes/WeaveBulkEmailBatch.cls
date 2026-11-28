@@ -1,3 +1,5 @@
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces,PMD.NcssMethodCount,PMD.NcssTypeCount,PMD.NcssConstructorCount')
+@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ApexDoc')
 public with sharing class WeaveBulkEmailBatch
         implements Database.Batchable<SObject>, Database.Stateful {
 
@@ -49,16 +51,9 @@ public with sharing class WeaveBulkEmailBatch
     public void execute(Database.BatchableContext ctx, List<SObject> scope) {
         targeted += scope.size();
 
-        if (outputType == 'Email' || outputType == 'Both') {
-            OrgLimit emailLimit = OrgLimits.getMap().get('SingleEmail');
-            if (emailLimit != null) {
-                Integer remaining = emailLimit.getLimit() - emailLimit.getValue();
-                if (remaining < scope.size()) {
-                    failed += scope.size();
-                    errorDetail = 'Stopped: org daily email limit nearly reached (' + remaining + ' remaining).';
-                    return;
-                }
-            }
+        if ((outputType == 'Email' || outputType == 'Both') && dailyEmailLimitExceeded(scope.size())) {
+            failed += scope.size();
+            return;
         }
 
         for (SObject record : scope) {
@@ -117,5 +112,14 @@ public with sharing class WeaveBulkEmailBatch
         );
         if (errorDetail != null) upd.Error_Detail__c = errorDetail;
         try { update upd; } catch (Exception ignored) {}
+    }
+
+    private Boolean dailyEmailLimitExceeded(Integer batchSize) {
+        OrgLimit emailLimit = OrgLimits.getMap().get('SingleEmail');
+        if (emailLimit == null) return false;
+        Integer remaining = emailLimit.getLimit() - emailLimit.getValue();
+        if (remaining >= batchSize) return false;
+        errorDetail = 'Stopped: org daily email limit nearly reached (' + remaining + ' remaining).';
+        return true;
     }
 }

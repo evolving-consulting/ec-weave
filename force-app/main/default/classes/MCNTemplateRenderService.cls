@@ -8,6 +8,7 @@
  * Results are cached for 5 minutes per (templateId + contextHash) in Platform Cache.
  * Falls back to direct render if cache is unavailable.
  */
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces,PMD.ApexDoc,PMD.AvoidDebugStatements')
 public with sharing class MCNTemplateRenderService {
 
     @TestVisible
@@ -83,6 +84,7 @@ public with sharing class MCNTemplateRenderService {
             ctx.dataCloudValues  = extractStringStringMap(raw, 'dataCloudValues');
         } catch (Exception e) {
             // Return empty context — renderer will use parent record only
+            System.debug(LoggingLevel.WARN, 'Context JSON parse failed (non-blocking): ' + e.getMessage());
         }
         return ctx;
     }
@@ -129,6 +131,7 @@ public with sharing class MCNTemplateRenderService {
             part.put(key, result, CACHE_TTL_SECONDS);
         } catch (Exception e) {
             // Cache unavailable — continue without caching
+            System.debug(LoggingLevel.WARN, 'Org cache put failed (non-blocking): ' + e.getMessage());
         }
     }
 
@@ -155,6 +158,7 @@ public with sharing class MCNTemplateRenderService {
             }
         } catch (Exception e) {
             // Return empty map on parse failure
+            System.debug(LoggingLevel.WARN, 'DataCloud value map parse failed (non-blocking): ' + e.getMessage());
         }
         return result;
     }

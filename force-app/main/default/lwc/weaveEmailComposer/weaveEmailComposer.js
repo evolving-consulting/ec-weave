@@ -23,7 +23,7 @@ import { CurrentPageReference } from 'lightning/navigation';
 
 const EMAIL_REGEX = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
 const VIEW_COMPOSE = 'compose';
-const VIEW_PREVIEW = 'preview';
+
 const EMAIL_FONT_FAMILY = '"Salesforce Sans", Arial, sans-serif';
 const EMAIL_FONT_SIZE = '13px';
 const TAB_COMPOSE = 'compose';
@@ -47,14 +47,27 @@ export default class WeaveEmailComposer extends LightningElement {
         }
     }
 
-    @api objectApiName;
+    _objectApiName;
+    @api get objectApiName() { return this._objectApiName; }
+    set objectApiName(v) { this._objectApiName = v; }
+
     @api flowRecordId;
-    @api templateId;
+
+    _templateId;
+    @api get templateId() { return this._templateId; }
+    set templateId(v) { this._templateId = v; }
+
     @api flowMode = false;
     @api hideFlowFooter = false;
     @api finishFlowOnSend = false;
-    @api emailSent = false;
-    @api cancelled = false;
+
+    _emailSent = false;
+    @api get emailSent() { return this._emailSent; }
+    set emailSent(v) { this._emailSent = v; }
+
+    _cancelled = false;
+    @api get cancelled() { return this._cancelled; }
+    set cancelled(v) { this._cancelled = v; }
 
     @wire(CurrentPageReference)
     setCurrentPageReference(pageRef) {
@@ -420,7 +433,7 @@ export default class WeaveEmailComposer extends LightningElement {
         if (!recordId) return;
         try {
             this.recordSummary = await getRecordSummary({ recordId });
-        } catch (error) {
+        } catch {
             this.recordSummary = { recordName: recordId, objectLabel: this.objectApiName };
         }
     }
@@ -429,7 +442,7 @@ export default class WeaveEmailComposer extends LightningElement {
         const recordId = this.effectiveRecordId;
         if (!recordId || this.objectApiName) return;
         try {
-            this.objectApiName = await getObjectApiNameFromRecordId({ recordId });
+            this._objectApiName = await getObjectApiNameFromRecordId({ recordId });
         } catch (error) {
             this.setError(this.getErrorMessage(error) || 'Unable to determine object type from this record.');
         }
@@ -460,7 +473,7 @@ export default class WeaveEmailComposer extends LightningElement {
             } else if (this.templates.length === 1) {
                 this.selectedTemplateId = this.templates[0].id;
                 this.selectedTemplate = this.templates[0];
-                this.templateId = this.selectedTemplateId;
+                this._templateId = this.selectedTemplateId;
             } else {
                 this.selectedTemplateId = undefined;
                 this.selectedTemplate = undefined;
@@ -481,7 +494,7 @@ export default class WeaveEmailComposer extends LightningElement {
     async handleTemplateChange(event) {
         const value = event.detail.value;
         this.selectedTemplateId = value;
-        this.templateId = value;
+        this._templateId = value;
         this.selectedTemplate = this.templates.find((t) => t.id === value) || null;
         this.hasManualEdits = false;
         this.recipients = [];
@@ -911,8 +924,8 @@ export default class WeaveEmailComposer extends LightningElement {
 
         try {
             const sendResult = await sendEmail({ request });
-            this.emailSent = true;
-            this.cancelled = false;
+            this._emailSent = true;
+            this._cancelled = false;
             this.sendComplete = true;
             this.dispatchEvent(new FlowAttributeChangeEvent('emailSent', this.emailSent));
             this.dispatchEvent(new FlowAttributeChangeEvent('cancelled', this.cancelled));
@@ -926,7 +939,7 @@ export default class WeaveEmailComposer extends LightningElement {
             if (this.isFlowMode && this.shouldFinishFlowOnSend) {
                 this.dispatchEvent(new FlowNavigationFinishEvent());
             } else if (this.isQuickActionMode) {
-                try { this.dispatchEvent(new CloseActionScreenEvent()); } catch (e) { /* best-effort */ }
+                try { this.dispatchEvent(new CloseActionScreenEvent()); } catch { /* best-effort */ }
             }
         } catch (error) {
             const message = this.getErrorMessage(error) || 'Unable to send email. Please contact your administrator.';
@@ -978,7 +991,7 @@ export default class WeaveEmailComposer extends LightningElement {
             if (this.isFlowMode && this.shouldFinishFlowOnSend) {
                 this.dispatchEvent(new FlowNavigationFinishEvent());
             } else if (this.isQuickActionMode) {
-                try { this.dispatchEvent(new CloseActionScreenEvent()); } catch (e) { /* best-effort */ }
+                try { this.dispatchEvent(new CloseActionScreenEvent()); } catch { /* best-effort */ }
             }
         } catch (error) {
             const message = this.getErrorMessage(error) || 'Unable to schedule email. Please contact your administrator.';
@@ -1044,7 +1057,7 @@ export default class WeaveEmailComposer extends LightningElement {
             if (this.isFlowMode && this.shouldFinishFlowOnSend) {
                 this.dispatchEvent(new FlowNavigationFinishEvent());
             } else if (this.isQuickActionMode) {
-                try { this.dispatchEvent(new CloseActionScreenEvent()); } catch (e) { /* best-effort */ }
+                try { this.dispatchEvent(new CloseActionScreenEvent()); } catch { /* best-effort */ }
             }
         } catch (error) {
             const message = this.getErrorMessage(error) || 'Unable to create recurring schedule. Please contact your administrator.';
@@ -1063,18 +1076,18 @@ export default class WeaveEmailComposer extends LightningElement {
         try {
             await notifyRecordUpdateAvailable([{ recordId }]);
             this.dispatchEvent(new RefreshEvent());
-        } catch (e) { /* best-effort */ }
+        } catch { /* best-effort */ }
     }
 
     handleCancel() {
-        this.cancelled = true;
-        this.emailSent = false;
+        this._cancelled = true;
+        this._emailSent = false;
         this.dispatchEvent(new FlowAttributeChangeEvent('cancelled', this.cancelled));
         this.dispatchEvent(new FlowAttributeChangeEvent('emailSent', this.emailSent));
         if (this.isFlowMode) {
             this.dispatchEvent(new FlowNavigationFinishEvent());
         } else if (this.isQuickActionMode) {
-            try { this.dispatchEvent(new CloseActionScreenEvent()); } catch (e) {
+            try { this.dispatchEvent(new CloseActionScreenEvent()); } catch {
                 this.showToast('Cancelled', 'Email sending was cancelled.', 'info');
             }
         }
@@ -1177,9 +1190,11 @@ export default class WeaveEmailComposer extends LightningElement {
         if (!html) return '';
         if (typeof document === 'undefined') return html;
         const container = document.createElement('div');
+        // eslint-disable-next-line @lwc/lwc/no-inner-html
         container.innerHTML = html;
         this.ensureStandardEmailWrapper(container);
         this.applyStandardEmailTypography(container);
+        // eslint-disable-next-line @lwc/lwc/no-inner-html
         return container.innerHTML;
     }
 

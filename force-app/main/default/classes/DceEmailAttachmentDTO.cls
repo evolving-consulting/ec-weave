@@ -1,6 +1,7 @@
 /**
  * File option shown in the DCE composer and passed through preview/send selection.
  */
+@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.ApexDoc')
 public with sharing class DceEmailAttachmentDTO {
     @AuraEnabled public Id contentDocumentId { get; set; }
     @AuraEnabled public Id contentVersionId { get; set; }
@@ -10,6 +11,7 @@ public with sharing class DceEmailAttachmentDTO {
     @AuraEnabled public Boolean selected { get; set; }
     @AuraEnabled public String source { get; set; }
 
+    @SuppressWarnings('PMD.EmptyStatementBlock')
     public DceEmailAttachmentDTO() {
     }
 }

@@ -1293,7 +1293,7 @@ export default class DceTemplateBuilder extends LightningElement {
       document.execCommand("copy");
       document.body.removeChild(el);
       this.showToast("Copied", `${tag} copied to clipboard`, "success");
-    } catch (_e) {
+    } catch {
       this.showToast("Tag", tag, "info");
     }
   }

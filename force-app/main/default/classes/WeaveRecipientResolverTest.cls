@@ -1,3 +1,4 @@
+@SuppressWarnings('PMD.MethodNamingConventions,PMD.ApexUnitTestClassShouldHaveRunAs')
 @IsTest
 private class WeaveRecipientResolverTest {
 

@@ -1,3 +1,4 @@
+@SuppressWarnings('PMD.ApexDoc')
 public with sharing class WeaveTemplateSecurityService {
     @TestVisible
     private static Boolean allowManagementDuringTest = false;

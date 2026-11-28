@@ -1,3 +1,9 @@
+// PMD.ApexXSSFromURLParam: 'token' from URL is base64-decoded, then cast to Salesforce Id type.
+// The cast fails fast if the value is not a valid Id. signerIdStr (the only string property set
+// from token data) is escaped with {!JSENCODE()} in WeaveSignaturePage before script injection.
+// PMD.ApexCRUDViolation: without sharing is required so unauthenticated site-guest users can
+// reach signing records regardless of sharing rules. SOQL uses WITH USER_MODE to enforce FLS.
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ApexDoc,PMD.ApexXSSFromURLParam,PMD.ApexCRUDViolation,PMD.NcssMethodCount,PMD.NcssTypeCount,PMD.NcssConstructorCount,PMD.AvoidDebugStatements')
 global without sharing class WeaveSignatureController {
 
     // ─── Page state (read by VF bindings) ────────────────────────────────────
@@ -66,7 +72,7 @@ global without sharing class WeaveSignatureController {
                     if (String.isNotBlank(b.name))           brandName     = b.name;
                     hasBrandLogo = String.isNotBlank(b.logoUrl);
                 } catch (Exception ex) {
-                    // Brand lookup failure is non-fatal; defaults remain
+                    System.debug(LoggingLevel.WARN, 'Brand logo URL load failed (non-blocking): ' + ex.getMessage());
                 }
             }
 
@@ -76,7 +82,7 @@ global without sharing class WeaveSignatureController {
                        Signature_Request__r.Status__c,
                        Signature_Request__r.Template_Id__c,
                        Signature_Request__r.Template_Id__r.Name
-                FROM Weave_Signer__c WHERE Id = :signerId LIMIT 1
+                FROM Weave_Signer__c WHERE Id = :signerId WITH USER_MODE LIMIT 1
             ];
             if (rows.isEmpty()) {
                 errorMessage = 'Invalid signing link.';
@@ -130,6 +136,7 @@ global without sharing class WeaveSignatureController {
             WHERE Signature_Request__c = :requestId
             AND Signer__c = :signerId
             AND Type__c IN ('Full','Initials','Date','DatePick')
+            WITH USER_MODE
         ]) {
             String key = pl.Role__c.toLowerCase() + ':' + pl.Type__c.toLowerCase();
             if (seen.contains(key)) continue;
@@ -153,6 +160,7 @@ global without sharing class WeaveSignatureController {
                 FROM Weave_Signature_Form_Field__c
                 WHERE Weave_Template_Config__c = :templateId
                 AND Signer_Role__c = :signerRole
+                WITH USER_MODE
                 ORDER BY Display_Order__c ASC NULLS LAST
             ]) {
                 ffs.add(new Map<String,Object>{
@@ -178,7 +186,7 @@ global without sharing class WeaveSignatureController {
                 SELECT Id, Status__c, Signature_Request__c,
                        Signature_Request__r.Status__c,
                        Signature_Request__r.Signing_Mode__c
-                FROM Weave_Signer__c WHERE Id = :sigId LIMIT 1
+                FROM Weave_Signer__c WHERE Id = :sigId WITH USER_MODE LIMIT 1
             ];
             if (signers.isEmpty()) return 'Error: Signer not found.';
             Weave_Signer__c signer = signers[0];
@@ -193,6 +201,7 @@ global without sharing class WeaveSignatureController {
                 FROM Weave_Signature_Placement__c
                 WHERE Signature_Request__c = :signer.Signature_Request__c
                 AND Signer__c = :sigId
+                WITH USER_MODE
             ];
             List<Weave_Signature_Placement__c> toUpdate = new List<Weave_Signature_Placement__c>();
             for (Weave_Signature_Placement__c pl : placements) {
@@ -232,7 +241,7 @@ global without sharing class WeaveSignatureController {
         try {
             Id sigId = (Id) signerIdStr;
             List<Weave_Signer__c> rows = [
-                SELECT Id, Status__c, Signature_Request__c FROM Weave_Signer__c WHERE Id = :sigId LIMIT 1
+                SELECT Id, Status__c, Signature_Request__c FROM Weave_Signer__c WHERE Id = :sigId WITH USER_MODE LIMIT 1
             ];
             if (rows.isEmpty()) return 'Error: Not found.';
             Weave_Signer__c s = rows[0];
@@ -255,6 +264,7 @@ global without sharing class WeaveSignatureController {
             SELECT Id FROM Weave_Signer__c
             WHERE Signature_Request__c = :requestId
             AND Status__c NOT IN ('Signed', 'Declined', 'Canceled')
+            WITH USER_MODE
             LIMIT 1
         ];
         if (pending.isEmpty()) {

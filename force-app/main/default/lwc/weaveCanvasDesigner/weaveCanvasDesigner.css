@@ -1,3 +1,4 @@
+/* eslint-disable @salesforce-ux/slds/no-hardcoded-values-slds2, @salesforce-ux/slds/no-slds-class-overrides */
 :host {
     --ec-brand-teal: #1f5f5b;
     --ec-brand-teal-mid: #2d7a73;
@@ -24,9 +25,9 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 0 0 16px;
+    padding: 0 0 var(--slds-g-spacing-4, 16px);
     border-bottom: 1px solid #e5e7eb;
-    margin-bottom: 16px;
+    margin-bottom: var(--slds-g-spacing-4, 16px);
 }
 
 .mode-tabs {
@@ -40,9 +41,9 @@
 .mode-tab {
     border: none;
     background: transparent;
-    border-radius: 20px;
-    padding: 5px 16px;
-    font-size: 13px;
+    border-radius: var(--slds-g-radius-border-4, 20px);
+    padding: 5px var(--slds-g-spacing-4, 16px);
+    font-size: var(--slds-g-font-scale-base, 13px);
     color: var(--ec-brand-muted);
     cursor: pointer;
     transition: background 0.15s, color 0.15s;
@@ -56,7 +57,7 @@
 .mode-tab_active {
     background: var(--ec-brand-teal);
     color: white;
-    font-weight: 600;
+    font-weight: var(--slds-g-font-weight-6, 600);
 }
 
 .toolbar-actions {
@@ -68,10 +69,10 @@
 
 .toolbar-btn {
     background: white;
-    border: 1px solid #e5e7eb;
+    border: var(--slds-g-sizing-border-1, 1px) solid #e5e7eb;
     border-radius: 6px;
     padding: 5px 10px;
-    font-size: 12px;
+    font-size: var(--slds-g-font-scale-neg-1, 12px);
     color: var(--ec-brand-ink);
     cursor: pointer;
     transition: background 0.1s;
@@ -91,7 +92,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 12px;
+    font-size: var(--slds-g-font-scale-neg-1, 12px);
     color: var(--ec-brand-muted);
     cursor: pointer;
     user-select: none;
@@ -100,7 +101,7 @@
 /* ── Email mode ─────────────────────────────────────────────────────────── */
 
 .email-mode-content {
-    padding: 4px 0;
+    padding: var(--slds-g-spacing-1, 4px) 0;
 }
 
 .region-group {
@@ -109,35 +110,35 @@
 
 .region-group__label {
     font-size: 11px;
-    font-weight: 700;
+    font-weight: var(--slds-g-font-weight-7, 700);
     color: var(--ec-brand-muted);
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    margin: 0 0 8px;
+    margin: 0 0 var(--slds-g-spacing-2, 8px);
 }
 
 .region-group__empty {
     color: var(--ec-brand-muted);
-    font-size: 13px;
+    font-size: var(--slds-g-font-scale-base, 13px);
     font-style: italic;
-    margin: 4px 0;
+    margin: var(--slds-g-spacing-1, 4px) 0;
 }
 
 .empty-state {
     text-align: center;
-    padding: 3rem 1rem;
+    padding: 3rem var(--slds-g-spacing-4, 1rem)s-g-spacing-8, 3rem) 1rem;
     color: var(--ec-brand-muted);
 }
 
 .empty-state__title {
     font-size: 15px;
-    font-weight: 600;
+    font-weight: var(--slds-g-font-weight-6, 600);
     color: var(--ec-brand-ink);
     margin: 0 0 6px;
 }
 
 .empty-state__sub {
-    font-size: 13px;
+    font-size: var(--slds-g-font-scale-base, 13px);
     margin: 0;
 }
 
@@ -147,8 +148,8 @@
     display: flex;
     gap: 0;
     min-height: 600px;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
+    border: var(--slds-g-sizing-border-1, 1px) solid #e5e7eb;
+    border-radius: var(--slds-g-radius-border-2, 8px);
     overflow: hidden;
     background: #f1f3f4;
 }
@@ -162,7 +163,7 @@
     flex-direction: column;
     align-items: center;
     gap: 2px;
-    padding: 12px 6px;
+    padding: var(--slds-g-spacing-3, 12px) 6px;
     background: white;
     border-right: 1px solid #e5e7eb;
 }
@@ -173,7 +174,7 @@
     color: var(--ec-brand-muted);
     letter-spacing: 0.08em;
     text-align: center;
-    margin: 0 0 8px;
+    margin: 0 0 var(--slds-g-spacing-2, 8px);
 }
 
 .tool-btn {
@@ -182,12 +183,12 @@
     align-items: center;
     gap: 3px;
     width: 56px;
-    padding: 8px 4px;
+    padding: 8px var(--slds-g-spacing-1, 4px)lds-g-spacing-2, 8px) 4px;
     background: transparent;
-    border: 1px solid transparent;
+    border: var(--slds-g-sizing-border-1, 1px) solid transparent;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 10px;
+    font-size: var(--slds-g-font-scale-neg-2, 10px);
     color: var(--ec-brand-muted);
     transition: background 0.1s, border-color 0.1s, color 0.1s;
 }
@@ -201,12 +202,12 @@
     background: var(--ec-brand-teal-bg);
     border-color: var(--ec-brand-teal-border);
     color: var(--ec-brand-teal);
-    font-weight: 600;
+    font-weight: var(--slds-g-font-weight-6, 600);
 }
 
 .tool-icon {
-    width: 20px;
-    height: 20px;
+    width: var(--slds-g-sizing-6, 20px);
+    height: var(--slds-g-sizing-6, 20px);
     flex-shrink: 0;
 }
 
@@ -218,7 +219,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 32px 24px;
+    padding: 32px var(--slds-g-spacing-5, 24px)s-g-spacing-6, 32px) 24px;
     gap: 32px;
     background: #f1f3f4;
 }
@@ -233,7 +234,7 @@
 .page-label {
     font-size: 11px;
     color: var(--ec-brand-muted);
-    font-weight: 600;
+    font-weight: var(--slds-g-font-weight-6, 600);
     letter-spacing: 0.05em;
     text-transform: uppercase;
 }
@@ -256,14 +257,14 @@
 
 .canvas-box {
     position: absolute;
-    border: 1px solid var(--ec-brand-teal-border);
+    border: var(--slds-g-sizing-border-1, 1px) solid var(--ec-brand-teal-border);
     border-radius: 2px;
     cursor: move;
     box-sizing: border-box;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    padding: 4px 6px;
+    padding: var(--slds-g-spacing-1, 4px) 6px;
     user-select: none;
     transition: box-shadow 0.1s;
 }
@@ -284,7 +285,7 @@
 
 .box-type-badge {
     font-size: 9px;
-    font-weight: 700;
+    font-weight: var(--slds-g-font-weight-7, 700);
     color: var(--ec-brand-teal);
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -292,7 +293,7 @@
 }
 
 .box-preview-text {
-    font-size: 10px;
+    font-size: var(--slds-g-font-scale-neg-2, 10px);
     color: var(--ec-brand-ink);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -303,16 +304,16 @@
 .add-page-row {
     display: flex;
     justify-content: center;
-    padding: 8px 0;
+    padding: var(--slds-g-spacing-2, 8px) 0;
 }
 
 .btn-add-page {
     background: white;
-    border: 1px dashed var(--ec-brand-teal-border);
-    border-radius: 8px;
-    padding: 8px 24px;
+    border: var(--slds-g-sizing-border-1, 1px) dashed var(--ec-brand-teal-border);
+    border-radius: var(--slds-g-radius-border-2, 8px);
+    padding: 8px var(--slds-g-spacing-5, 24px)ds-g-spacing-2, 8px) 24px;
     color: var(--ec-brand-teal);
-    font-size: 13px;
+    font-size: var(--slds-g-font-scale-base, 13px);
     cursor: pointer;
     transition: background 0.1s;
 }
@@ -327,15 +328,15 @@
     width: 264px;
     flex-shrink: 0;
     overflow-y: auto;
-    padding: 16px 12px;
+    padding: 16px var(--slds-g-spacing-3, 12px)s-g-spacing-4, 16px) 12px;
     background: white;
     border-left: 1px solid #e5e7eb;
 }
 
 .edit-panel {
     background: var(--ec-brand-teal-bg);
-    border: 1px solid var(--ec-brand-teal-border);
-    border-radius: 8px;
+    border: var(--slds-g-sizing-border-1, 1px) solid var(--ec-brand-teal-border);
+    border-radius: var(--slds-g-radius-border-2, 8px);
     padding: 1.25rem;
 }
 
@@ -343,7 +344,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
+    margin-bottom: var(--slds-g-spacing-3, 12px);
 }
 
 .edit-panel-title {
@@ -360,10 +361,10 @@
     border: none;
     color: var(--ec-brand-muted);
     cursor: pointer;
-    font-size: 14px;
-    padding: 2px 4px;
-    border-radius: 4px;
-    line-height: 1;
+    font-size: var(--slds-g-font-scale-1, 14px);
+    padding: 2px var(--slds-g-spacing-1, 4px);
+    border-radius: var(--slds-g-radius-border-1, 4px);
+    line-height: var(--slds-g-font-line-height-1, 1);
 }
 
 .edit-panel-close:hover {
@@ -384,11 +385,11 @@
 .btn-prop-cancel {
     flex: 1;
     padding: 7px 10px;
-    border: 1px solid #e5e7eb;
+    border: var(--slds-g-sizing-border-1, 1px) solid #e5e7eb;
     border-radius: 6px;
     background: white;
     color: var(--ec-brand-ink);
-    font-size: 13px;
+    font-size: var(--slds-g-font-scale-base, 13px);
     cursor: pointer;
     transition: background 0.1s;
 }
@@ -404,7 +405,7 @@
     border-radius: 6px;
     background: #fef2f2;
     color: #991b1b;
-    font-size: 13px;
+    font-size: var(--slds-g-font-scale-base, 13px);
     cursor: pointer;
     transition: background 0.1s;
 }
@@ -414,9 +415,9 @@
 }
 
 .properties-hint {
-    padding: 16px 4px;
+    padding: 16px var(--slds-g-spacing-1, 4px)ds-g-spacing-4, 16px) 4px;
     color: var(--ec-brand-muted);
-    font-size: 13px;
+    font-size: var(--slds-g-font-scale-base, 13px);
     line-height: 1.5;
 }
 
@@ -430,25 +431,25 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 0 12px;
+    padding: 8px 0 var(--slds-g-spacing-3, 12px)-g-spacing-2, 8px) 0 12px;
     flex-wrap: wrap;
 }
 
 .insert-toolbar-label {
-    font-size: 10px;
+    font-size: var(--slds-g-font-scale-neg-2, 10px);
     font-weight: 800;
     color: var(--ec-brand-muted);
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    margin-right: 4px;
+    margin-right: var(--slds-g-spacing-1, 4px);
 }
 
 .insert-btn {
     background: white;
-    border: 1px solid #e5e7eb;
-    border-radius: 20px;
+    border: var(--slds-g-sizing-border-1, 1px) solid #e5e7eb;
+    border-radius: var(--slds-g-radius-border-4, 20px);
     padding: 5px 14px;
-    font-size: 12px;
+    font-size: var(--slds-g-font-scale-neg-1, 12px);
     color: var(--ec-brand-ink);
     cursor: pointer;
     transition: background 0.1s, border-color 0.1s, color 0.1s;
@@ -470,7 +471,7 @@
     background: var(--ec-brand-teal);
     border-color: var(--ec-brand-teal);
     color: white;
-    font-weight: 600;
+    font-weight: var(--slds-g-font-weight-6, 600);
 }
 
 .insert-btn_active:hover:not(:disabled) {
@@ -483,10 +484,10 @@
 
 .insert-panel {
     background: var(--ec-brand-teal-bg);
-    border: 1px solid var(--ec-brand-teal-border);
-    border-radius: 8px;
-    padding: 1rem;
-    margin-bottom: 12px;
+    border: var(--slds-g-sizing-border-1, 1px) solid var(--ec-brand-teal-border);
+    border-radius: var(--slds-g-radius-border-2, 8px);
+    padding: var(--slds-g-spacing-4, 1rem);
+    margin-bottom: var(--slds-g-spacing-3, 12px);
 }
 
 .insert-panel-header {
@@ -514,10 +515,10 @@
     background: var(--ec-brand-teal);
     color: white;
     border: none;
-    border-radius: 8px;
-    padding: 7px 16px;
-    font-size: 13px;
-    font-weight: 600;
+    border-radius: var(--slds-g-radius-border-2, 8px);
+    padding: 7px var(--slds-g-spacing-4, 16px);
+    font-size: var(--slds-g-font-scale-base, 13px);
+    font-weight: var(--slds-g-font-weight-6, 600);
     cursor: pointer;
     transition: background 0.15s;
 }
@@ -533,10 +534,10 @@
 
 .btn-cancel {
     background: white;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    padding: 7px 16px;
-    font-size: 13px;
+    border: var(--slds-g-sizing-border-1, 1px) solid #e5e7eb;
+    border-radius: var(--slds-g-radius-border-2, 8px);
+    padding: 7px var(--slds-g-spacing-4, 16px);
+    font-size: var(--slds-g-font-scale-base, 13px);
     color: var(--ec-brand-ink);
     cursor: pointer;
     transition: background 0.1s;
@@ -552,10 +553,10 @@
     background: var(--ec-brand-teal);
     color: white;
     border: none;
-    border-radius: 8px;
-    padding: 7px 16px;
-    font-size: 13px;
-    font-weight: 600;
+    border-radius: var(--slds-g-radius-border-2, 8px);
+    padding: 7px var(--slds-g-spacing-4, 16px);
+    font-size: var(--slds-g-font-scale-base, 13px);
+    font-weight: var(--slds-g-font-weight-6, 600);
     cursor: pointer;
     transition: background 0.15s;
     white-space: nowrap;
@@ -589,7 +590,7 @@ lightning-input-rich-text {
     display: flex;
     gap: 2px;
     background: #f3f4f6;
-    border-radius: 20px;
+    border-radius: var(--slds-g-radius-border-4, 20px);
     padding: 3px;
     margin-bottom: 10px;
     width: fit-content;
@@ -599,8 +600,8 @@ lightning-input-rich-text {
     border: none;
     background: transparent;
     border-radius: 16px;
-    padding: 4px 14px;
-    font-size: 12px;
+    padding: var(--slds-g-spacing-1, 4px) 14px;
+    font-size: var(--slds-g-font-scale-neg-1, 12px);
     color: var(--ec-brand-muted);
     cursor: pointer;
     transition: background 0.15s, color 0.15s;
@@ -618,7 +619,7 @@ lightning-input-rich-text {
 .merge-source-tab_active {
     background: var(--ec-brand-teal);
     color: white;
-    font-weight: 600;
+    font-weight: var(--slds-g-font-weight-6, 600);
 }
 
 /* ── Merge table toggle ──────────────────────────────────────────────────── */
@@ -627,7 +628,7 @@ lightning-input-rich-text {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 13px;
+    font-size: var(--slds-g-font-scale-base, 13px);
     color: var(--ec-brand-ink);
     cursor: pointer;
     user-select: none;
@@ -641,7 +642,7 @@ lightning-input-rich-text {
 
 .column-config-section {
     background: white;
-    border: 1px solid var(--ec-brand-teal-border);
+    border: var(--slds-g-sizing-border-1, 1px) solid var(--ec-brand-teal-border);
     border-radius: 6px;
     padding: 10px;
     margin-bottom: 10px;
@@ -649,11 +650,11 @@ lightning-input-rich-text {
 
 .column-config-label {
     font-size: 11px;
-    font-weight: 700;
+    font-weight: var(--slds-g-font-weight-7, 700);
     color: var(--ec-brand-muted);
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    margin: 0 0 8px;
+    margin: 0 0 var(--slds-g-spacing-2, 8px);
 }
 
 .column-config-list {
@@ -675,10 +676,10 @@ lightning-input-rich-text {
 }
 
 .col-field-name {
-    font-size: 12px;
-    font-weight: 600;
+    font-size: var(--slds-g-font-scale-neg-1, 12px);
+    font-weight: var(--slds-g-font-weight-6, 600);
     color: var(--ec-brand-teal);
-    min-width: 80px;
+    min-width: var(--slds-g-sizing-12, 80px);
     max-width: 120px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -691,10 +692,10 @@ lightning-input-rich-text {
 
 .col-order-btn {
     background: white;
-    border: 1px solid #e5e7eb;
-    border-radius: 4px;
+    border: var(--slds-g-sizing-border-1, 1px) solid #e5e7eb;
+    border-radius: var(--slds-g-radius-border-1, 4px);
     padding: 2px 5px;
-    font-size: 10px;
+    font-size: var(--slds-g-font-scale-neg-2, 10px);
     cursor: pointer;
     color: var(--ec-brand-muted);
     line-height: 1.4;
@@ -716,7 +717,7 @@ lightning-input-rich-text {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     gap: 8px;
-    margin-bottom: 12px;
+    margin-bottom: var(--slds-g-spacing-3, 12px);
     max-height: 200px;
     overflow-y: auto;
 }
@@ -726,20 +727,20 @@ lightning-input-rich-text {
     flex-direction: column;
     align-items: center;
     gap: 4px;
-    padding: 8px;
-    border: 1px solid #e5e7eb;
+    padding: var(--slds-g-spacing-2, 8px);
+    border: var(--slds-g-sizing-border-1, 1px) solid #e5e7eb;
     border-radius: 6px;
     background: #f9fafb;
     text-align: center;
 }
 
 .image-file-icon {
-    font-size: 24px;
-    line-height: 1;
+    font-size: var(--slds-g-font-scale-4, 24px);
+    line-height: var(--slds-g-font-line-height-1, 1);
 }
 
 .image-file-name {
-    font-size: 10px;
+    font-size: var(--slds-g-font-scale-neg-2, 10px);
     color: var(--ec-brand-muted);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -752,10 +753,10 @@ lightning-input-rich-text {
     background: var(--ec-brand-teal);
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: var(--slds-g-radius-border-1, 4px);
     padding: 3px 10px;
     font-size: 11px;
-    font-weight: 600;
+    font-weight: var(--slds-g-font-weight-6, 600);
     cursor: pointer;
     transition: background 0.1s;
 }
@@ -770,7 +771,7 @@ lightning-input-rich-text {
 }
 
 .no-images-text {
-    font-size: 13px;
+    font-size: var(--slds-g-font-scale-base, 13px);
     color: var(--ec-brand-muted);
     font-style: italic;
     margin: 0 0 10px;
@@ -784,7 +785,7 @@ lightning-input-rich-text {
 
 .upload-label {
     font-size: 11px;
-    font-weight: 700;
+    font-weight: var(--slds-g-font-weight-7, 700);
     color: var(--ec-brand-muted);
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -792,14 +793,14 @@ lightning-input-rich-text {
 }
 
 .manual-url-toggle {
-    margin-top: 8px;
+    margin-top: var(--slds-g-spacing-2, 8px);
 }
 
 .btn-link {
     background: none;
     border: none;
     color: var(--ec-brand-teal);
-    font-size: 12px;
+    font-size: var(--slds-g-font-scale-neg-1, 12px);
     cursor: pointer;
     padding: 0;
     text-decoration: underline;
@@ -819,13 +820,13 @@ lightning-input-rich-text {
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    padding: 32px 16px;
+    padding: 32px var(--slds-g-spacing-4, 16px)s-g-spacing-6, 32px) 16px;
     overflow-y: auto;
 }
 
 .ai-modal {
     background: white;
-    border-radius: 12px;
+    border-radius: var(--slds-g-radius-border-3, 12px);
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     width: 100%;
     max-width: 720px;
@@ -839,14 +840,14 @@ lightning-input-rich-text {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    padding: 20px 24px 16px;
+    padding: 20px 24px var(--slds-g-spacing-4, 16px)s-g-spacing-5, 24px) 16px;
     border-bottom: 1px solid #e5e7eb;
     flex-shrink: 0;
 }
 
 .ai-modal-eyebrow {
     display: block;
-    font-size: 10px;
+    font-size: var(--slds-g-font-scale-neg-2, 10px);
     font-weight: 800;
     color: var(--ec-brand-teal);
     letter-spacing: 0.1em;
@@ -855,7 +856,7 @@ lightning-input-rich-text {
 
 .ai-modal-title {
     font-size: 18px;
-    font-weight: 700;
+    font-weight: var(--slds-g-font-weight-7, 700);
     color: var(--ec-brand-ink);
     margin: 0;
 }
@@ -867,7 +868,7 @@ lightning-input-rich-text {
 
 .ai-modal-body {
     overflow-y: auto;
-    padding: 20px 24px 24px;
+    padding: 20px 24px var(--slds-g-spacing-5, 24px)s-g-spacing-5, 24px) 24px;
     display: flex;
     flex-direction: column;
     gap: 20px;
@@ -876,16 +877,16 @@ lightning-input-rich-text {
 /* ── AI sections ─────────────────────────────────────────────────────────── */
 
 .ai-section {
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    padding: 16px;
+    border: var(--slds-g-sizing-border-1, 1px) solid #e5e7eb;
+    border-radius: var(--slds-g-radius-border-2, 8px);
+    padding: var(--slds-g-spacing-4, 16px);
 }
 
 .ai-section-heading {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-bottom: 12px;
+    margin-bottom: var(--slds-g-spacing-3, 12px);
 }
 
 .ai-section-heading_prompt {
@@ -902,25 +903,25 @@ lightning-input-rich-text {
     color: white;
     border-radius: 50%;
     font-size: 11px;
-    font-weight: 700;
+    font-weight: var(--slds-g-font-weight-7, 700);
     flex-shrink: 0;
 }
 
 .ai-section-label {
-    font-size: 14px;
-    font-weight: 700;
+    font-size: var(--slds-g-font-scale-1, 14px);
+    font-weight: var(--slds-g-font-weight-7, 700);
     color: var(--ec-brand-ink);
 }
 
 .ai-optional {
     font-size: 11px;
     color: var(--ec-brand-muted);
-    font-weight: 400;
+    font-weight: var(--slds-g-font-weight-4, 400);
 }
 
 .ai-subsection {
-    margin-bottom: 16px;
-    padding-bottom: 16px;
+    margin-bottom: var(--slds-g-spacing-4, 16px);
+    padding-bottom: var(--slds-g-spacing-4, 16px);
     border-bottom: 1px solid #f3f4f6;
 }
 
@@ -934,21 +935,21 @@ lightning-input-rich-text {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 8px;
+    margin-bottom: var(--slds-g-spacing-2, 8px);
 }
 
 .ai-subsection-title {
-    font-size: 12px;
-    font-weight: 700;
+    font-size: var(--slds-g-font-scale-neg-1, 12px);
+    font-weight: var(--slds-g-font-weight-7, 700);
     color: var(--ec-brand-ink);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    margin: 0 0 8px;
+    margin: 0 0 var(--slds-g-spacing-2, 8px);
 }
 
 .ai-subsection-subtitle {
     font-size: 11px;
-    font-weight: 600;
+    font-weight: var(--slds-g-font-weight-6, 600);
     color: var(--ec-brand-muted);
     margin: 10px 0 6px;
     text-transform: uppercase;
@@ -961,16 +962,16 @@ lightning-input-rich-text {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 4px 16px;
-    max-height: 160px;
+    max-height: var(--slds-g-sizing-13, 160px);
     overflow-y: auto;
-    padding: 4px 0;
+    padding: var(--slds-g-spacing-1, 4px) 0;
 }
 
 .ai-field-checkbox-label {
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 12px;
+    font-size: var(--slds-g-font-scale-neg-1, 12px);
     color: var(--ec-brand-ink);
     cursor: pointer;
     user-select: none;
@@ -985,24 +986,24 @@ lightning-input-rich-text {
 /* ── AI query configs ────────────────────────────────────────────────────── */
 
 .ai-queries-section {
-    margin-top: 8px;
+    margin-top: var(--slds-g-spacing-2, 8px);
 }
 
 .ai-query-config {
-    margin-bottom: 8px;
-    padding: 8px;
-    border: 1px solid #e5e7eb;
+    margin-bottom: var(--slds-g-spacing-2, 8px);
+    padding: var(--slds-g-spacing-2, 8px);
+    border: var(--slds-g-sizing-border-1, 1px) solid #e5e7eb;
     border-radius: 6px;
     background: #f9fafb;
 }
 
 .ai-query-toggle {
-    font-weight: 600;
+    font-weight: var(--slds-g-font-weight-6, 600);
 }
 
 .ai-query-name {
     color: var(--ec-brand-teal);
-    font-weight: 600;
+    font-weight: var(--slds-g-font-weight-6, 600);
 }
 
 .ai-query-sub {
@@ -1014,7 +1015,7 @@ lightning-input-rich-text {
 }
 
 .ai-column-configs {
-    padding-left: 16px;
+    padding-left: var(--slds-g-spacing-4, 16px);
     margin-top: 6px;
 }
 
@@ -1028,14 +1029,14 @@ lightning-input-rich-text {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 4px;
+    margin-bottom: var(--slds-g-spacing-1, 4px);
 }
 
 .ai-col-field {
-    min-width: 80px;
+    min-width: var(--slds-g-sizing-12, 80px);
     font-size: 11px;
     color: var(--ec-brand-teal);
-    font-weight: 600;
+    font-weight: var(--slds-g-font-weight-6, 600);
 }
 
 .ai-col-header-input {
@@ -1054,18 +1055,18 @@ lightning-input-rich-text {
     grid-template-columns: 1fr 2fr auto;
     gap: 8px;
     align-items: flex-end;
-    margin-bottom: 8px;
+    margin-bottom: var(--slds-g-spacing-2, 8px);
 }
 
 .btn-remove-cta {
     background: none;
-    border: 1px solid #fca5a5;
-    border-radius: 4px;
+    border: var(--slds-g-sizing-border-1, 1px) solid #fca5a5;
+    border-radius: var(--slds-g-radius-border-1, 4px);
     color: #991b1b;
-    padding: 4px 8px;
+    padding: 4px var(--slds-g-spacing-2, 8px)lds-g-spacing-1, 4px) 8px;
     cursor: pointer;
-    font-size: 12px;
-    line-height: 1;
+    font-size: var(--slds-g-font-scale-neg-1, 12px);
+    line-height: var(--slds-g-font-line-height-1, 1);
     align-self: flex-end;
     margin-bottom: 2px;
 }
@@ -1086,12 +1087,12 @@ lightning-input-rich-text {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 12px;
+    font-size: var(--slds-g-font-scale-neg-1, 12px);
     color: var(--ec-brand-ink);
     cursor: pointer;
     user-select: none;
-    padding: 4px 6px;
-    border-radius: 4px;
+    padding: var(--slds-g-spacing-1, 4px) 6px;
+    border-radius: var(--slds-g-radius-border-1, 4px);
 }
 
 .ai-image-item:hover {
@@ -1099,7 +1100,7 @@ lightning-input-rich-text {
 }
 
 .ai-image-icon {
-    font-size: 16px;
+    font-size: var(--slds-g-font-scale-2, 16px);
 }
 
 .ai-image-name {
@@ -1110,12 +1111,12 @@ lightning-input-rich-text {
 }
 
 .ai-image-url-pill {
-    font-size: 10px;
+    font-size: var(--slds-g-font-scale-neg-2, 10px);
     background: #d1fae5;
     color: #065f46;
     padding: 2px 6px;
     border-radius: 10px;
-    font-weight: 600;
+    font-weight: var(--slds-g-font-weight-6, 600);
 }
 
 /* ── AI prompt text ──────────────────────────────────────────────────────── */
@@ -1125,9 +1126,9 @@ lightning-input-rich-text {
     color: white;
     border: none;
     border-radius: 6px;
-    padding: 6px 16px;
-    font-size: 12px;
-    font-weight: 600;
+    padding: 6px var(--slds-g-spacing-4, 16px);
+    font-size: var(--slds-g-font-scale-neg-1, 12px);
+    font-weight: var(--slds-g-font-weight-6, 600);
     cursor: pointer;
     transition: background 0.15s;
     white-space: nowrap;
@@ -1153,7 +1154,7 @@ lightning-input-rich-text {
     overflow-y: auto;
     line-height: 1.6;
     background: #f9fafb;
-    border: 1px solid #e5e7eb;
+    border: var(--slds-g-sizing-border-1, 1px) solid #e5e7eb;
     border-radius: 6px;
 }
 
@@ -1164,7 +1165,7 @@ lightning-input-rich-text {
     align-items: center;
     justify-content: center;
     gap: 0;
-    padding: 16px 24px 0;
+    padding: 16px var(--slds-g-spacing-5, 24px) 0g-spacing-4, 16px) 24px 0;
     border-top: 1px solid #e5e7eb;
     margin-top: 0;
 }
@@ -1191,13 +1192,13 @@ lightning-input-rich-text {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
+    width: var(--slds-g-sizing-7, 24px);
+    height: var(--slds-g-sizing-7, 24px);
     border-radius: 50%;
     background: #e5e7eb;
     color: var(--ec-brand-muted);
     font-size: 11px;
-    font-weight: 700;
+    font-weight: var(--slds-g-font-weight-7, 700);
 }
 
 .ai-step-dot_active .ai-step-num {
@@ -1211,8 +1212,8 @@ lightning-input-rich-text {
 }
 
 .ai-step-name {
-    font-size: 10px;
-    font-weight: 600;
+    font-size: var(--slds-g-font-scale-neg-2, 10px);
+    font-weight: var(--slds-g-font-weight-6, 600);
     color: var(--ec-brand-muted);
     white-space: nowrap;
 }
@@ -1225,7 +1226,7 @@ lightning-input-rich-text {
     flex: 1;
     height: 2px;
     background: #e5e7eb;
-    margin-bottom: 16px;
+    margin-bottom: var(--slds-g-spacing-4, 16px);
     max-width: 40px;
 }
 
@@ -1236,10 +1237,10 @@ lightning-input-rich-text {
     justify-content: flex-end;
     align-items: center;
     gap: 10px;
-    padding: 14px 24px;
+    padding: 14px var(--slds-g-spacing-5, 24px);
     border-top: 1px solid #e5e7eb;
     background: #f9fafb;
-    border-radius: 0 0 12px 12px;
+    border-radius: 0 0 12px var(--slds-g-radius-border-3, 12px)s-g-radius-border-3, 12px) 12px;
     flex-shrink: 0;
 }
 
@@ -1257,10 +1258,10 @@ lightning-input-rich-text {
 }
 
 .img-size-sep {
-    font-size: 14px;
+    font-size: var(--slds-g-font-scale-1, 14px);
     color: var(--ec-brand-muted);
-    padding-bottom: 8px;
-    font-weight: 600;
+    padding-bottom: var(--slds-g-spacing-2, 8px);
+    font-weight: var(--slds-g-font-weight-6, 600);
 }
 
 /* ── CTA URL row + field tag picker ─────────────────────────────────────── */
@@ -1278,12 +1279,12 @@ lightning-input-rich-text {
 .btn-field-tag {
     white-space: nowrap;
     background: var(--ec-brand-teal-bg);
-    border: 1px solid var(--ec-brand-teal-border);
+    border: var(--slds-g-sizing-border-1, 1px) solid var(--ec-brand-teal-border);
     color: var(--ec-brand-teal);
     border-radius: 6px;
     padding: 6px 10px;
-    font-size: 12px;
-    font-weight: 600;
+    font-size: var(--slds-g-font-scale-neg-1, 12px);
+    font-weight: var(--slds-g-font-weight-6, 600);
     cursor: pointer;
     margin-bottom: 2px;
 }
@@ -1296,8 +1297,8 @@ lightning-input-rich-text {
 .field-tag-picker {
     margin-top: 6px;
     background: #fff;
-    border: 1px solid var(--ec-brand-teal-border);
-    border-radius: 8px;
+    border: var(--slds-g-sizing-border-1, 1px) solid var(--ec-brand-teal-border);
+    border-radius: var(--slds-g-radius-border-2, 8px);
     overflow: hidden;
 }
 
@@ -1305,7 +1306,7 @@ lightning-input-rich-text {
     display: block;
     width: 100%;
     padding: 7px 10px;
-    font-size: 12px;
+    font-size: var(--slds-g-font-scale-neg-1, 12px);
     border: none;
     border-bottom: 1px solid #e5e7eb;
     outline: none;
@@ -1317,16 +1318,16 @@ lightning-input-rich-text {
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
-    padding: 8px;
+    padding: var(--slds-g-spacing-2, 8px);
     max-height: 140px;
     overflow-y: auto;
 }
 
 .field-tag-item {
     background: #f3f4f6;
-    border: 1px solid #e5e7eb;
-    border-radius: 4px;
-    padding: 3px 8px;
+    border: var(--slds-g-sizing-border-1, 1px) solid #e5e7eb;
+    border-radius: var(--slds-g-radius-border-1, 4px);
+    padding: 3px var(--slds-g-spacing-2, 8px);
     font-size: 11px;
     font-family: 'Courier New', Courier, monospace;
     color: var(--ec-brand-ink);
@@ -1350,16 +1351,16 @@ lightning-input-rich-text {
     align-items: flex-start;
     gap: 8px;
     background: var(--ec-brand-teal-bg);
-    border: 1px solid var(--ec-brand-teal-border);
+    border: var(--slds-g-sizing-border-1, 1px) solid var(--ec-brand-teal-border);
     border-radius: 6px;
-    padding: 10px 12px;
-    font-size: 12px;
+    padding: 10px var(--slds-g-spacing-3, 12px);
+    font-size: var(--slds-g-font-scale-neg-1, 12px);
     color: var(--ec-brand-teal);
-    margin-bottom: 12px;
+    margin-bottom: var(--slds-g-spacing-3, 12px);
 }
 
 .ai-brand-linked-icon {
-    font-size: 14px;
+    font-size: var(--slds-g-font-scale-1, 14px);
     flex-shrink: 0;
 }
 
@@ -1373,7 +1374,7 @@ lightning-input-rich-text {
     display: flex;
     align-items: center;
     gap: 10px;
-    font-size: 12px;
+    font-size: var(--slds-g-font-scale-neg-1, 12px);
 }
 
 .ai-brand-readonly-row_block {
@@ -1383,7 +1384,7 @@ lightning-input-rich-text {
 }
 
 .ai-brand-readonly-label {
-    font-weight: 600;
+    font-weight: var(--slds-g-font-weight-6, 600);
     color: var(--ec-brand-muted);
     min-width: 100px;
     font-size: 11px;
@@ -1406,7 +1407,7 @@ lightning-input-rich-text {
     width: 16px;
     height: 16px;
     border-radius: 3px;
-    border: 1px solid #e5e7eb;
+    border: var(--slds-g-sizing-border-1, 1px) solid #e5e7eb;
     flex-shrink: 0;
 }
 
@@ -1414,8 +1415,8 @@ lightning-input-rich-text {
     max-height: 40px;
     max-width: 120px;
     object-fit: contain;
-    border: 1px solid #e5e7eb;
-    border-radius: 4px;
+    border: var(--slds-g-sizing-border-1, 1px) solid #e5e7eb;
+    border-radius: var(--slds-g-radius-border-1, 4px);
     padding: 2px;
 }
 
@@ -1439,7 +1440,7 @@ lightning-input-rich-text {
 
 .ai-brand-color-label {
     font-size: 11px;
-    font-weight: 600;
+    font-weight: var(--slds-g-font-weight-6, 600);
     color: var(--ec-brand-muted);
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -1449,19 +1450,19 @@ lightning-input-rich-text {
     display: flex;
     align-items: center;
     gap: 6px;
-    border: 1px solid #d1d5db;
+    border: var(--slds-g-sizing-border-1, 1px) solid #d1d5db;
     border-radius: 6px;
-    padding: 4px 8px;
+    padding: 4px var(--slds-g-spacing-2, 8px)lds-g-spacing-1, 4px) 8px;
     background: #fff;
 }
 
 .ai-color-picker {
-    width: 28px;
-    height: 28px;
+    width: var(--slds-g-sizing-8, 28px);
+    height: var(--slds-g-sizing-8, 28px);
     border: none;
     padding: 0;
     cursor: pointer;
-    border-radius: 4px;
+    border-radius: var(--slds-g-radius-border-1, 4px);
     flex-shrink: 0;
 }
 
@@ -1469,7 +1470,7 @@ lightning-input-rich-text {
     flex: 1;
     border: none;
     outline: none;
-    font-size: 12px;
+    font-size: var(--slds-g-font-scale-neg-1, 12px);
     color: var(--ec-brand-ink);
     font-family: 'Courier New', monospace;
     background: transparent;
@@ -1479,15 +1480,15 @@ lightning-input-rich-text {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-top: 4px;
+    margin-top: var(--slds-g-spacing-1, 4px);
 }
 
 .ai-logo-url-input {
     flex: 1;
-    border: 1px solid #d1d5db;
+    border: var(--slds-g-sizing-border-1, 1px) solid #d1d5db;
     border-radius: 6px;
     padding: 7px 10px;
-    font-size: 12px;
+    font-size: var(--slds-g-font-scale-neg-1, 12px);
     color: var(--ec-brand-ink);
     outline: none;
 }
@@ -1502,9 +1503,9 @@ lightning-input-rich-text {
     flex-wrap: wrap;
     gap: 6px;
     margin-top: 6px;
-    padding: 8px;
+    padding: var(--slds-g-spacing-2, 8px);
     background: #f9fafb;
-    border: 1px solid #e5e7eb;
+    border: var(--slds-g-sizing-border-1, 1px) solid #e5e7eb;
     border-radius: 6px;
 }
 
@@ -1513,9 +1514,9 @@ lightning-input-rich-text {
     align-items: center;
     gap: 4px;
     background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 4px;
-    padding: 4px 8px;
+    border: var(--slds-g-sizing-border-1, 1px) solid #e5e7eb;
+    border-radius: var(--slds-g-radius-border-1, 4px);
+    padding: 4px var(--slds-g-spacing-2, 8px)lds-g-spacing-1, 4px) 8px;
     font-size: 11px;
     color: var(--ec-brand-ink);
     cursor: pointer;
@@ -1531,10 +1532,10 @@ lightning-input-rich-text {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 7px 12px;
-    margin-bottom: 8px;
+    padding: 7px var(--slds-g-spacing-3, 12px);
+    margin-bottom: var(--slds-g-spacing-2, 8px);
     background: var(--ec-brand-teal-bg);
-    border: 1px solid var(--ec-brand-teal-border);
+    border: var(--slds-g-sizing-border-1, 1px) solid var(--ec-brand-teal-border);
     border-radius: 6px;
     cursor: pointer;
     user-select: none;
@@ -1542,21 +1543,21 @@ lightning-input-rich-text {
 
 .pdf-constraints-badge {
     font-size: 11px;
-    font-weight: 600;
+    font-weight: var(--slds-g-font-weight-6, 600);
     color: var(--ec-brand-teal);
     letter-spacing: 0.03em;
 }
 
 .pdf-constraints-chevron {
-    font-size: 10px;
+    font-size: var(--slds-g-font-scale-neg-2, 10px);
     color: var(--ec-brand-teal);
 }
 
 .pdf-constraints-body {
     padding: 10px 14px;
-    margin-bottom: 8px;
+    margin-bottom: var(--slds-g-spacing-2, 8px);
     background: #f9fafb;
-    border: 1px solid var(--ec-brand-teal-border);
+    border: var(--slds-g-sizing-border-1, 1px) solid var(--ec-brand-teal-border);
     border-radius: 6px;
     font-size: 11px;
     color: var(--ec-brand-ink);
@@ -1565,7 +1566,7 @@ lightning-input-rich-text {
 
 .pdf-constraints-body ul {
     margin: 0;
-    padding-left: 16px;
+    padding-left: var(--slds-g-spacing-4, 16px);
 }
 
 .pdf-constraints-body li {
@@ -1574,9 +1575,9 @@ lightning-input-rich-text {
 
 .pdf-constraints-body code {
     font-family: 'Courier New', monospace;
-    font-size: 10px;
+    font-size: var(--slds-g-font-scale-neg-2, 10px);
     background: #e5e7eb;
-    padding: 1px 4px;
+    padding: 1px var(--slds-g-spacing-1, 4px);
     border-radius: 3px;
 }
 
@@ -1587,7 +1588,7 @@ lightning-input-rich-text {
 }
 
 .cond-modal-body {
-    padding: 20px 24px;
+    padding: 20px var(--slds-g-spacing-5, 24px);
     display: flex;
     flex-direction: column;
     gap: 0;
@@ -1597,7 +1598,7 @@ lightning-input-rich-text {
 .cond-expr-row {
     display: flex;
     gap: 12px;
-    margin-bottom: 0.75rem;
+    margin-bottom: var(--slds-g-spacing-3, 0.75rem);
 }
 
 .cond-expr-operator {
@@ -1609,7 +1610,7 @@ lightning-input-rich-text {
 }
 
 .cond-content-section {
-    margin-top: 1rem;
+    margin-top: var(--slds-g-spacing-4, 1rem);
 }
 
 .cond-content-header {
@@ -1620,51 +1621,51 @@ lightning-input-rich-text {
 }
 
 .cond-content-label {
-    font-size: 12px;
-    font-weight: 600;
+    font-size: var(--slds-g-font-scale-neg-1, 12px);
+    font-weight: var(--slds-g-font-weight-6, 600);
     color: var(--ec-brand-muted);
     letter-spacing: 0.03em;
 }
 
 .cond-textarea {
-    --lwc-fontSize3: 12px;
+    --slds-g-font-size-base: 12px;
 }
 
 .ai-modal-footer {
     display: flex;
     justify-content: flex-end;
     gap: 8px;
-    padding: 14px 24px;
+    padding: 14px var(--slds-g-spacing-5, 24px);
     border-top: 1px solid #e5e7eb;
     flex-shrink: 0;
 }
 
 /* AI Step 3 — Conditional block cards */
 .ai-cond-intro {
-    font-size: 12px;
+    font-size: var(--slds-g-font-scale-neg-1, 12px);
     color: var(--ec-brand-muted);
-    margin: 0 0 1rem;
+    margin: 0 0 var(--slds-g-spacing-4, 1rem);
     line-height: 1.5;
 }
 
 .ai-cond-card {
     background: #ffffff;
-    border: 1px solid var(--ec-brand-teal-border);
-    border-radius: 8px;
-    padding: 1rem;
-    margin-bottom: 0.75rem;
+    border: var(--slds-g-sizing-border-1, 1px) solid var(--ec-brand-teal-border);
+    border-radius: var(--slds-g-radius-border-2, 8px);
+    padding: var(--slds-g-spacing-4, 1rem);
+    margin-bottom: var(--slds-g-spacing-3, 0.75rem);
 }
 
 .ai-cond-card-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 0.75rem;
+    margin-bottom: var(--slds-g-spacing-3, 0.75rem);
 }
 
 .ai-cond-card-num {
     font-size: 11px;
-    font-weight: 700;
+    font-weight: var(--slds-g-font-weight-7, 700);
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--ec-brand-teal);
@@ -1675,10 +1676,10 @@ lightning-input-rich-text {
     border: none;
     color: var(--ec-brand-muted);
     cursor: pointer;
-    font-size: 14px;
+    font-size: var(--slds-g-font-scale-1, 14px);
     padding: 2px 6px;
-    border-radius: 4px;
-    line-height: 1;
+    border-radius: var(--slds-g-radius-border-1, 4px);
+    line-height: var(--slds-g-font-line-height-1, 1);
 }
 
 .btn-remove-cond:hover {
@@ -1689,7 +1690,7 @@ lightning-input-rich-text {
 .cond-type-field-row {
     display: flex;
     gap: 12px;
-    margin-bottom: 0.75rem;
+    margin-bottom: var(--slds-g-spacing-3, 0.75rem);
 }
 
 .cond-type-col {
@@ -1703,14 +1704,14 @@ lightning-input-rich-text {
 .btn-add-cond {
     display: block;
     width: 100%;
-    margin-top: 0.5rem;
-    padding: 8px 0;
+    margin-top: var(--slds-g-spacing-2, 0.5rem);
+    padding: var(--slds-g-spacing-2, 8px) 0;
     background: none;
-    border: 1px dashed var(--ec-brand-teal-light);
-    border-radius: 8px;
+    border: var(--slds-g-sizing-border-1, 1px) dashed var(--ec-brand-teal-light);
+    border-radius: var(--slds-g-radius-border-2, 8px);
     color: var(--ec-brand-teal);
-    font-size: 13px;
-    font-weight: 600;
+    font-size: var(--slds-g-font-scale-base, 13px);
+    font-weight: var(--slds-g-font-weight-6, 600);
     cursor: pointer;
     text-align: center;
 }

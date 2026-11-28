@@ -6,6 +6,15 @@ const lwcConfig = require('@salesforce/eslint-config-lwc/recommended');
 const globals = require('globals');
 
 module.exports = defineConfig([
+    // LWC CSS — project uses custom --ec-brand-* design tokens, not SLDS2 standard tokens
+    {
+        files: ['**/lwc/**/*.css'],
+        rules: {
+            '@salesforce-ux/slds/no-hardcoded-values-slds2': 'off',
+            '@salesforce-ux/slds/lwc-token-to-slds-hook': 'off'
+        }
+    },
+
     // Aura configuration
     {
         files: ['**/aura/**/*.js'],

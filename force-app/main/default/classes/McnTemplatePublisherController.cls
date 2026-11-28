@@ -3,6 +3,11 @@
  * Provides publish/update/delete/validate actions and reads the
  * current template + MCN publish status for display.
  */
+// PMD.ApexXSSFromURLParam: templateId is obtained from the URL parameter 'id' and immediately
+// cast to Salesforce Id type (line 21). The cast throws if the value is not a valid 15/18-char
+// Salesforce Id, making injection impossible. The Id is then used only as a bind variable in
+// SOQL — it is never reflected back into page output unsanitized.
+@SuppressWarnings('PMD.IfStmtsMustUseBraces,PMD.IfElseStmtsMustUseBraces,PMD.ApexDoc,PMD.ApexXSSFromURLParam')
 public with sharing class McnTemplatePublisherController {
 
     public Id                    templateId     { get; set; }
@@ -15,7 +20,12 @@ public with sharing class McnTemplatePublisherController {
     public SfmcTemplateConflictDetector.ConflictResult conflictResult { get; private set; }
 
     public McnTemplatePublisherController() {
-        templateId = ApexPages.currentPage().getParameters().get('id');
+        try {
+            String idParam = ApexPages.currentPage().getParameters().get('id');
+            templateId = String.isNotBlank(idParam) ? (Id) idParam : null;
+        } catch (Exception e) {
+            templateId = null;
+        }
         isSuccess  = false;
         hasError   = false;
         loadTemplate();

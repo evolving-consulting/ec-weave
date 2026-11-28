@@ -2,6 +2,7 @@
  * Transport object for moving a DCE email send request from LWC/API callers into Apex.
  * This class intentionally contains no business logic or email-sending behavior.
  */
+@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.ApexDoc')
 public with sharing class GenericEmailSendRequest {
     @AuraEnabled public Id templateId { get; set; }
     @AuraEnabled public Id recordId { get; set; }
@@ -13,6 +14,7 @@ public with sharing class GenericEmailSendRequest {
     @AuraEnabled public List<Id> attachmentContentDocumentIds { get; set; }
     @AuraEnabled public Boolean storeHistory { get; set; }
 
+    @SuppressWarnings('PMD.EmptyStatementBlock')
     public GenericEmailSendRequest() {
     }
 

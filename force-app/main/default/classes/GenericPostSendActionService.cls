@@ -3,6 +3,7 @@
  * Actions are intentionally stored and handled generically so new action types
  * can be added by registering another handler.
  */
+@SuppressWarnings('PMD.AvoidBooleanMethodParameters,PMD.ExcessiveParameterList,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ApexDoc,PMD.NcssMethodCount,PMD.NcssTypeCount,PMD.NcssConstructorCount')
 public with sharing class GenericPostSendActionService {
     private static final String ACTION_UPDATE_FIELD = 'Update Field';
     private static final String ACTION_CREATE_TASK = 'Create Task';
@@ -15,6 +16,7 @@ public with sharing class GenericPostSendActionService {
     private static final Integer MAX_TASK_DESCRIPTION_LENGTH = 32000;
 
     private virtual class ActionHandler {
+        @SuppressWarnings('PMD.EmptyStatementBlock')
         public virtual void execute(DceBuilderPostSendActionDTO action, ExecutionContext context) {
         }
     }
@@ -313,21 +315,23 @@ public with sharing class GenericPostSendActionService {
         }
     }
 
+    private static void executeParentUpdates(ExecutionContext context) {
+        Schema.SObjectType parentType = Schema.getGlobalDescribe().get(context.parentObjectApiName);
+        if (!parentType.getDescribe().isUpdateable()) return;
+        SObject updateRecord = parentType.newSObject(context.parentRecordId);
+        for (String fieldApiName : context.pendingParentUpdates.keySet()) {
+            updateRecord.put(fieldApiName, context.pendingParentUpdates.get(fieldApiName));
+        }
+        Database.SaveResult updateResult = Database.update(updateRecord, false, AccessLevel.USER_MODE);
+        if (!updateResult.isSuccess()) {
+            context.warnings.add('Email sent, but a configured record update failed.');
+        }
+    }
+
     private static void flush(ExecutionContext context) {
         if (!context.pendingParentUpdates.isEmpty()) {
             try {
-                Schema.SObjectType parentType = Schema.getGlobalDescribe().get(context.parentObjectApiName);
-                if (parentType.getDescribe().isUpdateable()) {
-                    SObject updateRecord = parentType.newSObject(context.parentRecordId);
-                    for (String fieldApiName : context.pendingParentUpdates.keySet()) {
-                        updateRecord.put(fieldApiName, context.pendingParentUpdates.get(fieldApiName));
-                    }
-                    Database.SaveResult updateResult =
-                        Database.update(updateRecord, false, AccessLevel.USER_MODE);
-                    if (!updateResult.isSuccess()) {
-                        context.warnings.add('Email sent, but a configured record update failed.');
-                    }
-                }
+                executeParentUpdates(context);
             } catch (Exception e) {
                 context.warnings.add('Email sent, but a configured record update failed.');
             }

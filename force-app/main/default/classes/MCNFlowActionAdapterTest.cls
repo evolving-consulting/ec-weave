@@ -1,3 +1,4 @@
+@SuppressWarnings('PMD.MethodNamingConventions,PMD.ApexDoc,PMD.ApexUnitTestClassShouldHaveRunAs')
 @IsTest
 private class MCNFlowActionAdapterTest {
 

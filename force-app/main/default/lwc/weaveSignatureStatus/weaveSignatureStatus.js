@@ -1,4 +1,4 @@
-import { LightningElement, api, track, wire } from 'lwc';
+import { LightningElement, api, track } from 'lwc';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import getSignatureRequests from '@salesforce/apex/WeaveSignatureAuraController.getSignatureRequests';
 import cancelSignatureRequest from '@salesforce/apex/WeaveSignatureAuraController.cancelSignatureRequest';

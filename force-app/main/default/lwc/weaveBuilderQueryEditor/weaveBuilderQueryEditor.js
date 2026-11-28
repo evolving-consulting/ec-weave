@@ -25,12 +25,12 @@ const FILTER_OPERATOR_OPTIONS = [
   { label: 'IN', value: 'IN' },
   { label: 'NOT IN', value: 'NOT IN' },
   { label: 'IS NULL', value: 'IS NULL' },
-  { label: 'IS NOT NULL', value: 'IS NOT NULL' },
+  { label: 'IS NOT NULL', value: 'IS NOT NULL' }
 ];
 
 const FILTER_CONNECTOR_OPTIONS = [
   { label: 'AND', value: 'AND' },
-  { label: 'OR', value: 'OR' },
+  { label: 'OR', value: 'OR' }
 ];
 
 const NULL_OPS = new Set(['IS NULL', 'IS NOT NULL']);
@@ -308,7 +308,7 @@ export default class WeaveBuilderQueryEditor extends LightningElement {
   handleFieldSelect(event) {
     const fieldApiName = event.currentTarget.dataset.field;
     this.availableFields = this.availableFields.map(f =>
-      f.apiName === fieldApiName ? { ...f, isSelected: true } : f
+      (f.apiName === fieldApiName ? { ...f, isSelected: true } : f)
     );
     this.emitChange();
   }
@@ -320,13 +320,13 @@ export default class WeaveBuilderQueryEditor extends LightningElement {
     const inDirect = this.availableFields.some(f => f.apiName === fieldApiName);
     if (inDirect) {
       this.availableFields = this.availableFields.map(f =>
-        f.apiName === fieldApiName ? { ...f, isSelected: false } : f
+        (f.apiName === fieldApiName ? { ...f, isSelected: false } : f)
       );
     } else {
       // Relationship field deselect
       this.relatedFieldGroups = this.relatedFieldGroups.map(g => ({
         ...g,
-        fields: g.fields.map(f => f.apiName === fieldApiName ? { ...f, isSelected: false } : f)
+        fields: g.fields.map(f => (f.apiName === fieldApiName ? { ...f, isSelected: false } : f))
       }));
     }
     this.emitChange();
@@ -336,9 +336,9 @@ export default class WeaveBuilderQueryEditor extends LightningElement {
     const fieldApiName = event.currentTarget.dataset.field;
     const relName = event.currentTarget.dataset.rel;
     this.relatedFieldGroups = this.relatedFieldGroups.map(g =>
-      g.relationshipName === relName
-        ? { ...g, fields: g.fields.map(f => f.apiName === fieldApiName ? { ...f, isSelected: true } : f) }
-        : g
+      (g.relationshipName === relName
+        ? { ...g, fields: g.fields.map(f => (f.apiName === fieldApiName ? { ...f, isSelected: true } : f)) }
+        : g)
     );
     this.emitChange();
   }
@@ -346,7 +346,7 @@ export default class WeaveBuilderQueryEditor extends LightningElement {
   handleToggleRelGroup(event) {
     const relName = event.currentTarget.dataset.rel;
     this.relatedFieldGroups = this.relatedFieldGroups.map(g =>
-      g.relationshipName === relName ? { ...g, expanded: !g.expanded } : g
+      (g.relationshipName === relName ? { ...g, expanded: !g.expanded } : g)
     );
   }
 
@@ -371,37 +371,37 @@ export default class WeaveBuilderQueryEditor extends LightningElement {
 
   handleFilterRowFieldChange(event) {
     const idx = parseInt(event.currentTarget.dataset.idx, 10);
-    this.filterRows = this.filterRows.map(r => r.id === idx ? { ...r, field: event.detail.value } : r);
+    this.filterRows = this.filterRows.map(r => (r.id === idx ? { ...r, field: event.detail.value } : r));
     this.emitChange();
   }
 
   handleFilterRowOperatorChange(event) {
     const idx = parseInt(event.currentTarget.dataset.idx, 10);
-    this.filterRows = this.filterRows.map(r => r.id === idx ? { ...r, operator: event.detail.value } : r);
+    this.filterRows = this.filterRows.map(r => (r.id === idx ? { ...r, operator: event.detail.value } : r));
     this.emitChange();
   }
 
   handleFilterRowValueChange(event) {
     const idx = parseInt(event.currentTarget.dataset.idx, 10);
-    this.filterRows = this.filterRows.map(r => r.id === idx ? { ...r, value: event.target.value } : r);
+    this.filterRows = this.filterRows.map(r => (r.id === idx ? { ...r, value: event.target.value } : r));
     this.emitChange();
   }
 
   handleFilterRowConnectorChange(event) {
     const idx = parseInt(event.currentTarget.dataset.idx, 10);
-    this.filterRows = this.filterRows.map(r => r.id === idx ? { ...r, connector: event.detail.value } : r);
+    this.filterRows = this.filterRows.map(r => (r.id === idx ? { ...r, connector: event.detail.value } : r));
     this.emitChange();
   }
 
   handleSortRowFieldChange(event) {
     const idx = parseInt(event.currentTarget.dataset.idx, 10);
-    this.sortRows = this.sortRows.map(r => r.id === idx ? { ...r, field: event.detail.value } : r);
+    this.sortRows = this.sortRows.map(r => (r.id === idx ? { ...r, field: event.detail.value } : r));
     this.emitChange();
   }
 
   handleSortRowDirChange(event) {
     const idx = parseInt(event.currentTarget.dataset.idx, 10);
-    this.sortRows = this.sortRows.map(r => r.id === idx ? { ...r, dir: event.detail.value } : r);
+    this.sortRows = this.sortRows.map(r => (r.id === idx ? { ...r, dir: event.detail.value } : r));
     this.emitChange();
   }
 

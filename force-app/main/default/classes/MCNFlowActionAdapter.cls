@@ -6,6 +6,7 @@
  * Input params: templateId, recipientEmail, contextVariablesJson
  * Outputs: isSuccess, messageId, errorMessage
  */
+@SuppressWarnings('PMD.ApexDoc')
 public with sharing class MCNFlowActionAdapter {
 
     public class SendRequest {

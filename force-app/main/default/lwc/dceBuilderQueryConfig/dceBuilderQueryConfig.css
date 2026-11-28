@@ -1,3 +1,4 @@
+/* eslint-disable @salesforce-ux/slds/no-hardcoded-values-slds2, @salesforce-ux/slds/no-slds-class-overrides */
 :host {
   display: block;
 }
@@ -15,19 +16,19 @@
 
 .qc-filter-box {
   background: var(--ec-surface-subtle, #f3f3f3);
-  border: 1px solid var(--ec-border, #c9c9c9);
-  border-radius: 8px;
+  border: var(--slds-g-sizing-border-1, 1px) solid var(--ec-border, #c9c9c9);
+  border-radius: var(--slds-g-radius-border-2, 8px);
   display: grid;
   gap: 0.5rem;
-  margin-top: 0.25rem;
-  padding: 0.75rem;
+  margin-top: var(--slds-g-spacing-1, 0.25rem);
+  padding: var(--slds-g-spacing-3, 0.75rem);
 }
 
 .qc-filter-title {
   align-items: center;
   display: flex;
   font-size: 0.8rem;
-  font-weight: 700;
+  font-weight: var(--slds-g-font-weight-7, 700);
   gap: 0.5rem;
   justify-content: space-between;
   letter-spacing: 0.04em;
@@ -47,10 +48,10 @@
 
 .qc-filter-preview {
   background: var(--ec-surface, #fff);
-  border: 1px dashed var(--ec-border, #c9c9c9);
+  border: var(--slds-g-sizing-border-1, 1px) dashed var(--ec-border, #c9c9c9);
   border-radius: 6px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 0.75rem;
+  font-size: var(--slds-g-font-scale-neg-1, 0.75rem);
   padding: 0.4rem 0.6rem;
   word-break: break-all;
 }
@@ -59,10 +60,10 @@
 .btn-add-filter {
   align-self: flex-end;
   background: var(--ec-surface, #fff);
-  border: 1px solid var(--ec-border, #c9c9c9);
+  border: var(--slds-g-sizing-border-1, 1px) solid var(--ec-border, #c9c9c9);
   border-radius: 6px;
   cursor: pointer;
-  font-size: 0.75rem;
+  font-size: var(--slds-g-font-scale-neg-1, 0.75rem);
   padding: 0.3rem 0.7rem;
   white-space: nowrap;
 }
@@ -77,12 +78,12 @@
 
 .qc-field-picker {
   background: var(--ec-surface, #fff);
-  border: 1px solid var(--ec-border, #c9c9c9);
+  border: var(--slds-g-sizing-border-1, 1px) solid var(--ec-border, #c9c9c9);
   border-radius: 10px;
   display: flex;
   flex-direction: column;
   gap: 0;
-  margin-top: 0.75rem;
+  margin-top: var(--slds-g-spacing-3, 0.75rem);
   max-height: 460px;
   overflow: hidden;
 }
@@ -94,15 +95,15 @@
   display: flex;
   gap: 0.75rem;
   justify-content: space-between;
-  padding: 0.5rem 0.75rem;
+  padding: 0.5rem var(--slds-g-spacing-3, 0.75rem)pacing-2, 0.5rem) 0.75rem;
 }
 
 .qc-object-pill {
   background: var(--ec-brand-subtle, #e3f0fb);
-  border-radius: 20px;
+  border-radius: var(--slds-g-radius-border-4, 20px);
   color: var(--ec-brand, #1565c0);
   font-size: 0.72rem;
-  font-weight: 600;
+  font-weight: var(--slds-g-font-weight-6, 600);
   padding: 0.15rem 0.6rem;
 }
 
@@ -112,21 +113,21 @@
 }
 
 .qc-search-wrap {
-  padding: 0.5rem 0.75rem 0;
+  padding: 0.5rem var(--slds-g-spacing-3, 0.75rem) 0cing-2, 0.5rem) 0.75rem 0;
 }
 
 .qc-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 0.3rem;
-  padding: 0.5rem 0.75rem 0;
+  padding: 0.5rem var(--slds-g-spacing-3, 0.75rem) 0cing-2, 0.5rem) 0.75rem 0;
 }
 
 .qc-chip {
   align-items: center;
   background: var(--ec-brand-subtle, #e3f0fb);
-  border: 1px solid var(--ec-brand-border, #90c4f7);
-  border-radius: 20px;
+  border: var(--slds-g-sizing-border-1, 1px) solid var(--ec-brand-border, #90c4f7);
+  border-radius: var(--slds-g-radius-border-4, 20px);
   color: var(--ec-brand-dark, #1565c0);
   display: inline-flex;
   font-size: 0.72rem;
@@ -135,7 +136,7 @@
 }
 
 .qc-chip-label {
-  max-width: 160px;
+  max-width: var(--slds-g-sizing-13, 160px);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -147,7 +148,7 @@
   color: inherit;
   cursor: pointer;
   font-size: 0.85rem;
-  line-height: 1;
+  line-height: var(--slds-g-font-line-height-1, 1);
   opacity: 0.6;
   padding: 0;
 }
@@ -163,9 +164,9 @@
   background: var(--ec-surface-subtle, #f7f7f7);
   cursor: pointer;
   display: flex;
-  font-size: 0.75rem;
+  font-size: var(--slds-g-font-scale-neg-1, 0.75rem);
   gap: 0.4rem;
-  padding: 0.4rem 0.75rem;
+  padding: 0.4rem var(--slds-g-spacing-3, 0.75rem);
   user-select: none;
 }
 
@@ -178,7 +179,7 @@
 }
 
 .qc-rel-label {
-  font-weight: 600;
+  font-weight: var(--slds-g-font-weight-6, 600);
 }
 
 .qc-rel-api {
@@ -193,7 +194,7 @@
   color: #fff;
   font-size: 0.65rem;
   min-width: 16px;
-  padding: 0 4px;
+  padding: 0 var(--slds-g-spacing-1, 4px);
   text-align: center;
 }
 
@@ -202,22 +203,22 @@
   border-top: 1px solid var(--ec-border-light, #ebebeb);
   max-height: 200px;
   overflow-y: auto;
-  padding: 0.25rem 0;
+  padding: var(--slds-g-spacing-1, 0.25rem) 0;
 }
 
 .qc-direct-fields {
   flex: 1;
   overflow-y: auto;
-  padding: 0.25rem 0;
+  padding: var(--slds-g-spacing-1, 0.25rem) 0;
 }
 
 .qc-field-row {
   align-items: center;
   cursor: pointer;
   display: flex;
-  font-size: 0.75rem;
+  font-size: var(--slds-g-font-scale-neg-1, 0.75rem);
   gap: 0.5rem;
-  padding: 0.25rem 0.75rem;
+  padding: 0.25rem var(--slds-g-spacing-3, 0.75rem)acing-1, 0.25rem) 0.75rem;
 }
 
 .qc-field-row:hover { background: var(--ec-surface-hover, #f5f9ff); }
@@ -229,7 +230,7 @@
 
 .qc-field-name {
   flex: 1;
-  font-weight: 500;
+  font-weight: var(--slds-g-font-weight-5, 500);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -250,7 +251,7 @@
   align-items: center;
   color: var(--ec-muted, #999);
   display: flex;
-  font-size: 0.75rem;
+  font-size: var(--slds-g-font-scale-neg-1, 0.75rem);
   gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
+  padding: 0.5rem var(--slds-g-spacing-3, 0.75rem)pacing-2, 0.5rem) 0.75rem;
 }

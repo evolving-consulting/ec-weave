@@ -15,13 +15,7 @@ jest.mock('lightning/platformShowToastEvent', () => ({
 }), { virtual: true });
 
 function flushPromises() {
-    return new Promise(resolve => setTimeout(resolve, 0));
-}
-
-function setInput(el, selector, value) {
-    const input = el.shadowRoot.querySelector(selector);
-    input.value = value;
-    input.dispatchEvent(new CustomEvent('change', { detail: { value } }));
+    return new Promise(resolve => { setTimeout(resolve, 0); });
 }
 
 describe('mcnEmailSender', () => {

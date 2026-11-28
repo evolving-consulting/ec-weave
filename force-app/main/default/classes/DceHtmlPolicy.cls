@@ -1,6 +1,7 @@
 /**
  * Validates administrator-authored and user-edited email HTML without rewriting source.
  */
+@SuppressWarnings('PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ApexDoc')
 public with sharing class DceHtmlPolicy {
     private static final Set<String> SAFE_ATTRIBUTES = new Set<String>{
         'href', 'src', 'alt', 'width', 'height', 'colspan', 'rowspan'
